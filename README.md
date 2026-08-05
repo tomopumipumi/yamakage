@@ -1,126 +1,127 @@
 # YAMAKAGE (Garmin Connect IQ App)
 
-## 概要
+## Overview
 
-Garminデバイス（Edge, Fenix, Forerunnerなど）向けに、周囲の地形（標高）を考慮した「本当の日の出・日の入り時刻」を表示するデータフィールドアプリです。
+A data field app for Garmin devices (Edge, Fenix, Forerunner, etc.) that displays the "true sunrise and sunset times" by taking the surrounding terrain (elevation) into account.
 
-専用のバックエンドサーバー（YAMAKAGE API）と通信を行い、現在地から周囲の山や障害物の高さを計算して、正確な日照時間を予測します。
+It communicates with a dedicated backend server (YAMAKAGE API) to calculate the height of surrounding mountains and obstacles from your current location, predicting accurate daylight hours.
 
-## 事前準備（Garmin SDKのセットアップ）
+---
 
-開発を始める前に、Garmin Connect IQの公式開発環境を準備する必要があります。
+## Preparation (Garmin SDK Setup)
 
-### 1. Connect IQ SDK Managerのインストール
+Before starting development, you need to prepare the official Garmin Connect IQ development environment.
 
-Garminの[開発者サイト](https://developer.garmin.com/connect-iq/overview/)から「Connect IQ SDK Manager」をダウンロードしてインストールし、最新のSDKをダウンロードしてください。
+### 1. Installing Connect IQ SDK Manager
 
-### 2. デベロッパーキーの作成
+Download and install the "Connect IQ SDK Manager" from the Garmin [developer site](https://developer.garmin.com/connect-iq/overview/), and download the latest SDK.
 
-アプリをビルド・署名するための秘密鍵（`.der` ファイル）を作成します。
-ターミナルを開き、SDKの `bin` ディレクトリにある `monkeyc` コマンドを使って鍵を生成します。
+### 2. Creating a Developer Key
+
+Create a private key (`.der` file) to build and sign the app.
+Open a terminal and use the `monkeyc` command located in the SDK's `bin` directory to generate the key.
 
 ```sh
-# 鍵の生成コマンド例（自身の環境のbinパスに読み替えてください）
+# Example key generation command (replace the path with your environment's bin path)
 /path/to/connectiq-sdk/bin/monkeyc -a developer_key.der
 
 ```
 
-作成した `developer_key.der` は、プロジェクトのルートディレクトリ等に配置してください（※ `.gitignore` で除外されているためGitにはコミットされません）。
+Place the generated `developer_key.der` in the project's root directory (Note: It will not be committed to Git as it is excluded via `.gitignore`).
 
 ---
 
-## 環境構築
+## Environment Setup
 
-### 1. `pnpm` のインストール
+### 1. Installing `pnpm`
 
-パッケージマネージャーおよびスクリプトランナーとして `pnpm` を使用しています。
+We use `pnpm` as the package manager and script runner.
 
 ```sh
 npm install -g pnpm
 
 ```
 
-### 2. 依存環境の解決
+### 2. Installing Dependencies
 
-`package.json` があるディレクトリ階層で以下のコマンドを実行し、コードフォーマッター（Prettier）などの開発ツールをインストールします。
+Run the following command in the directory containing `package.json` to install development tools such as the code formatter (Prettier).
 
 ```sh
 pnpm install
 
 ```
 
-### 3. 環境変数の用意
+### 3. Setting Up Environment Variables
 
-プロジェクトルートにある `.env.example` をコピーして `.env` を作成し、必要な環境変数を設定してください。
+Copy `.env.example` in the project root to create `.env`, and configure the necessary environment variables for your setup.
 
 ```sh
 cp .env.example .env
 
 ```
 
-`.env` ファイルには以下の内容をご自身の環境に合わせて入力してください。
+Please enter the following variables in the `.env` file according to your environment.
 
-| 変数名 | 説明 | 設定例 (Windows) | 設定例 (Mac) |
+| Variable Name | Description | Example (Windows) | Example (Mac) |
 | --- | --- | --- | --- |
-| `GARMIN_DEVICE` | シミュレーターで起動・テストする対象のデバイスID | `edge1040` | `edge1040` |
-| `GARMIN_KEY_PATH` | 作成したデベロッパーキーの絶対（または相対）パス | `C:\keys\developer_key.der` | `/Users/name/keys/developer_key.der` |
-| `GARMIN_SDK_BIN` | ダウンロードしたGarmin SDKの `bin` フォルダの絶対パス | `C:\Users\name\AppData\Roaming\Garmin\ConnectIQ\Sdks\connectiq-X.Y.Z\bin` | `/Users/name/Library/Application Support/Garmin/ConnectIQ/Sdks/connectiq-X.Y.Z/bin` |
+| `GARMIN_DEVICE` | The target device ID to launch and test in the simulator. | `edge1040` | `edge1040` |
+| `GARMIN_KEY_PATH` | Absolute (or relative) path to the created developer key. | `C:\keys\developer_key.der` | `/Users/name/keys/developer_key.der` |
+| `GARMIN_SDK_BIN` | Absolute path to the `bin` folder of the downloaded Garmin SDK. | `C:\Users\name\AppData\Roaming\Garmin\ConnectIQ\Sdks\connectiq-X.Y.Z\bin` | `/Users/name/Library/Application Support/Garmin/ConnectIQ/Sdks/connectiq-X.Y.Z/bin` |
 
 ---
 
-## ローカル環境での実行・開発
+## Local Execution & Development
 
-### 1. シミュレーターの起動
+### 1. Launching the Simulator
 
-以下のコマンドを実行すると、自動的にコードがビルドされ、設定した `GARMIN_DEVICE` のシミュレーターが起動します。
+Running the following command will automatically build the code and launch the simulator for the configured `GARMIN_DEVICE`.
 
 ```sh
 pnpm run dev
 
 ```
 
-### 2. 通信（バックグラウンド処理）のテストについて
+### 2. Testing Communication (Background Processing)
 
-データフィールドアプリの仕様上、外部APIとの通信は「バックグラウンドイベント」として最短5分間隔で実行されます。
-シミュレーターで動作確認をする際は、以下の手順で強制的に通信を発生させることができます。
+Due to the specifications of data field apps, communication with external APIs is executed as a "background event" at a minimum interval of 5 minutes.
+When testing in the simulator, you can force this communication using the following steps:
 
-1. シミュレーターの上部メニューから **[Simulation]** を開く。
-2. **[Background Events]** をクリックする。
-3. `Event Type`を**Temporal Event**、`Target App`が**YAMAKAGE**になっていることを確認し、`OK`を押下する。
+1. Open **[Simulation]** from the simulator's top menu.
+2. Click **[Background Events]**.
+3. Verify that `Event Type` is set to **Temporal Event** and `Target App` is set to **YAMAKAGE**, then press `OK`.
 
-※すぐにバックグラウンド処理が走らない場合は、**Settings > Set Position**を開いて`OK`を押したり、
-デバイスを切り替えると動くことが多いです。
+*Note: If the background process does not run immediately, opening **Settings > Set Position** and pressing `OK`, or switching devices often triggers it.*
 
 ---
 
-## 各種コマンド
+## Commands
 
-| コマンド | 説明 |
+| Command | Description |
 | --- | --- |
-| `pnpm run dev` | デバッグビルドを実行し、シミュレーターを起動します。 |
-| `pnpm run dev:release` | リリースビルド（最適化あり）でシミュレーターを起動します。 |
-| `pnpm run test` | 単体テストをビルドし、シミュレーター上でテストを実行します。 |
-| `pnpm run fmt` | Prettier (monkeycプラグイン) を使用してコードのフォーマットを行います。 |
-| `pnpm run export` | Connect IQストアへの申請用ファイル（`.iq`）をエクスポートします。 |
+| `pnpm run dev` | Executes a debug build and launches the simulator. |
+| `pnpm run dev:release` | Launches the simulator with a release build (optimized). |
+| `pnpm run test` | Builds unit tests and executes them on the simulator. |
+| `pnpm run fmt` | Formats the code using Prettier (monkeyc plugin). |
+| `pnpm run export` | Exports the `.iq` file for submission to the Connect IQ Store. |
 
 ---
 
-## ストア公開用ファイルの作成
+## Creating the Store Release File
 
-Connect IQストアにアプリを申請するための `.iq` ファイルを出力する手順です。
-以下のコマンドを実行してください。
+Follow these steps to generate the `.iq` file required for submitting the app to the Connect IQ Store.
+Run the following command:
 
 ```sh
 pnpm run export
 
 ```
 
-処理が完了すると、プロジェクトの `bin` ディレクトリ内に `yamakage.iq` というファイルが生成されます。
+Once the process is complete, a file named `yamakage.iq` will be generated inside the project's `bin` directory.
 
-このファイルを [Garmin Developer Dashboard](https://www.google.com/search?q=https://developer.garmin.com/connect-iq/overview/) からアップロードすることで、ストアへの公開申請が完了します。
+Uploading this file via the [Garmin Developer Dashboard](https://www.google.com/search?q=https://developer.garmin.com/connect-iq/overview/) will complete your application for store release.
 
 ---
 
-## ライセンス
+## License
 
-本プロジェクトは [MIT License](https://www.google.com/search?q=./LICENSE) のもとで公開されています。
+This project is licensed under the [MIT License](https://www.google.com/search?q=./LICENSE).
