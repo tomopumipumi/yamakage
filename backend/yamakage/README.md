@@ -1,104 +1,106 @@
 # YAMAKAGE API
 
-## 概要
+## Overview
 
-Garminアプリ向けに、山影を考慮した真の日の出・日の入り時刻を計算し提供するAPIサーバー（BFF）です。<br>
-`Cloudflare Workers` 上で動作し、標高データの取得には `AWS Open Data` のパブリックデータセット を、キャッシュ機能として `Cloudflare R2` を利用しています。
+This is an API server (BFF) that calculates and provides the true sunrise and sunset times, taking mountain shadows into account, for the Garmin app.
 
-## 環境構築
+It runs on `Cloudflare Workers`, utilizes public datasets from `AWS Open Data` to retrieve elevation data, and uses `Cloudflare R2` as a caching feature.
 
-### 0. `pnpm`のインストール
+## Environment Setup
 
-パッケージマネージャーとして `pnpm` を使用しています。インストールしていない場合は `npm` 等経由でインストールしてください。
+### 0. Installing `pnpm`
+
+We use `pnpm` as our package manager. If you haven't installed it yet, please install it via `npm` or a similar tool.
 
 ```sh
 npm install -g pnpm
 
 ```
 
-以下のコマンドでバージョンが表示されれば成功です。
+If the version is displayed by running the following command, the installation was successful.
 
 ```sh
 pnpm --version
 
 ```
 
-### 1. 依存環境の解決
+### 1. Installing Dependencies
 
-`package.json` があるディレクトリ階層で以下のコマンドを実行してください。
+Run the following command in the directory containing `package.json`.
 
 ```sh
 pnpm install
 
 ```
 
-## ローカル環境での実行・開発
+## Local Execution & Development
 
-### 0. 環境変数の用意
+### 0. Setting Up Environment Variables
 
-`.dev.vars.example` をコピーして `.dev.vars` を作成し、必要な環境変数を設定してください。
+Copy `.dev.vars.example` to create `.dev.vars`, and configure the necessary environment variables.
 
 ```sh
 cp .dev.vars.example .dev.vars
 
 ```
 
-| 変数名 | 説明 |
+| Variable Name | Description |
 | --- | --- |
-| `YAMAKAGE_API_KEY` | APIの認証(Bearer Token)に使用するキーです。任意の文字列を設定してください。 |
+| `YAMAKAGE_API_KEY` | The key used for API authentication (Bearer Token). Please set any arbitrary string. |
 
-### 1. バケットのセットアップ
+### 1. Bucket Setup
 
-Cloudflare R2 のバケットを作成します。以下のコマンドを実行してください。
+Create a Cloudflare R2 bucket by running the following command:
 
 ```sh
 pnpm run r2:create
 
 ```
 
-### 2. 開発サーバーの起動
+### 2. Launching the Development Server
 
-以下のコマンドを実行してローカルサーバーを起動します。
+Run the following command to start the local server:
 
 ```sh
 pnpm run dev
+
 ```
 
-※APIのドキュメント（Swagger UI）をブラウザで同時に開きたい場合は、以下のコマンドを使用します。
+*Note: If you want to open the API documentation (Swagger UI) in your browser at the same time, use the following command:*
 
 ```sh
 pnpm run dev:ui
 
 ```
 
-## 各種コマンド
+## Commands
 
-| コマンド | 説明 |
+| Command | Description |
 | --- | --- |
-| `pnpm run dev` | ローカル開発サーバーを起動します。 |
-| `pnpm run dev:ui` | ローカル開発サーバーを起動し、ブラウザでSwagger UIを開きます。 |
-| `pnpm run test` | Vitestを用いてテストを実行します。 |
-| `pnpm run fmt` | Biomeを使用してコードのフォーマットを行います。 |
-| `pnpm run lint` | Biomeを使用してコードの静的解析（Lint）を行います。 |
-| `pnpm run fix` | BiomeによるLintエラーの自動修正およびフォーマットを行います。 |
+| `pnpm run dev` | Starts the local development server. |
+| `pnpm run dev:ui` | Starts the local development server and opens Swagger UI in the browser. |
+| `pnpm run test` | Runs tests using Vitest. |
+| `pnpm run fmt` | Formats the code using Biome. |
+| `pnpm run lint` | Performs static code analysis (Linting) using Biome. |
+| `pnpm run fix` | Automatically fixes Lint errors and formats the code using Biome. |
 
-## 本番環境へのデプロイ設定
+## Deployment to Production Environment
 
-Cloudflare へデプロイする際の手順です。
+These are the steps for deploying to Cloudflare.
 
-### 1. シークレットキーの設定
+### 1. Setting Up the Secret Key
 
-`.dev.vars` に記載した機密情報を Cloudflare の本番環境に登録します。
-以下のコマンドを実行し、対話プロンプトに従って `YAMAKAGE_API_KEY` の値を入力してください。
+Register the sensitive information specified in `.dev.vars` into the Cloudflare production environment.
+Run the following command and follow the interactive prompt to enter the value for `YAMAKAGE_API_KEY`.
 
 ```sh
 pnpm run register:apikey
 
 ```
 
-### 4. デプロイ
+### 4. Deployment
 
-以下のコマンドで Cloudflare Workers へデプロイします。
+Deploy to Cloudflare Workers using the following command:
 
 ```sh
 pnpm run deploy
