@@ -1,0 +1,6 @@
+# ========================================
+# YAMAKAGE Local Environment Variables (.dev.vars.example)
+# ========================================
+
+# Authentication key for the YAMAKAGE API (if applicable)
+YAMAKAGE_API_KEY=

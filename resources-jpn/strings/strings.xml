@@ -1,0 +1,11 @@
+<strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    
+    <string id="AppName">YAMAKAGE</string>
+    <string id="UpdateFrequencyTitle">バックグラウンド更新間隔（分）</string>
+    <string id="TimeDefaultLabel">--:--</string>
+    <string id="Communicating">通信中...</string>
+    <string id="UpdateFailed">更新失敗</string>
+    <string id="Updating">更新中...</string>
+    <string id="FailBackgroundProcessMsg">バックグラウンドプロセスが失敗したか\nタイムアウトになりました</string>
+    <string id="FailConnectPhoneMsg">スマートフォンとの接続を\n確立できませんでした</string>
+</strings>

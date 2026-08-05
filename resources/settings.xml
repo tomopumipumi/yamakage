@@ -1,0 +1,9 @@
+<resources>
+    <settings>
+
+        <setting propertyKey="@Properties.BackgroundUpdateDurationMins" title="@Strings.UpdateFrequencyTitle">
+            <settingConfig type="numeric" min="5" max="60" />
+        </setting>
+        
+    </settings>
+</resources>

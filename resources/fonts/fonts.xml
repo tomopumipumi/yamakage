@@ -1,0 +1,6 @@
+<resources>
+    <font id="IconFont40" filename="YamakageIcons_40.fnt" />
+    <font id="IconFont48" filename="YamakageIcons_48.fnt" />
+    <font id="IconFont62" filename="YamakageIcons_62.fnt" />
+    <font id="IconFont92" filename="YamakageIcons_92.fnt" />
+</resources>

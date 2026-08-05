@@ -1,0 +1,36 @@
+{
+	"name": "yamakage-api",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "npx wrangler deploy",
+		"dev": "wrangler dev",
+		"dev:ui": "concurrently \"pnpm dev\" \"wait-on http-get://localhost:8787/ && start http://localhost:8787/ui\"",
+		"test": "vitest",
+		"cf-typegen": "wrangler types",
+		"fmt": "biome format --write .",
+		"lint": "biome lint .",
+		"fix": "biome check --write .",
+		"r2:create": "npx wrangler r2 bucket create yamakage-terrain-tiles",
+		"register:apikey": "npx wrangler secret put YAMAKAGE_API_KEY"
+	},
+	"dependencies": {
+		"@hono/swagger-ui": "^0.6.1",
+		"@hono/zod-openapi": "^1.5.1",
+		"fast-png": "^8.0.0",
+		"hono": "^4.12.30",
+		"suncalc": "^2.0.1",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.4",
+		"@cloudflare/vitest-pool-workers": "^0.12.4",
+		"@types/node": "^26.1.1",
+		"@types/suncalc": "^1.9.2",
+		"concurrently": "^10.0.3",
+		"typescript": "^5.5.2",
+		"vitest": "~3.2.0",
+		"wait-on": "^9.0.10",
+		"wrangler": "^4.112.0"
+	}
+}

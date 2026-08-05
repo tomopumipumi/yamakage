@@ -1,0 +1,8 @@
+{
+  "plugins": ["@markw65/prettier-plugin-monkeyc"],
+  "printWidth": 80,
+  "tabWidth": 4,
+  "useTabs": false,
+  "trailingComma": "none",
+  "bracketSpacing": true
+}

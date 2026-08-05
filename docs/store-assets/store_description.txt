@@ -1,0 +1,65 @@
+YAMAKAGE - Terrain-Aware Sunset and Sunrise Prediction
+
+■Description
+Darkness falls earlier in the mountains than standard sunset times suggest.
+
+YAMAKAGE is a data field that reads surrounding terrain (elevation data) to calculate the "true sunrise and sunset times," taking actual mountains and shadows into account.
+
+
+■Key Features
+    ・Scans terrain data up to a 20 km radius from your current location.
+
+    ・Compares the sun's trajectory with mountain elevations to predict exactly when the sun will be hidden (or appear).
+
+    ・Ideal for trail running, mountaineering, road cycling in mountainous areas, and any activity requiring early light activation or careful schedule management.
+
+
+■Displayed Data
+
+The following information is displayed. (Layout may vary depending on your device's screen size.)
+
+    ・Countdown to the next update
+
+    ・Next Sunrise time
+
+    ・Next Sunset time
+
+
+■How It Works
+
+To minimize battery consumption and processing load on your device, YAMAKAGE performs complex terrain calculations on a dedicated cloud server.
+
+    ・The app sends your current coordinates to the dedicated server.
+
+    ・The server reads publicly available global terrain data (terrain tile images) and instantly analyzes the elevation within a 20 km radius of your location.
+
+    ・It combines the terrain cross-section with the sun's trajectory calculations to determine when the sun will hide behind (or emerge from) the mountains, and sends the results back to your device.
+
+
+※Privacy Note:
+This app sends location data to an external server for sunset calculations, but it does not collect or transmit any personally identifiable information, such as account details or device identifiers. 
+To maintain anonymity, it uses only a completely random, temporary hash value for communication.
+
+The transmitted location data is never stored (persisted) on the server; it is immediately discarded upon calculation completion (retained only temporarily as an operation log and is strictly unused for anything besides the calculation). Please use the app with peace of mind.
+
+
+■Usage Notes (Please Read)
+
+    ・Smartphone Connection Required: Because terrain data is fetched externally, your device must be connected via Bluetooth to your smartphone (Garmin Connect Mobile app) during your activity.
+
+    ・Updates Every 5 Minutes: Due to the specifications of Garmin data fields, communication and terrain recalculations occur at a pace of "once every 5 minutes."
+
+    ・Initial Calculation Time: When starting an activity, the first data fetch may take anywhere from a few seconds to over ten seconds. If data isn't displayed immediately, please wait a moment.
+
+    ・Exceptions: In regions experiencing midnight sun or polar night (e.g., Nordic countries in summer) where the concept of "sunrise/sunset" does not exist for the day, the time will be displayed as --:--.
+
+    ・Communication Failure: If communication with the external server fails or the smartphone is disconnected, an "Update Failed" message will appear at the top. 
+　　　The app will attempt to communicate again in 5 minutes, and if successful, the display will return to normal.
+
+
+■Disclaimer and Margins of Error
+
+The times calculated by this app are estimates based on terrain data (approx. 38m mesh) and the sun's trajectory.
+Atmospheric conditions, the height of surrounding trees or buildings, and weather (clouds) are not taken into account, which may result in a margin of error ranging from a few minutes to over ten minutes compared to what you actually experience.
+
+Please do not over-rely on the assumption that "it will definitely be bright until the predicted time." Always plan your activities with an ample margin of safety.

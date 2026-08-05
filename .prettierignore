@@ -1,0 +1,7 @@
+backend/
+node_modules/
+bin/
+doc/
+resources/
+*.prg
+*.iq
