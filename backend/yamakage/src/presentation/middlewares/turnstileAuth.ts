@@ -7,7 +7,7 @@ const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/sit
 export const createTurnstileAuthMiddleware = (logger: Logger) => {
   return async (c: Context<{ Bindings: Bindings }>, next: Next) => {
     const token = c.req.header('X-Turnstile-Token');
-    
+
     const clientIp = c.req.header('cf-connecting-ip') || 'unknown';
 
     if (c.env.RATE_LIMITER) {
@@ -34,12 +34,12 @@ export const createTurnstileAuthMiddleware = (logger: Logger) => {
         body: formData,
       });
 
-      const outcome = await result.json() as { success: boolean; 'error-codes': string[] };
+      const outcome = (await result.json()) as { success: boolean; 'error-codes': string[] };
 
       if (!outcome.success) {
-        logger.warn('Turnstile Error: Invalid token', { 
-          clientIp, 
-          errorCodes: outcome['error-codes'] 
+        logger.warn('Turnstile Error: Invalid token', {
+          clientIp,
+          errorCodes: outcome['error-codes'],
         });
         return c.json({ error: 'Forbidden: Invalid Turnstile token' }, 403);
       }

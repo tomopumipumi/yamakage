@@ -9,10 +9,10 @@ import { WebShadowRequestSchema, WebShadowResponseSchema } from '../schemas/webS
 export const postWebShadowRoute = {
   method: 'post' as const,
   path: '/',
-  request: { 
+  request: {
     body: {
-      content: { 'application/json': { schema: WebShadowRequestSchema } }
-    }
+      content: { 'application/json': { schema: WebShadowRequestSchema } },
+    },
   },
   security: [{ TurnstileAuth: [] }],
   responses: {
@@ -35,10 +35,8 @@ export const createWebShadowRouter = (logger: Logger) => {
 
   router.openapi(postWebShadowRoute, async (c) => {
     const { lat, lng, time } = c.req.valid('json');
-    
-    const targetTime = time 
-        ? new Date(time < 10000000000 ? time * 1000 : time) 
-        : new Date();
+
+    const targetTime = time ? new Date(time < 10000000000 ? time * 1000 : time) : new Date();
 
     const runInBackground = (promise: Promise<void>) => {
       c.executionCtx.waitUntil(promise);
@@ -58,22 +56,28 @@ export const createWebShadowRouter = (logger: Logger) => {
     const result = await calcExecuterAsync(lat, lng, targetTime);
 
     if (result.isPolar || !result.sunsetResult || !result.sunriseResult) {
-      return c.json({
-        sunsetTime: null,
-        minutesToSunset: null,
-        sunriseTime: null,
-        minutesToSunrise: null,
-        isPolar: true
-      }, 200);
+      return c.json(
+        {
+          sunsetTime: null,
+          minutesToSunset: null,
+          sunriseTime: null,
+          minutesToSunrise: null,
+          isPolar: true,
+        },
+        200,
+      );
     }
 
-    return c.json({
-      sunsetTime: result.sunsetResult.shadowTimeUnix,
-      minutesToSunset: result.sunsetResult.minutesToShadow,
-      sunriseTime: result.sunriseResult.sunriseTimeUnix,
-      minutesToSunrise: result.sunriseResult.minutesToSunrise,
-      isPolar: false
-    }, 200);
+    return c.json(
+      {
+        sunsetTime: result.sunsetResult.shadowTimeUnix,
+        minutesToSunset: result.sunsetResult.minutesToShadow,
+        sunriseTime: result.sunriseResult.sunriseTimeUnix,
+        minutesToSunrise: result.sunriseResult.minutesToSunrise,
+        isPolar: false,
+      },
+      200,
+    );
   });
 
   return router;
