@@ -1,0 +1,106 @@
+{
+  "app_title": "YAMAKAGE",
+  "app_subtitle": "Terrain-Aware Sunset & Sunrise",
+  "selected_location": "Selected Location",
+  "click_to_select": "Click on the map to select a location",
+  "position_format": "Lat: {{lat}}, Lng: {{lon}}",
+  "can_change_location": "Tap or click the map to change the location",
+  "timezone": "Timezone",
+  "local_time": "📍 Local Time ({{tz}})",
+  "local_standard_time": "📍 Local Standard Time ({{tzName}})",
+  "target_date": "Target Date & Time",
+  "calculate_button": "Calculate Shadow",
+  "polar_alert": "Polar day or polar night applies to this region and time.",
+  "sunrise_label": "Sunrise (Terrain-Aware)",
+  "sunset_label": "Sunset (Terrain-Aware)",
+  "settings": "Settings",
+  "language": "Language / 言語",
+  "close": "Close",
+  "error_no_position": "Please select a location on the map.",
+  "error_no_turnstile": "Bot verification (Turnstile) is not complete.",
+  "error_calculation_failed": "Calculation failed. Please try again later.",
+  "timezones": {
+    "utc": "Coordinated Universal Time (UTC)",
+    "asia_tokyo": "Japan / Tokyo (JST)",
+    "asia_seoul": "South Korea / Seoul (KST)",
+    "asia_shanghai": "China / Beijing, Shanghai (CST)",
+    "asia_taipei": "Taiwan / Taipei (CST)",
+    "asia_hong_kong": "Hong Kong (HKT)",
+    "asia_singapore": "Singapore (SGT)",
+    "asia_bangkok": "Thailand / Bangkok (ICT)",
+    "asia_kolkata": "India (IST)",
+    "asia_dubai": "UAE / Dubai (GST)",
+    "australia_sydney": "Australia / Sydney (AEST/AEDT)",
+    "australia_perth": "Australia / Perth (AWST)",
+    "pacific_auckland": "New Zealand / Auckland (NZST/NZDT)",
+    "pacific_honolulu": "USA / Honolulu (HST)",
+    "europe_london": "UK / London (GMT/BST)",
+    "europe_paris": "France / Paris (CET/CEST)",
+    "europe_berlin": "Germany / Berlin (CET/CEST)",
+    "europe_rome": "Italy / Rome (CET/CEST)",
+    "europe_kyiv": "Ukraine / Kyiv (EET/EEST)",
+    "europe_istanbul": "Turkey / Istanbul (TRT)",
+    "africa_cairo": "Egypt / Cairo (EET/EEST)",
+    "africa_johannesburg": "South Africa / Johannesburg (SAST)",
+    "america_new_york": "USA / New York (EST/EDT)",
+    "america_chicago": "USA / Chicago (CST/CDT)",
+    "america_denver": "USA / Denver (MST/MDT)",
+    "america_la": "USA / Los Angeles (PST/PDT)",
+    "america_anchorage": "USA / Anchorage (AKST/AKDT)",
+    "america_vancouver": "Canada / Vancouver (PST/PDT)",
+    "america_toronto": "Canada / Toronto (EST/EDT)",
+    "america_sao_paulo": "Brazil / Sao Paulo (BRT/BRST)",
+    "america_buenos_aires": "Argentina / Buenos Aires (ART)"
+  },
+  "about": {
+    "menu_title": "How it works",
+    "title": "How YAMAKAGE Works",
+    "steps": {
+      "1": {
+        "title": "1. Solar Trajectory Calculation",
+        "desc": "Calculates the exact astronomical position of the sun (azimuth and altitude) minute by minute, based on the specified date, time, and coordinates."
+      },
+      "2": {
+        "title": "2. Terrain Data Retrieval",
+        "desc": "Instantly retrieves elevation data from a public AWS dataset for hundreds of sampling points within a 20km radius, covering 360 degrees (in 15-degree increments) around your location."
+      },
+      "3": {
+        "title": "3. Terrain Profile Construction",
+        "desc": "Calculates the 'maximum obstacle elevation angle' for each direction. This takes into account the elevation difference, the Earth's curvature, and atmospheric refraction."
+      },
+      "4": {
+        "title": "4. Shadow Detection",
+        "desc": "Compares the sun's altitude with the terrain's obstacle angle. A minute-by-minute simulation identifies the exact moment the sun dips below (or rises above) the mountains."
+      },
+      "5": {
+        "title": "5. Result Output",
+        "desc": "Finally, the 'true sunset' and 'true sunrise' times—when the sun actually hides behind or emerges from the physical terrain—are determined and displayed."
+      }
+    }
+  },
+  "smartwatch": {
+    "menu_title": "Smartwatch Apps",
+    "title": "Smartwatch Integration",
+    "description": "YAMAKAGE is also available on smartwatches. Quickly check terrain-aware sunset times right from your wrist while hiking or cycling, without taking out your phone.",
+    "garmin": {
+      "title": "Garmin (Connect IQ)",
+      "desc": "Available for compatible Garmin devices like Edge and Fenix. Check the terrain-aware sunset time via a dedicated data field in real-time.",
+      "button": "View on Connect IQ Store",
+      "url": "https://apps.garmin.com/apps/cbe81d8e-661d-49b0-bc4c-a1fc8ab10d53"
+    }
+  },
+  "share": {
+    "menu_title": "Share",
+    "title": "Share Results",
+    "format_text": "Text",
+    "format_json": "JSON",
+    "copy_button": "Copy to Clipboard",
+    "copied": "Copied!",
+    "share_x": "Post on X",
+    "not_calculated": "Please calculate the shadow first to share the results."
+  },
+  "skyline_terrain": "Terrain Elevation",
+  "sun_path": "Sun Trajectory",
+  "azimuth": "Azimuth",
+  "click_to_move_pin": "Click to move pin in this direction"
+}

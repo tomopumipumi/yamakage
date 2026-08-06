@@ -1,0 +1,106 @@
+{
+  "app_title": "YAMAKAGE",
+  "app_subtitle": "地形考慮型 日没・日の出予測",
+  "selected_location": "選択中の地点",
+  "click_to_select": "地図をクリックして地点を選択",
+  "position_format": "緯度: {{lat}}, 経度: {{lon}}",
+  "can_change_location": "地図をタップ・クリックして位置を変更できます",
+  "timezone": "タイムゾーン",
+  "local_time": "📍 現地時間 ({{tz}})",
+  "local_standard_time": "📍 現地の標準時 ({{tzName}})",
+  "target_date": "予測日時",
+  "calculate_button": "計算する",
+  "polar_alert": "白夜または極夜の地域・日時です。",
+  "sunrise_label": "日の出 (地形考慮)",
+  "sunset_label": "日没 (地形考慮)",
+  "settings": "設定",
+  "language": "言語 / Language",
+  "close": "閉じる",
+  "error_no_position": "地図上で地点を選択してください。",
+  "error_no_turnstile": "Bot検証が完了していません。",
+  "error_calculation_failed": "計算に失敗しました。時間をおいて再試行してください。",
+  "timezones": {
+    "utc": "世界標準時 (UTC)",
+    "asia_tokyo": "日本 / 東京 (JST)",
+    "asia_seoul": "韓国 / ソウル (KST)",
+    "asia_shanghai": "中国 / 北京・上海 (CST)",
+    "asia_taipei": "台湾 / 台北 (CST)",
+    "asia_hong_kong": "香港 (HKT)",
+    "asia_singapore": "シンガポール (SGT)",
+    "asia_bangkok": "タイ / バンコク (ICT)",
+    "asia_kolkata": "インド (IST)",
+    "asia_dubai": "UAE / ドバイ (GST)",
+    "australia_sydney": "オーストラリア / シドニー (AEST/AEDT)",
+    "australia_perth": "オーストラリア / パース (AWST)",
+    "pacific_auckland": "ニュージーランド / オークランド (NZST/NZDT)",
+    "pacific_honolulu": "アメリカ / ホノルル (HST)",
+    "europe_london": "イギリス / ロンドン (GMT/BST)",
+    "europe_paris": "フランス / パリ (CET/CEST)",
+    "europe_berlin": "ドイツ / ベルリン (CET/CEST)",
+    "europe_rome": "イタリア / ローマ (CET/CEST)",
+    "europe_kyiv": "ウクライナ / キーウ (EET/EEST)",
+    "europe_istanbul": "トルコ / イスタンブール (TRT)",
+    "africa_cairo": "エジプト / カイロ (EET/EEST)",
+    "africa_johannesburg": "南アフリカ / ヨハネスブルグ (SAST)",
+    "america_new_york": "アメリカ / ニューヨーク (EST/EDT)",
+    "america_chicago": "アメリカ / シカゴ (CST/CDT)",
+    "america_denver": "アメリカ / デンバー (MST/MDT)",
+    "america_la": "アメリカ / ロサンゼルス (PST/PDT)",
+    "america_anchorage": "アメリカ / アンカレッジ (AKST/AKDT)",
+    "america_vancouver": "カナダ / バンクーバー (PST/PDT)",
+    "america_toronto": "カナダ / トロント (EST/EDT)",
+    "america_sao_paulo": "ブラジル / サンパウロ (BRT/BRST)",
+    "america_buenos_aires": "アルゼンチン / ブエノスアイレス (ART)"
+  },
+  "about": {
+    "menu_title": "仕組み",
+    "title": "YAMAKAGEの仕組み",
+    "steps": {
+      "1": {
+        "title": "1. 太陽の軌道計算",
+        "desc": "指定された日時と緯度・経度から、天文学的な太陽の位置（方位角と高度）を分単位で正確に計算します。"
+      },
+      "2": {
+        "title": "2. 周囲の地形データの取得",
+        "desc": "現在地を中心に、360度全方向（15度刻み）で半径20km圏内にある数百箇所の標高データをAWSの公開データセットから取得します。"
+      },
+      "3": {
+        "title": "3. 地形プロファイルの構築",
+        "desc": "取得した標高データと現在地との高低差、さらに「地球の丸み（曲率）」や「大気の屈折率」も考慮し、各方角において『最も高く立ちはだかる障害物の仰角』を計算します。"
+      },
+      "4": {
+        "title": "4. 山影の判定",
+        "desc": "太陽の高度と、その方角にある地形の仰角を比較します。太陽の高度が山の仰角を下回る（または上回る）瞬間を分単位のシミュレーションで特定します。"
+      },
+      "5": {
+        "title": "5. 結果の出力",
+        "desc": "最終的に、実際の地形に太陽が隠れる「真の日没」および「真の日の出」の時刻を導き出し、画面に表示します。"
+      }
+    }
+  },
+  "smartwatch": {
+    "menu_title": "スマートウォッチ版",
+    "title": "スマートウォッチ連携",
+    "description": "YAMAKAGEはスマートウォッチにも対応しています。登山中やサイクリング中など、スマートフォンを取り出せない環境でも手元で素早く日没時間を確認できます。",
+    "garmin": {
+      "title": "Garmin (Connect IQ)",
+      "desc": "Garmin EdgeやFenixなどの対応デバイス向けアプリです。現在地の地形を考慮した日没時間をデータフィールドでリアルタイムに確認できます。",
+      "button": "Connect IQ ストアで見る",
+      "url": "https://apps.garmin.com/ja-JP/apps/cbe81d8e-661d-49b0-bc4c-a1fc8ab10d53"
+    }
+  },
+  "share": {
+    "menu_title": "シェア",
+    "title": "計算結果を共有",
+    "format_text": "テキスト",
+    "format_json": "JSON",
+    "copy_button": "コピーする",
+    "copied": "コピーしました！",
+    "share_x": "Xでポスト",
+    "not_calculated": "計算してからシェアしてください。"
+  },
+  "skyline_terrain": "地形の仰角",
+  "sun_path": "太陽の軌道",
+  "azimuth": "方位角",
+  "click_to_move_pin": "クリックでその方角へ移動"
+}

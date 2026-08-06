@@ -1,0 +1,132 @@
+import React, { useMemo } from 'react';
+import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts';
+import { useTranslation } from 'react-i18next';
+import type { TerrainAzimuthProfile, SunPathPoint } from '../api/calculateShadow';
+import { useCalculatorStore } from '../store/calculatorStore';
+
+interface Props {
+  azimuthProfiles: TerrainAzimuthProfile[];
+  sunPath: SunPathPoint[];
+}
+
+export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
+  const { t } = useTranslation();
+  const setHoveredAzimuth = useCalculatorStore((state) => state.setHoveredAzimuth);
+
+  const mergedData = useMemo(() => {
+    if (!azimuthProfiles.length) return [];
+    
+    const dataPoints: { azimuth: number; sun?: number; isTerrainBase?: boolean }[] = [];
+    
+    for (let az = 0; az <= 360; az += 2) {
+      dataPoints.push({ azimuth: az, isTerrainBase: true });
+    }
+    
+    if (sunPath && sunPath.length > 0) {
+      sunPath.forEach(sun => {
+        dataPoints.push({ azimuth: sun.azimuth, sun: sun.altitude });
+      });
+    }
+    
+    dataPoints.sort((a, b) => a.azimuth - b.azimuth);
+    
+    const sortedTerrain = [...azimuthProfiles].sort((a, b) => a.azimuthDeg - b.azimuthDeg);
+    
+    const finalData = dataPoints.map(pt => {
+      let az = pt.azimuth;
+      let left = sortedTerrain[sortedTerrain.length - 1];
+      let right = sortedTerrain[0];
+      
+      for (let i = 0; i < sortedTerrain.length - 1; i++) {
+        if (az >= sortedTerrain[i].azimuthDeg && az <= sortedTerrain[i + 1].azimuthDeg) {
+          left = sortedTerrain[i]; 
+          right = sortedTerrain[i + 1]; 
+          break;
+        }
+      }
+      
+      let diffRL = right.azimuthDeg - left.azimuthDeg; 
+      if (diffRL < 0) diffRL += 360;
+      let diffAL = az - left.azimuthDeg; 
+      if (diffAL < 0) diffAL += 360;
+      
+      const ratio = diffAL / diffRL;
+      const terrainAlt = left.maxObstacleAngleDeg + ratio * (right.maxObstacleAngleDeg - left.maxObstacleAngleDeg);
+
+      return {
+        ...pt,
+        terrain: Math.max(0, terrainAlt),
+      };
+    });
+    
+    return finalData;
+  }, [azimuthProfiles, sunPath]);
+
+  const handleMouseMove = (e: any) => {
+    if (e && e.activeLabel !== undefined && e.activeLabel !== null) {
+      setHoveredAzimuth(Number(e.activeLabel));
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredAzimuth(null);
+  };
+
+  if (!mergedData.length) return null;
+
+  return (
+    <div className="w-full h-40 mt-4 bg-slate-950 rounded-xl p-2 border border-slate-700 relative overflow-hidden group touch-pan-y">
+      <div className="absolute top-2 left-3 text-xs font-bold text-slate-400 z-10 flex items-center gap-3">
+        <div className="flex items-center gap-1"><div className="w-3 h-3 bg-slate-600 rounded-sm"></div>{t('skyline_terrain')}</div>
+        <div className="flex items-center gap-1"><div className="w-3 h-1 bg-orange-500 rounded-full"></div>{t('sun_path')}</div>
+      </div>
+
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart 
+          data={mergedData} 
+          margin={{ top: 20, right: 10, left: -25, bottom: 0 }}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          onTouchStart={handleMouseMove}
+          onTouchMove={handleMouseMove}
+          onTouchEnd={handleMouseLeave}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+          <XAxis 
+            dataKey="azimuth" 
+            type="number" 
+            domain={[0, 360]} 
+            ticks={[0, 90, 180, 270, 360]} 
+            tickFormatter={(val) => {
+              if (val === 0 || val === 360) return 'N';
+              if (val === 90) return 'E';
+              if (val === 180) return 'S';
+              if (val === 270) return 'W';
+              return val;
+            }}
+            stroke="#64748b" 
+            tick={{ fontSize: 10 }} 
+          />
+          <YAxis stroke="#64748b" tick={{ fontSize: 10 }} />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: 'rgba(15, 23, 42, 0.8)', 
+              borderColor: '#334155', 
+              color: '#fff', 
+              borderRadius: '8px',
+              backdropFilter: 'blur(4px)' 
+            }}
+            labelFormatter={(label) => `${t('azimuth')}: ${Number(label).toFixed(0)}°`}
+            formatter={(value: any, name: any) => [
+              value !== undefined && value !== null ? `${Number(value).toFixed(1)}°` : '',
+              name === 'terrain' ? t('skyline_terrain') : t('sun_path')
+            ]}
+            cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '5 5' }}
+          />
+          <Area type="monotone" dataKey="terrain" fill="#475569" stroke="#94a3b8" fillOpacity={0.7} isAnimationActive={false} />
+          <Line type="monotone" dataKey="sun" stroke="#f97316" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
