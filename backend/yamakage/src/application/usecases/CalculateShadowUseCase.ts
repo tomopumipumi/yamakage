@@ -1,8 +1,13 @@
 import * as SunCalc from 'suncalc';
 import { ShadowCalculationEngine } from '../../domain/engines/ShadowCalculationEngine';
+import { SunPositionEngine } from '../../domain/engines/SunPositionEngine';
 import { TerrainProfileEngine } from '../../domain/engines/TerrainProfileEngine';
 import { TerrainSamplingEngine } from '../../domain/engines/TerrainSamplingEngine';
-import type { ShadowCalculationResult, SunriseCalculationResult } from '../../domain/models/types';
+import type {
+  ShadowCalculationResult,
+  SunriseCalculationResult,
+  TerrainAzimuthProfile,
+} from '../../domain/models/types';
 import type { ElevationRepository } from '../../domain/repositories/ElevationRepository';
 import type { Logger } from '../interfaces/Logger';
 
@@ -15,6 +20,8 @@ export interface calcExecuterAsync {
   isPolar: boolean;
   sunsetResult: ShadowCalculationResult | null;
   sunriseResult: SunriseCalculationResult | null;
+  azimuthProfiles?: TerrainAzimuthProfile[];
+  sunPath?: { time: number; azimuth: number; altitude: number }[];
 }
 
 export const createCalculateShadowUseCase = ({
@@ -58,11 +65,33 @@ export const createCalculateShadowUseCase = ({
       fullAzimuthProfiles,
     );
 
+    const sunPath: { time: number; azimuth: number; altitude: number }[] = [];
+    const baseTime = targetTime.getTime();
+    for (let i = -72; i <= 72; i++) {
+      const t = new Date(baseTime + i * 10 * 60000);
+
+      const pos = SunPositionEngine.getPosition(t, lat, lng);
+
+      if (pos.altitudeDeg > -15) {
+        sunPath.push({
+          time: Math.floor(t.getTime() / 1000),
+          azimuth: pos.azimuthDeg,
+          altitude: pos.altitudeDeg,
+        });
+      }
+    }
+
     logger.info('Shadow calculation completed successfully', {
       minutesToSunsetShadow: sunsetResult.minutesToShadow,
       minutesToSunriseShadow: sunriseResult.minutesToSunrise,
     });
 
-    return { isPolar: false, sunsetResult, sunriseResult };
+    return {
+      isPolar: false,
+      sunsetResult,
+      sunriseResult,
+      azimuthProfiles: fullAzimuthProfiles,
+      sunPath,
+    };
   };
 };
