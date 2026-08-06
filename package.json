@@ -23,7 +23,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "packageManager": "pnpm@10.33.2",
   "devDependencies": {
     "@markw65/prettier-plugin-monkeyc": "^1.0.69",
