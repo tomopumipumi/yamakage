@@ -12,7 +12,8 @@
 		"lint": "biome lint .",
 		"fix": "biome check --write .",
 		"r2:create": "npx wrangler r2 bucket create yamakage-terrain-tiles",
-		"register:apikey": "npx wrangler secret put YAMAKAGE_API_KEY"
+		"register:apikey": "npx wrangler secret put YAMAKAGE_API_KEY",
+		"register:turnstile-key": "npx wrangler secret put TURNSTILE_SECRET_KEY"
 	},
 	"dependencies": {
 		"@hono/swagger-ui": "^0.6.1",

@@ -1,5 +1,6 @@
 import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { cors } from 'hono/cors';
 import { ConsoleLogger } from './infrastructure/logging/ConsoleLogger';
 import { requestLogger } from './presentation/middlewares/requestLogger';
 import { createShadowRouter } from './presentation/routes/shadow';
@@ -9,6 +10,15 @@ import type { Bindings } from './types/env';
 const app = new OpenAPIHono<{ Bindings: Bindings }>();
 
 const logger = new ConsoleLogger();
+
+app.use(
+  '/api/v1/web/shadow/*',
+  cors({
+    origin: ['https://yamakage-site.pages.dev', 'http://localhost:5173'],
+    allowHeaders: ['Content-Type', 'X-Turnstile-Token'],
+    allowMethods: ['POST', 'GET', 'OPTIONS'],
+  }),
+);
 
 app.use('*', requestLogger(logger));
 

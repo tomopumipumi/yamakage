@@ -4,3 +4,6 @@
 
 # Authentication key for the YAMAKAGE API (if applicable)
 YAMAKAGE_API_KEY=
+
+# Secret key for Cloudflare Turnstile (server-side verification for bot protection)
+TURNSTILE_SECRET_KEY=
