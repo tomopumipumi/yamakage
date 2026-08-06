@@ -22,7 +22,7 @@ class YamakageApp extends Application.AppBase {
 
     function getInitialView() {
         LocalStorage.clearOldData();
-        
+
         var durationMins = Property.getBackgroundUpdateDurationMins();
 
         if (durationMins == null || durationMins < MINIMUM_DURATION_MINS) {
@@ -30,12 +30,38 @@ class YamakageApp extends Application.AppBase {
         }
 
         if (System.getDeviceSettings().phoneConnected) {
-            var lastSyncTime = LocalStorage.getLastSyncTime();
-            if (lastSyncTime == null) {
-                Background.registerForTemporalEvent(Time.now());
-            } else {
-                var duration = new Time.Duration(durationMins * 60);
-                Background.registerForTemporalEvent(duration);
+            try {
+                var lastSyncTime = LocalStorage.getLastSyncTime();
+                var intervalSeconds = durationMins * 60;
+
+                if (intervalSeconds < 300) {
+                    intervalSeconds = 300;
+                }
+
+                if (lastSyncTime == null) {
+                    Background.registerForTemporalEvent(
+                        new Time.Duration(intervalSeconds)
+                    );
+                } else {
+                    var now = Time.now().value();
+                    var elapsed = now - lastSyncTime;
+
+                    if (elapsed >= intervalSeconds) {
+                        Background.registerForTemporalEvent(
+                            new Time.Duration(intervalSeconds)
+                        );
+                    } else {
+                        var remaining = intervalSeconds - elapsed;
+                        if (remaining < 300) {
+                            remaining = 300;
+                        }
+                        Background.registerForTemporalEvent(
+                            new Time.Duration(remaining)
+                        );
+                    }
+                }
+            } catch (e) {
+                // System.println("Background registration skipped: " + e.getErrorMessage());
             }
         } else {
             BackgroundStorage.setLastSyncError({
