@@ -16,6 +16,8 @@ export const WebShadowResponseSchema = z
     sunriseTime: z.number().nullable(),
     minutesToSunrise: z.number().nullable(),
     isPolar: z.boolean().describe('True if polar day or night applies'),
+    azimuthProfiles: z.array(z.any()).optional(),
+    sunPath: z.array(z.any()).optional(),
   })
   .openapi({
     description: 'Rich JSON format for web clients',

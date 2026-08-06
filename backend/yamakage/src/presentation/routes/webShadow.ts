@@ -75,6 +75,8 @@ export const createWebShadowRouter = (logger: Logger) => {
         sunriseTime: result.sunriseResult.sunriseTimeUnix,
         minutesToSunrise: result.sunriseResult.minutesToSunrise,
         isPolar: false,
+        azimuthProfiles: result.azimuthProfiles,
+        sunPath: result.sunPath,
       },
       200,
     );
