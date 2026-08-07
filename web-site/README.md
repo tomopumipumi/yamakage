@@ -1,75 +1,100 @@
-# React + TypeScript + Vite
+# YAMAKAGE Webアプリ版
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## プロダクトの目的
 
-Currently, two official plugins are available:
+YAMAKAGEは、周囲の地形（標高データ）を考慮した「本当の日の出・日の入り時刻」を計算するサービスです。
+このWeb版（`yamakage-site`）は、以下の目的のために存在しています。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. **Garminデバイス非所有者への提供**: Garminのスマートウォッチを持っていないユーザーでも、ブラウザから簡単に任意の場所の日没・日の出シミュレーションを可能にする。
+2. **リッチな視覚情報の提供**: デバイスの小さな画面では表現しきれない「地形の仰角と太陽軌道の関係性」を視覚的に表示する。
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 技術スタックと選定理由
 
-## Expanding the ESLint configuration
+本プロジェクトは、以下の技術を採用しています。
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+-   **Vite + React + TypeScript**: 型安全性の担保。
+-   **Tailwind CSS**: ユーティリティファーストによる高速なスタイリング。クラス名のみでレスポンシブやダークテーマに対応。
+-   **Zustand**: 軽量でボイラープレートが少ない状態管理ライブラリ。コンポーネントツリー全体での状態共有と、不要な再レンダリングの抑制のために採用。
+-   **React-Leaflet (OpenStreetMap)**: 特定地点を選択するためのインタラクティブな地図実装。OSSで無料で利用できる地図プロバイダとして採用。
+-   **Recharts**: 日没時刻の根拠となる「地形の仰角と太陽軌道の交差」を表現するグラフを、レスポンシブかつ軽量に描画するため。
+-   **Cloudflare Turnstile**: オープンなAPIエンドポイントをBotによる大量リクエストから保護するため。UXを阻害しないBot検証として採用。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## ディレクトリ構成の思想
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+`src/` 配下は、ドメイン（機能）ごとに凝集度を高め、関連するコンポーネントや状態管理が散らばらない設計にしています。
+
+```text
+src/
+ ├── assets/        # 静的アセット（アイコン、画像など）
+ ├── components/    # ドメイン知識を持たない、汎用的なUIパーツ（Button, Dialogなど）
+ ├── constants/     # アプリケーション全体で使う定数（タイムゾーン一覧など）
+ ├── features/      # 機能（ドメイン）ごとに分割されたモジュール
+ │    ├── calculator/ # 日没計算ロジック、状態(store)、UI、API通信
+ │    └── map/        # 地図表示・操作ロジック、UI
+ ├── i18n/          # 国際化の設定と翻訳ファイル
+ ├── layouts/       # ページ全体のレイアウトコンポーネント
+ └── store/         # 機能に依存しないグローバルなUI状態（モーダル開閉など）
 
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 開発環境のセットアップ
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. 依存関係のインストール
+
+プロジェクトルート（`package.json` があるディレクトリ）で以下を実行します。
+
+```bash
+pnpm install
 
 ```
+
+### 2. 環境変数の設定
+
+`.env.example` をコピーして `.env.local` または `.env` を作成します。
+
+```bash
+cp .env.example .env.local
+
+```
+
+ファイル内の値を設定します。
+
+```env
+# ローカル開発時はプロキシされるため空でOK、本番環境ではBFFのURLを指定
+VITE_API_BASE_URL=
+
+# Cloudflare Turnstile のサイトキー（ローカルテスト用のダミーキーを設定）
+VITE_TURNSTILE_SITE_KEY=1x00000000000000000000AA
+
+```
+
+### 3. ローカルサーバーの起動
+
+```bash
+npm run dev
+
+```
+
+-  フロントエンドサーバーが起動し、`http://localhost:5173` （デフォルト）でアクセスできます。
+-  **注意**: API呼び出しをテストするには、バックエンド側（YAMAKAGE API / BFF）のローカルサーバー（ポート `8787` など）も同時に起動しておく必要があります。（`vite.config.ts` で `/api` へのリクエストを `http://localhost:8787` にプロキシする設定になっています）
+
+---
+
+## 利用可能なコマンド
+
+| コマンド | 説明 |
+| --- | --- |
+| `npm run dev` | 開発サーバーを起動します（HMR有効）。 |
+| `npm run build` | TypeScriptの型チェックを行い、本番用に最適化されたビルドを `dist` フォルダに出力します。 |
+| `npm run fmt` | Biome を使用してコードのフォーマットを行います。 |
+| `npm run lint` | Biome を使用してコードの静的解析（Lint）を行います。 |
+| `npm run fix` | Biome によるLintエラーの自動修正およびフォーマットを行います。 |
+| `npm run deploy` | ビルド成果物（`dist`）を Cloudflare Pages へデプロイします。 |
+
+---
