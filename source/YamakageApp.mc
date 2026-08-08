@@ -29,41 +29,41 @@ class YamakageApp extends Application.AppBase {
             durationMins = MINIMUM_DURATION_MINS;
         }
 
-        if (System.getDeviceSettings().phoneConnected) {
-            try {
-                var lastSyncTime = LocalStorage.getLastSyncTime();
-                var intervalSeconds = durationMins * 60;
+        try {
+            var lastSyncTime = LocalStorage.getLastSyncTime();
+            var intervalSeconds = durationMins * 60;
 
-                if (intervalSeconds < 300) {
-                    intervalSeconds = 300;
-                }
+            if (intervalSeconds < 300) {
+                intervalSeconds = 300;
+            }
 
-                if (lastSyncTime == null) {
+            if (lastSyncTime == null) {
+                Background.registerForTemporalEvent(
+                    new Time.Duration(intervalSeconds)
+                );
+            } else {
+                var now = Time.now().value();
+                var elapsed = now - lastSyncTime;
+
+                if (elapsed >= intervalSeconds) {
                     Background.registerForTemporalEvent(
                         new Time.Duration(intervalSeconds)
                     );
                 } else {
-                    var now = Time.now().value();
-                    var elapsed = now - lastSyncTime;
-
-                    if (elapsed >= intervalSeconds) {
-                        Background.registerForTemporalEvent(
-                            new Time.Duration(intervalSeconds)
-                        );
-                    } else {
-                        var remaining = intervalSeconds - elapsed;
-                        if (remaining < 300) {
-                            remaining = 300;
-                        }
-                        Background.registerForTemporalEvent(
-                            new Time.Duration(remaining)
-                        );
+                    var remaining = intervalSeconds - elapsed;
+                    if (remaining < 300) {
+                        remaining = 300;
                     }
+                    Background.registerForTemporalEvent(
+                        new Time.Duration(remaining)
+                    );
                 }
-            } catch (e) {
-                // System.println("Background registration skipped: " + e.getErrorMessage());
             }
-        } else {
+        } catch (e) {
+            // System.println("Background registration skipped: " + e.getErrorMessage());
+        }
+
+        if (!System.getDeviceSettings().phoneConnected) {
             BackgroundStorage.setLastSyncError({
                 "errorCode" => "CANNOT_CONNECT_PHONE",
                 "errorMessage" => Strings.getFailConnectPhoneMsg()
