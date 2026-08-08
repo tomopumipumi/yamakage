@@ -9,6 +9,7 @@ import Systems.LatLonSystem;
 import Core.Config;
 import Core.ApiSchema;
 import Hal.LocalStorage;
+import Hal.Strings;
 
 (:background)
 class YamakageBackground extends ServiceDelegate {
@@ -40,6 +41,16 @@ class YamakageBackground extends ServiceDelegate {
     }
 
     function onTemporalEvent() as Void {
+        if (!System.getDeviceSettings().phoneConnected) {
+            Background.exit(
+                ({
+                    "errorCode" => "DISCONNECTED",
+                    "errorMessage" => Strings.getFailConnectPhoneMsg()
+                }) as ApiSchema.BackgroundError
+            );
+            return;
+        }
+
         var latLon = LatLonSystem.getLatLon();
 
         if (latLon == null) {
@@ -66,12 +77,22 @@ class YamakageBackground extends ServiceDelegate {
             },
             :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
         };
-        Communications.makeWebRequest(
-            url,
-            parameters,
-            options,
-            method(:onReceive)
-        );
+
+        try {
+            Communications.makeWebRequest(
+                url,
+                parameters,
+                options,
+                method(:onReceive)
+            );
+        } catch (e) {
+            Background.exit(
+                ({
+                    "errorCode" => "REQ_EXCEPTION",
+                    "errorMessage" => Strings.getUpdateFailedLabel()
+                }) as ApiSchema.BackgroundError
+            );
+        }
     }
 
     function onReceive(
@@ -87,10 +108,15 @@ class YamakageBackground extends ServiceDelegate {
             }
         }
 
+        var errMsg =
+            responseCode < 0
+                ? "BT ERROR " + responseCode.toString()
+                : "HTTP " + responseCode.toString();
+
         Background.exit(
             ({
-                "error" => "API_ERROR",
-                "code" => responseCode
+                "errorCode" => responseCode,
+                "errorMessage" => errMsg
             }) as ApiSchema.BackgroundError
         );
     }
