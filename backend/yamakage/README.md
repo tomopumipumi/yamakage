@@ -47,6 +47,7 @@ cp .dev.vars.example .dev.vars
 | Variable Name | Description |
 | --- | --- |
 | `YAMAKAGE_API_KEY` | The key used for API authentication (Bearer Token). Please set any arbitrary string. |
+| `TURNSTILE_SECRET_KEY` | Secret key for Turnstile used to perform bot verification. Enter the key displayed in the Turnstile widget management dashboard. |
 
 ### 1. Bucket Setup
 

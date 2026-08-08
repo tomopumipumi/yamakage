@@ -46,6 +46,7 @@ cp .dev.vars.example .dev.vars
 | 変数名 | 説明 |
 | --- | --- |
 | `YAMAKAGE_API_KEY` | APIの認証(Bearer Token)に使用するキーです。任意の文字列を設定してください。 |
+| `TURNSTILE_SECRET_KEY` |Bot検証を行うTurnstileのシークレットキーです。Turnstileウィジェットの管理画面で表示されるキーを入力します。|
 
 ### 1. バケットのセットアップ
 

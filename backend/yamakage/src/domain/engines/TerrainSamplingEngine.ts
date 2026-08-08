@@ -9,17 +9,21 @@ const generateLinePoints = (
   intervalMeters: number = 100,
   maxDistanceMeters: number = 10000,
 ): SamplingPoint[] => {
-  const points: SamplingPoint[] = [];
   const startLatRad = startLat * (Math.PI / 180);
   const startLngRad = startLng * (Math.PI / 180);
   const azimuthRad = azimuthDeg * (Math.PI / 180);
 
-  for (let distance = intervalMeters; distance <= maxDistanceMeters; distance += intervalMeters) {
+  const numSteps = Math.floor(maxDistanceMeters / intervalMeters);
+
+  return Array.from({ length: numSteps }, (_, index) => {
+    const distance = (index + 1) * intervalMeters;
     const angularDistance = distance / EARTH_RADIUS_M;
+
     const latRad = Math.asin(
       Math.sin(startLatRad) * Math.cos(angularDistance) +
         Math.cos(startLatRad) * Math.sin(angularDistance) * Math.cos(azimuthRad),
     );
+
     const lngRad =
       startLngRad +
       Math.atan2(
@@ -27,14 +31,12 @@ const generateLinePoints = (
         Math.cos(angularDistance) - Math.sin(startLatRad) * Math.sin(latRad),
       );
 
-    points.push({
+    return {
       lat: latRad * (180 / Math.PI),
       lng: lngRad * (180 / Math.PI),
       distance,
-    });
-  }
-
-  return points;
+    };
+  });
 };
 
 export interface TerrainProfile {
@@ -48,35 +50,28 @@ export const TerrainSamplingEngine = {
     startLng: number,
     stepDeg: number = 15,
   ): TerrainProfile[] => {
-    const panorama = [];
-    for (let az = 0; az < 360; az += stepDeg) {
-      const points: SamplingPoint[] = [];
+    const numAzimuths = Math.floor(360 / stepDeg);
 
-      // 0-500m: 100m interval (5 points)
-      points.push(...generateLinePoints(startLat, startLng, az, 100, 500));
+    return Array.from({ length: numAzimuths }, (_, index) => {
+      const az = index * stepDeg;
 
-      // 500-2km: 300m interval (5 points)
-      points.push(
+      const points: SamplingPoint[] = [
+        // 0-500m: 100m interval (5 points)
+        ...generateLinePoints(startLat, startLng, az, 100, 500),
+
+        // 500-2km: 300m interval (5 points)
         ...generateLinePoints(startLat, startLng, az, 300, 2000).filter((p) => p.distance > 500),
-      );
 
-      // 2-10km: 2000m interval (4 points)
-      points.push(
+        // 2-10km: 2000m interval (4 points)
         ...generateLinePoints(startLat, startLng, az, 2000, 10000).filter((p) => p.distance > 2000),
-      );
 
-      // 10-20km: 5000m interval (4 points)
-      points.push(
+        // 10-20km: 5000m interval (4 points)
         ...generateLinePoints(startLat, startLng, az, 5000, 20000).filter(
           (p) => p.distance > 10000,
         ),
-      );
+      ];
 
-      panorama.push({
-        azimuth: az,
-        points,
-      });
-    }
-    return panorama;
+      return { azimuth: az, points };
+    });
   },
 };

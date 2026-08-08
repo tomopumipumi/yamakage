@@ -11,12 +11,16 @@ import type {
 import type { ElevationRepository } from '../../domain/repositories/ElevationRepository';
 import type { Logger } from '../interfaces/Logger';
 
-export interface CalculateShadowUseCaseProps {
+interface CalculateShadowUseCaseProps {
   elevationRepository: ElevationRepository;
   logger: Logger;
 }
 
-export interface calcExecuterAsync {
+interface CalculateShadowExecuter {
+  executeAsync: (lat: number, lng: number, targetTime: Date) => Promise<ShadowExecuteResult>;
+}
+
+interface ShadowExecuteResult {
   isPolar: boolean;
   sunsetResult: ShadowCalculationResult | null;
   sunriseResult: SunriseCalculationResult | null;
@@ -27,12 +31,19 @@ export interface calcExecuterAsync {
 export const createCalculateShadowUseCase = ({
   elevationRepository,
   logger,
-}: CalculateShadowUseCaseProps) => {
-  return async (lat: number, lng: number, targetTime: Date): Promise<calcExecuterAsync> => {
+}: CalculateShadowUseCaseProps): CalculateShadowExecuter => {
+  const executeAsync = async (
+    lat: number,
+    lng: number,
+    targetTime: Date,
+  ): Promise<ShadowExecuteResult> => {
     logger.debug('Starting Shadow Calculation', { lat, lng, targetTime: targetTime.toISOString() });
+
     const times = SunCalc.getTimes(targetTime, lat, lng);
 
-    if (!times.sunset || !times.sunrise) {
+    const isPolar = !times.sunset || !times.sunrise;
+
+    if (isPolar) {
       logger.info('Detected polar day/night. Calculation skipped.', { lat, lng });
       return { isPolar: true, sunsetResult: null, sunriseResult: null };
     }
@@ -67,11 +78,14 @@ export const createCalculateShadowUseCase = ({
 
     const sunPath: { time: number; azimuth: number; altitude: number }[] = [];
     const baseTime = targetTime.getTime();
+    // Loop from -720 minutes (-12 hours) to +720 minutes (+12 hours)
     for (let i = -72; i <= 72; i++) {
-      const t = new Date(baseTime + i * 10 * 60000);
+      const t = new Date(baseTime + i * 10 * 60000); // 10-minute intervals
 
       const pos = SunPositionEngine.getPosition(t, lat, lng);
 
+      // Extract points where the sun is above -15 degrees,
+      // as lower positions are not needed for chart rendering.
       if (pos.altitudeDeg > -15) {
         sunPath.push({
           time: Math.floor(t.getTime() / 1000),
@@ -94,4 +108,6 @@ export const createCalculateShadowUseCase = ({
       sunPath,
     };
   };
+
+  return { executeAsync };
 };

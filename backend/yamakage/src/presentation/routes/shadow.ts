@@ -29,10 +29,8 @@ export const createShadowRouter = (logger: Logger) => {
 
   router.openapi(getShadowRoute, async (c) => {
     const { lat, lng, time } = c.req.valid('query');
-    let targetTime = new Date();
-    if (time) {
-      targetTime = new Date(time < 10000000000 ? time * 1000 : time);
-    }
+
+    const targetTime = time ? new Date(time < 10000000000 ? time * 1000 : time) : new Date();
 
     const runInBackground = (promise: Promise<void>) => {
       c.executionCtx.waitUntil(promise);
@@ -44,12 +42,12 @@ export const createShadowRouter = (logger: Logger) => {
       logger,
     );
 
-    const calcExecuterAsync = createCalculateShadowUseCase({
+    const executer = createCalculateShadowUseCase({
       elevationRepository: elevationRepo,
       logger,
     });
 
-    const result = await calcExecuterAsync(lat, lng, targetTime);
+    const result = await executer.executeAsync(lat, lng, targetTime);
 
     if (result.isPolar || !result.sunsetResult || !result.sunriseResult) {
       return c.json({ d: [0, 0, 0, 0] }, 200);

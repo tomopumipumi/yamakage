@@ -14,27 +14,54 @@ const getInterpolatedObstacleAngle = (
 
   const sorted = [...azimuthProfiles].sort((a, b) => a.azimuthDeg - b.azimuthDeg);
 
-  let left = sorted[sorted.length - 1];
-  let right = sorted[0];
+  const rightIndex = sorted.findIndex((p) => p.azimuthDeg > azimuth);
 
-  for (let i = 0; i < sorted.length - 1; i++) {
-    if (azimuth >= sorted[i].azimuthDeg && azimuth <= sorted[i + 1].azimuthDeg) {
-      left = sorted[i];
-      right = sorted[i + 1];
-      break;
-    }
-  }
+  const left = rightIndex <= 0 ? sorted[sorted.length - 1] : sorted[rightIndex - 1];
+  const right = rightIndex === -1 ? sorted[0] : sorted[rightIndex];
 
   if (left.azimuthDeg === right.azimuthDeg) return left.maxObstacleAngleDeg;
 
-  let diffRightLeft = right.azimuthDeg - left.azimuthDeg;
-  if (diffRightLeft < 0) diffRightLeft += 360;
-
-  let diffAzimuthLeft = azimuth - left.azimuthDeg;
-  if (diffAzimuthLeft < 0) diffAzimuthLeft += 360;
+  const diffRightLeft = (right.azimuthDeg - left.azimuthDeg + 360) % 360;
+  const diffAzimuthLeft = (azimuth - left.azimuthDeg + 360) % 360;
 
   const ratio = diffAzimuthLeft / diffRightLeft;
   return left.maxObstacleAngleDeg + ratio * (right.maxObstacleAngleDeg - left.maxObstacleAngleDeg);
+};
+
+type CrossingCondition = (
+  prevAlt: number,
+  prevObs: number,
+  currAlt: number,
+  currObs: number,
+) => boolean;
+
+const findSunCrossing = (
+  lat: number,
+  lng: number,
+  startTime: Date,
+  azimuthProfiles: TerrainAzimuthProfile[],
+  isCrossing: CrossingCondition,
+) => {
+  const prevSunPos = SunPositionEngine.getPosition(startTime, lat, lng);
+  let prevAltitude = prevSunPos.altitudeDeg;
+  let prevObstacleAngle = getInterpolatedObstacleAngle(azimuthProfiles, prevSunPos.azimuthDeg);
+
+  const startUnix = startTime.getTime();
+
+  for (let i = 1; i <= 2880; i++) {
+    const currentUnix = startUnix + i * 60000;
+    const checkTime = new Date(currentUnix);
+    const sunPos = SunPositionEngine.getPosition(checkTime, lat, lng);
+    const obstacleAngle = getInterpolatedObstacleAngle(azimuthProfiles, sunPos.azimuthDeg);
+
+    if (isCrossing(prevAltitude, prevObstacleAngle, sunPos.altitudeDeg, obstacleAngle)) {
+      return { minutes: i, timeUnix: Math.floor(currentUnix / 1000) };
+    }
+
+    prevAltitude = sunPos.altitudeDeg;
+    prevObstacleAngle = obstacleAngle;
+  }
+  return { minutes: 0, timeUnix: -1 };
 };
 
 export const ShadowCalculationEngine = {
@@ -44,25 +71,15 @@ export const ShadowCalculationEngine = {
     startTime: Date,
     azimuthProfiles: TerrainAzimuthProfile[],
   ): ShadowCalculationResult => {
-    const checkTime = new Date(startTime.getTime());
+    const result = findSunCrossing(
+      lat,
+      lng,
+      startTime,
+      azimuthProfiles,
+      (prevAlt, prevObs, currAlt, currObs) => prevAlt >= prevObs && currAlt < currObs,
+    );
 
-    const prevSunPos = SunPositionEngine.getPosition(checkTime, lat, lng);
-    let prevAltitude = prevSunPos.altitudeDeg;
-    let prevObstacleAngle = getInterpolatedObstacleAngle(azimuthProfiles, prevSunPos.azimuthDeg);
-
-    for (let i = 1; i <= 2880; i++) {
-      checkTime.setTime(startTime.getTime() + i * 60000);
-      const sunPos = SunPositionEngine.getPosition(checkTime, lat, lng);
-      const obstacleAngle = getInterpolatedObstacleAngle(azimuthProfiles, sunPos.azimuthDeg);
-
-      if (prevAltitude >= prevObstacleAngle && sunPos.altitudeDeg < obstacleAngle) {
-        return { minutesToShadow: i, shadowTimeUnix: Math.floor(checkTime.getTime() / 1000) };
-      }
-
-      prevAltitude = sunPos.altitudeDeg;
-      prevObstacleAngle = obstacleAngle;
-    }
-    return { minutesToShadow: 0, shadowTimeUnix: -1 };
+    return { minutesToShadow: result.minutes, shadowTimeUnix: result.timeUnix };
   },
 
   calculateTrueSunrise: (
@@ -71,24 +88,14 @@ export const ShadowCalculationEngine = {
     startTime: Date,
     azimuthProfiles: TerrainAzimuthProfile[],
   ): SunriseCalculationResult => {
-    const checkTime = new Date(startTime.getTime());
+    const result = findSunCrossing(
+      lat,
+      lng,
+      startTime,
+      azimuthProfiles,
+      (prevAlt, prevObs, currAlt, currObs) => prevAlt <= prevObs && currAlt > currObs,
+    );
 
-    const prevSunPos = SunPositionEngine.getPosition(checkTime, lat, lng);
-    let prevAltitude = prevSunPos.altitudeDeg;
-    let prevObstacleAngle = getInterpolatedObstacleAngle(azimuthProfiles, prevSunPos.azimuthDeg);
-
-    for (let i = 1; i <= 2880; i++) {
-      checkTime.setTime(startTime.getTime() + i * 60000);
-      const sunPos = SunPositionEngine.getPosition(checkTime, lat, lng);
-      const obstacleAngle = getInterpolatedObstacleAngle(azimuthProfiles, sunPos.azimuthDeg);
-
-      if (prevAltitude <= prevObstacleAngle && sunPos.altitudeDeg > obstacleAngle) {
-        return { minutesToSunrise: i, sunriseTimeUnix: Math.floor(checkTime.getTime() / 1000) };
-      }
-
-      prevAltitude = sunPos.altitudeDeg;
-      prevObstacleAngle = obstacleAngle;
-    }
-    return { minutesToSunrise: 0, sunriseTimeUnix: -1 };
+    return { minutesToSunrise: result.minutes, sunriseTimeUnix: result.timeUnix };
   },
 };

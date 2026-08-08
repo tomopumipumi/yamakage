@@ -18,4 +18,26 @@ describe('SunPositionEngine', () => {
     expect(result.azimuthDeg).toBeGreaterThanOrEqual(0);
     expect(result.azimuthDeg).toBeLessThanOrEqual(360);
   });
+
+  it('normalizes negative azimuth values to be within 0 to 360 degrees', () => {
+    const targetDate = new Date('2024-12-21T08:00:00Z');
+    const lat = 34.81;
+    const lng = 135.534;
+
+    const result = SunPositionEngine.getPosition(targetDate, lat, lng);
+
+    expect(result.azimuthDeg).toBeGreaterThanOrEqual(0);
+    expect(result.azimuthDeg).toBeLessThan(360);
+  });
+
+  it('returns negative altitude during midnight', () => {
+    // 15:00 UTC is midnight (00:00 AM) in Japan Standard Time
+    const targetDate = new Date('2024-06-10T15:00:00Z');
+    const lat = 34.81;
+    const lng = 135.534;
+
+    const result = SunPositionEngine.getPosition(targetDate, lat, lng);
+
+    expect(result.altitudeDeg).toBeLessThan(0);
+  });
 });
