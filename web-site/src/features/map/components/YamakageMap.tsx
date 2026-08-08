@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Polygon, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useCalculatorStore } from '../../calculator/store/calculatorStore';
+import { createSectorPoints } from '../utils/geoUtils';
 
 const customIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -34,42 +35,6 @@ const MapEvents = () => {
   return null;
 };
 
-function getDestinationPoint(lat: number, lng: number, brng: number, dist: number) {
-  const R = 6371000;
-  const rad = Math.PI / 180;
-  const lat1 = lat * rad;
-  const lon1 = lng * rad;
-  const brngRad = brng * rad;
-  const dR = dist / R;
-
-  const lat2 = Math.asin(
-    Math.sin(lat1) * Math.cos(dR) +
-    Math.cos(lat1) * Math.sin(dR) * Math.cos(brngRad)
-  );
-  const lon2 = lon1 + Math.atan2(
-    Math.sin(brngRad) * Math.sin(dR) * Math.cos(lat1),
-    Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2)
-  );
-  return {
-    lat: lat2 / rad,
-    lng: lon2 / rad
-  };
-}
-
-function createSectorPoints(centerLat: number, centerLng: number, centerAzimuth: number, radiusMeters: number = 20000, spreadDeg: number = 15, steps: number = 12): [number, number][] {
-  const points: [number, number][] = [[centerLat, centerLng]];
-  const startAz = centerAzimuth - spreadDeg;
-  const endAz = centerAzimuth + spreadDeg;
-  const step = (endAz - startAz) / steps;
-
-  for (let i = 0; i <= steps; i++) {
-    const az = startAz + i * step;
-    const dest = getDestinationPoint(centerLat, centerLng, az, radiusMeters);
-    points.push([dest.lat, dest.lng]);
-  }
-  return points;
-}
-
 export const YamakageMap: React.FC = () => {
   const position = useCalculatorStore((state) => state.position);
   const hoveredAzimuth = useCalculatorStore((state) => state.hoveredAzimuth);
@@ -78,7 +43,7 @@ export const YamakageMap: React.FC = () => {
 
   const sectorPositions = useMemo(() => {
     if (!position || hoveredAzimuth === null) return null;
-    return createSectorPoints(position.lat, position.lng, hoveredAzimuth, 20000, 15, 12);
+    return createSectorPoints(position.lat, position.lng, hoveredAzimuth);
   }, [position, hoveredAzimuth]);
 
   return (

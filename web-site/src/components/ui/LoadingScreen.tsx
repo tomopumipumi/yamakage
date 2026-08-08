@@ -23,6 +23,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ isReady }) => {
       className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900 transition-opacity duration-500 ease-in-out ${
         isReady ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
+      aria-hidden={isReady}
     >
       <div className="flex flex-col items-center gap-6">
         <div className="relative flex items-center justify-center">

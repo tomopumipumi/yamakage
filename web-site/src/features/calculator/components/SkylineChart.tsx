@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import type { TerrainAzimuthProfile, SunPathPoint } from '../api/calculateShadow';
 import { useCalculatorStore } from '../store/calculatorStore';
+import { useSkylineData } from '../hooks/useSkylineData';
 
 interface Props {
   azimuthProfiles: TerrainAzimuthProfile[];
@@ -12,55 +13,7 @@ interface Props {
 export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
   const { t } = useTranslation();
   const setHoveredAzimuth = useCalculatorStore((state) => state.setHoveredAzimuth);
-
-  const mergedData = useMemo(() => {
-    if (!azimuthProfiles.length) return [];
-    
-    const dataPoints: { azimuth: number; sun?: number; isTerrainBase?: boolean }[] = [];
-    
-    for (let az = 0; az <= 360; az += 2) {
-      dataPoints.push({ azimuth: az, isTerrainBase: true });
-    }
-    
-    if (sunPath && sunPath.length > 0) {
-      sunPath.forEach(sun => {
-        dataPoints.push({ azimuth: sun.azimuth, sun: sun.altitude });
-      });
-    }
-    
-    dataPoints.sort((a, b) => a.azimuth - b.azimuth);
-    
-    const sortedTerrain = [...azimuthProfiles].sort((a, b) => a.azimuthDeg - b.azimuthDeg);
-    
-    const finalData = dataPoints.map(pt => {
-      let az = pt.azimuth;
-      let left = sortedTerrain[sortedTerrain.length - 1];
-      let right = sortedTerrain[0];
-      
-      for (let i = 0; i < sortedTerrain.length - 1; i++) {
-        if (az >= sortedTerrain[i].azimuthDeg && az <= sortedTerrain[i + 1].azimuthDeg) {
-          left = sortedTerrain[i]; 
-          right = sortedTerrain[i + 1]; 
-          break;
-        }
-      }
-      
-      let diffRL = right.azimuthDeg - left.azimuthDeg; 
-      if (diffRL < 0) diffRL += 360;
-      let diffAL = az - left.azimuthDeg; 
-      if (diffAL < 0) diffAL += 360;
-      
-      const ratio = diffAL / diffRL;
-      const terrainAlt = left.maxObstacleAngleDeg + ratio * (right.maxObstacleAngleDeg - left.maxObstacleAngleDeg);
-
-      return {
-        ...pt,
-        terrain: Math.max(0, terrainAlt),
-      };
-    });
-    
-    return finalData;
-  }, [azimuthProfiles, sunPath]);
+  const mergedData = useSkylineData(azimuthProfiles, sunPath);
 
   const handleMouseMove = (e: any) => {
     if (e && e.activeLabel !== undefined && e.activeLabel !== null) {
@@ -77,8 +30,14 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
   return (
     <div className="w-full h-40 mt-4 bg-slate-950 rounded-xl p-2 border border-slate-700 relative overflow-hidden group touch-pan-y">
       <div className="absolute top-2 left-3 text-xs font-bold text-slate-400 z-10 flex items-center gap-3">
-        <div className="flex items-center gap-1"><div className="w-3 h-3 bg-slate-600 rounded-sm"></div>{t('skyline_terrain')}</div>
-        <div className="flex items-center gap-1"><div className="w-3 h-1 bg-orange-500 rounded-full"></div>{t('sun_path')}</div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-slate-600 rounded-sm"></div>
+          {t('skyline_terrain')}
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-1 bg-orange-500 rounded-full"></div>
+          {t('sun_path')}
+        </div>
       </div>
 
       <ResponsiveContainer width="100%" height="100%">
@@ -102,7 +61,7 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
               if (val === 90) return 'E';
               if (val === 180) return 'S';
               if (val === 270) return 'W';
-              return val;
+              return String(val);
             }}
             stroke="#64748b" 
             tick={{ fontSize: 10 }} 

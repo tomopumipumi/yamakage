@@ -8,7 +8,16 @@ import {
   type TerrainAzimuthProfile,
 } from '../api/calculateShadow';
 
-const getInitialParams = () => {
+function detectTimezone(lat: number, lng: number): string {
+  try {
+    const normalizedLng = ((((lng + 180) % 360) + 360) % 360) - 180;
+    return tz_lookup(lat, normalizedLng);
+  } catch (_e) {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tokyo';
+  }
+}
+
+function getInitialParams() {
   if (typeof window === 'undefined') {
     return { lat: 35.3606, lng: 138.7274, tz: 'Asia/Tokyo' };
   }
@@ -20,19 +29,10 @@ const getInitialParams = () => {
   const lat = latStr && !Number.isNaN(parseFloat(latStr)) ? parseFloat(latStr) : 35.3606;
   const lng = lngStr && !Number.isNaN(parseFloat(lngStr)) ? parseFloat(lngStr) : 138.7274;
 
-  let tz = urlParams.get('tz');
-
-  if (!tz) {
-    try {
-      const normalizedLng = ((((lng + 180) % 360) + 360) % 360) - 180;
-      tz = tz_lookup(lat, normalizedLng);
-    } catch (_e) {
-      tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tokyo';
-    }
-  }
+  const tz = urlParams.get('tz') || detectTimezone(lat, lng);
 
   return { lat, lng, tz };
-};
+}
 
 const initialParams = getInitialParams();
 const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tokyo';
@@ -66,6 +66,16 @@ interface CalculatorState {
   calculate: () => Promise<void>;
 }
 
+const RESET_RESULT_STATE = {
+  error: null,
+  sunsetTime: null,
+  sunriseTime: null,
+  isPolar: false,
+  azimuthProfiles: [],
+  sunPath: [],
+  hoveredAzimuth: null,
+};
+
 export const useCalculatorStore = create<CalculatorState>((set, get) => ({
   position: { lat: initialParams.lat, lng: initialParams.lng },
   targetDate: initialDate,
@@ -81,52 +91,27 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
   hoveredAzimuth: null,
 
   setPosition: (pos) => {
-    try {
-      const normalizedLng = ((((pos.lng + 180) % 360) + 360) % 360) - 180;
-      const detectedTz = tz_lookup(pos.lat, normalizedLng);
-      set({
-        position: pos,
-        timezone: detectedTz,
-        error: null,
-        sunsetTime: null,
-        sunriseTime: null,
-        isPolar: false,
-        azimuthProfiles: [],
-        sunPath: [],
-        hoveredAzimuth: null,
-      });
-    } catch (_e) {
-      set({
-        position: pos,
-        error: null,
-        sunsetTime: null,
-        sunriseTime: null,
-        isPolar: false,
-        azimuthProfiles: [],
-        sunPath: [],
-        hoveredAzimuth: null,
-      });
-    }
+    const detectedTz = detectTimezone(pos.lat, pos.lng);
+    set({
+      position: pos,
+      timezone: detectedTz,
+      ...RESET_RESULT_STATE,
+    });
   },
+
   setTargetDate: (date) =>
     set({
       targetDate: date,
-      error: null,
-      sunsetTime: null,
-      sunriseTime: null,
-      isPolar: false,
-      azimuthProfiles: [],
-      sunPath: [],
-      hoveredAzimuth: null,
+      ...RESET_RESULT_STATE,
     }),
+
   setTimezone: (tz) =>
     set({
       timezone: tz,
       error: null,
-      // sunsetTime: null,
-      // sunriseTime: null,
       isPolar: false,
     }),
+
   setTurnstileToken: (token) => set({ turnstileToken: token, error: null }),
   setHoveredAzimuth: (azimuth) => set({ hoveredAzimuth: azimuth }),
 
@@ -145,7 +130,6 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const targetUnix = Math.floor(fromZonedTime(targetDate, timezone).getTime() / 1000);
-
       const normalizedLng = ((((position.lng + 180) % 360) + 360) % 360) - 180;
 
       const result = await calculateShadow(position.lat, normalizedLng, targetUnix, turnstileToken);

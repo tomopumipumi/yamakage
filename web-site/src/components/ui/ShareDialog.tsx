@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { X, Share2, Copy, Check } from 'lucide-react';
+import { Share2, Copy, Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useUiStore } from '../../store/uiStore';
 import { useCalculatorStore } from '../../features/calculator/store/calculatorStore';
 import { format, toZonedTime } from 'date-fns-tz';
+import { BaseDialog } from './BaseDialog';
 
 type ShareFormat = 'text' | 'json';
 
@@ -27,34 +28,26 @@ export const ShareDialog: React.FC = () => {
     }
 
     const currentUrl = typeof window !== 'undefined' ? window.location.href.split('?')[0] : '';
-
     const encodedTz = encodeURIComponent(timezone);
-
     const shareUrl = `${currentUrl}?lat=${position.lat.toFixed(4)}&lng=${position.lng.toFixed(4)}&tz=${encodedTz}`;
 
     if (activeFormat === 'text') {
-      return `⛰️ YAMAKAGE - ${t('app_subtitle')}
-
-📍 ${t('position_format', { lat: position.lat.toFixed(4), lon: position.lng.toFixed(4) })}
-🕒 ${t('timezone')}: ${timezone}
-🌅 ${t('sunrise_label')}: ${formatTime(sunriseTime, timezone)}
-🌇 ${t('sunset_label')}: ${formatTime(sunsetTime, timezone)}
-
-🔗 ${shareUrl}
-        `;
+      return `⛰️ YAMAKAGE - ${t('app_subtitle')}\n\n` +
+             `📍 ${t('position_format', { lat: position.lat.toFixed(4), lon: position.lng.toFixed(4) })}\n` +
+             `🕒 ${t('timezone')}: ${timezone}\n` +
+             `🌅 ${t('sunrise_label')}: ${formatTime(sunriseTime, timezone)}\n` +
+             `🌇 ${t('sunset_label')}: ${formatTime(sunsetTime, timezone)}\n\n` +
+             `🔗 ${shareUrl}`;
     }
 
     const jsonObj = {
       app: "YAMAKAGE",
-      coordinates: {
-        lat: Number(position.lat.toFixed(4)),
-        lng: Number(position.lng.toFixed(4))
-      },
-      timezone: timezone,
+      coordinates: { lat: Number(position.lat.toFixed(4)), lng: Number(position.lng.toFixed(4)) },
+      timezone,
       results: {
         sunrise: formatTime(sunriseTime, timezone),
         sunset: formatTime(sunsetTime, timezone),
-        isPolar: isPolar
+        isPolar
       },
       url: shareUrl
     };
@@ -78,79 +71,68 @@ export const ShareDialog: React.FC = () => {
     window.open(xUrl, '_blank');
   };
 
-  if (!isShareOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col">
-        
-        <div className="shrink-0 flex items-center justify-between p-4 border-b border-slate-800">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-blue-400" />
-            {t('share.title')}
-          </h2>
-          <button onClick={() => setShareOpen(false)} className="text-slate-400 hover:text-white transition-colors">
-            <X className="w-5 h-5 cursor-pointer" />
-          </button>
-        </div>
-        
-        <div className="p-5 space-y-4">
-          {!shareContent ? (
-            <div className="text-center py-10 text-slate-400">
-              {t('share.not_calculated')}
+    <BaseDialog
+      isOpen={isShareOpen}
+      onClose={() => setShareOpen(false)}
+      title={t('share.title')}
+      icon={<Share2 className="w-5 h-5 text-blue-400" />}
+      maxWidth="max-w-lg"
+    >
+      <div className="space-y-4">
+        {!shareContent ? (
+          <div className="text-center py-10 text-slate-400">
+            {t('share.not_calculated')}
+          </div>
+        ) : (
+          <>
+            <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+              <button
+                onClick={() => setActiveFormat('text')}
+                className={`flex-1 py-2 text-sm font-bold rounded-md transition-all cursor-pointer ${
+                  activeFormat === 'text' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {t('share.format_text')}
+              </button>
+              <button
+                onClick={() => setActiveFormat('json')}
+                className={`flex-1 py-2 text-sm font-bold rounded-md transition-all cursor-pointer ${
+                  activeFormat === 'json' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {t('share.format_json')}
+              </button>
             </div>
-          ) : (
-            <>
-              <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
-                <button
-                  onClick={() => setActiveFormat('text')}
-                  className={`flex-1 py-2 text-sm font-bold rounded-md transition-all cursor-pointer ${
-                    activeFormat === 'text' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {t('share.format_text')}
-                </button>
-                <button
-                  onClick={() => setActiveFormat('json')}
-                  className={`flex-1 py-2 text-sm font-bold rounded-md transition-all cursor-pointer ${
-                    activeFormat === 'json' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {t('share.format_json')}
-                </button>
-              </div>
 
-              <div className="relative">
-                <textarea
-                  readOnly
-                  value={shareContent}
-                  className="w-full h-48 bg-slate-950 text-slate-300 rounded-xl p-4 border border-slate-700 font-mono text-sm resize-none focus:outline-none"
-                />
-              </div>
+            <textarea
+              readOnly
+              value={shareContent}
+              className="w-full h-48 bg-slate-950 text-slate-300 rounded-xl p-4 border border-slate-700 font-mono text-sm resize-none focus:outline-none"
+            />
 
-              <div className="flex gap-3">
+            <div className="flex gap-3">
+              <button 
+                onClick={handleCopy}
+                className="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white rounded-lg font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isCopied ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5" />}
+                {isCopied ? t('share.copied') : t('share.copy_button')}
+              </button>
+              
+              {activeFormat === 'text' && (
                 <button 
-                  onClick={handleCopy}
-                  className="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white rounded-lg font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  onClick={handleShareX}
+                  className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  {isCopied ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5" />}
-                  {isCopied ? t('share.copied') : t('share.copy_button')}
+                  <X className="w-5 h-5 fill-current" />
+                  {t('share.share_x')}
                 </button>
-                
-                {activeFormat === 'text' && (
-                  <button 
-                    onClick={handleShareX}
-                    className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <X className="w-5 h-5 fill-current" />
-                    {t('share.share_x')}
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    </BaseDialog>
   );
 };
