@@ -1,6 +1,7 @@
 import Toybox.Lang;
 import Hal.LocalStorage;
 import Hal.LocalStorage.BackgroundStorage;
+import Hal.Strings;
 import Core.DataArena.UiArena;
 import Core.ApiSchema.DataIndex;
 import Systems.TimeSystem.SyncTimeMetrics;
@@ -56,11 +57,32 @@ module Ui {
 
             if (lastSyncError != null) {
                 UiArena.isFailed = true;
-                var customMsg = lastSyncError["errorMessage"];
-                UiArena.syncStatus =
-                    customMsg != null && customMsg instanceof String
-                        ? customMsg
-                        : labelSet[ConnectionLabelSet.UPDATE_FAILED];
+
+                var errorCode = lastSyncError["errorCode"];
+                var displayMsg = labelSet[ConnectionLabelSet.UPDATE_FAILED];
+
+                if (errorCode != null) {
+                    if (errorCode instanceof String) {
+                        if (errorCode.equals("DISCONNECTED")) {
+                            displayMsg = Strings.getFailConnectPhoneMsg();
+                        } else if (errorCode.equals("NULL_DATA_RETURNED")) {
+                            displayMsg = Strings.getFailBackgroundProcessMsg();
+                        } else if (errorCode.equals("NO_GPS")) {
+                            displayMsg = "WAITING FOR GPS...";
+                        } else if (errorCode.equals("REQ_EXCEPTION")) {
+                            displayMsg = "REQ FAILED";
+                        } else {
+                            displayMsg = errorCode;
+                        }
+                    } else if (errorCode instanceof Number) {
+                        displayMsg =
+                            errorCode < 0
+                                ? "BT ERROR " + errorCode.toString()
+                                : "HTTP " + errorCode.toString();
+                    }
+                }
+
+                UiArena.syncStatus = displayMsg;
             } else if (remainingSeconds < 0) {
                 UiArena.isFailed = false;
                 UiArena.syncStatus = labelSet[ConnectionLabelSet.UPDATING];

@@ -3,9 +3,9 @@
     <string id="AppName">YAMAKAGE</string>
     <string id="UpdateFrequencyTitle">バックグラウンド更新間隔（分）</string>
     <string id="TimeDefaultLabel">--:--</string>
-    <string id="Communicating">通信中...</string>
+    <string id="Communicating">5分待機中...</string>
     <string id="UpdateFailed">更新失敗</string>
     <string id="Updating">更新中...</string>
-    <string id="FailBackgroundProcessMsg">バックグラウンドプロセスが失敗したか\nタイムアウトになりました</string>
-    <string id="FailConnectPhoneMsg">スマートフォンとの接続を\n確立できませんでした</string>
+    <string id="FailBackgroundProcessMsg">タイムアウト</string>
+    <string id="FailConnectPhoneMsg">スマホ未接続</string>
 </strings>

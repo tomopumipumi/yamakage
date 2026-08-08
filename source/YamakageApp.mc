@@ -22,9 +22,7 @@ class YamakageApp extends Application.AppBase {
 
     function getInitialView() {
         LocalStorage.clearOldData();
-
         var durationMins = Property.getBackgroundUpdateDurationMins();
-
         if (durationMins == null || durationMins < MINIMUM_DURATION_MINS) {
             durationMins = MINIMUM_DURATION_MINS;
         }
@@ -60,14 +58,18 @@ class YamakageApp extends Application.AppBase {
                 }
             }
         } catch (e) {
-            // System.println("Background registration skipped: " + e.getErrorMessage());
+            System.println(
+                "Background registration skipped: " + e.getErrorMessage()
+            );
         }
 
         if (!System.getDeviceSettings().phoneConnected) {
-            BackgroundStorage.setLastSyncError({
-                "errorCode" => "CANNOT_CONNECT_PHONE",
-                "errorMessage" => Strings.getFailConnectPhoneMsg()
-            });
+            var errDict = {
+                "errorCode" => "DISCONNECTED"
+            };
+            BackgroundStorage.setLastSyncError(
+                errDict as ApiSchema.BackgroundError
+            );
         }
 
         return [new YamakageView()];
@@ -109,11 +111,11 @@ class YamakageApp extends Application.AppBase {
     }
 
     private function runtimeFallback() {
+        var errDict = {
+            "errorCode" => "NULL_DATA_RETURNED"
+        };
         BackgroundStorage.setLastSyncError(
-            ({
-                "errorCode" => "NULL_DATA_RETURNED",
-                "errorMessage" => Strings.getFailBackgroundProcessMsg()
-            }) as ApiSchema.BackgroundError
+            errDict as ApiSchema.BackgroundError
         );
     }
 }

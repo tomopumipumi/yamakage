@@ -42,19 +42,20 @@ class YamakageBackground extends ServiceDelegate {
 
     function onTemporalEvent() as Void {
         if (!System.getDeviceSettings().phoneConnected) {
-            Background.exit(
-                ({
-                    "errorCode" => "DISCONNECTED",
-                    "errorMessage" => Strings.getFailConnectPhoneMsg()
-                }) as ApiSchema.BackgroundError
-            );
+            var errDict = {
+                "errorCode" => "DISCONNECTED"
+            };
+            Background.exit(errDict);
             return;
         }
 
         var latLon = LatLonSystem.getLatLon();
 
         if (latLon == null) {
-            Background.exit({ "error" => "NO_GPS" });
+            var errDict = {
+                "errorCode" => "NO_GPS"
+            };
+            Background.exit(errDict);
             return;
         }
 
@@ -86,12 +87,10 @@ class YamakageBackground extends ServiceDelegate {
                 method(:onReceive)
             );
         } catch (e) {
-            Background.exit(
-                ({
-                    "errorCode" => "REQ_EXCEPTION",
-                    "errorMessage" => Strings.getUpdateFailedLabel()
-                }) as ApiSchema.BackgroundError
-            );
+            var errDict = {
+                "errorCode" => "REQ_EXCEPTION"
+            };
+            Background.exit(errDict);
         }
     }
 
@@ -108,16 +107,9 @@ class YamakageBackground extends ServiceDelegate {
             }
         }
 
-        var errMsg =
-            responseCode < 0
-                ? "BT ERROR " + responseCode.toString()
-                : "HTTP " + responseCode.toString();
-
-        Background.exit(
-            ({
-                "errorCode" => responseCode,
-                "errorMessage" => errMsg
-            }) as ApiSchema.BackgroundError
-        );
+        var errDict = {
+            "errorCode" => responseCode
+        };
+        Background.exit(errDict);
     }
 }

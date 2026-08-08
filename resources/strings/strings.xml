@@ -2,9 +2,9 @@
     <string id="AppName">YAMAKAGE</string>
     <string id="UpdateFrequencyTitle">Background Update Interval (min)</string>
     <string id="TimeDefaultLabel">--:--</string>
-    <string id="Communicating">Connecting...</string>
-    <string id="UpdateFailed">Update Failed</string>
+    <string id="Communicating">Wait 5 min</string>
+    <string id="UpdateFailed">SyncFailed</string>
     <string id="Updating">Updating...</string>
-    <string id="FailBackgroundProcessMsg">Background process \nfailed or timed out</string>
-    <string id="FailConnectPhoneMsg">Could not establish \nconnection with smartphone</string>
+    <string id="FailBackgroundProcessMsg">timed out</string>
+    <string id="FailConnectPhoneMsg">No Phone</string>
 </strings>
