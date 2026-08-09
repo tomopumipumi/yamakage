@@ -112,7 +112,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
       isPolar: false,
     }),
 
-  setTurnstileToken: (token) => set({ turnstileToken: token, error: null }),
+  setTurnstileToken: (token) => set({ turnstileToken: token }),
   setHoveredAzimuth: (azimuth) => set({ hoveredAzimuth: azimuth }),
 
   calculate: async () => {
