@@ -1,9 +1,11 @@
+import type { Position } from '../store/mapStore';
+
 export function getDestinationPoint(
   lat: number,
   lng: number,
   brng: number,
   distMeters: number,
-): { lat: number; lng: number } {
+): Position {
   const R = 6371000; // Earth's radius
   const rad = Math.PI / 180;
   const lat1 = lat * rad;
@@ -34,8 +36,8 @@ export function createSectorPoints(
   radiusMeters: number = 20000,
   spreadDeg: number = 15,
   steps: number = 12,
-): [number, number][] {
-  const points: [number, number][] = [[centerLat, centerLng]];
+): Position[] {
+  const points: Position[] = [{ lat: centerLat, lng: centerLng }];
   const startAz = centerAzimuth - spreadDeg;
   const endAz = centerAzimuth + spreadDeg;
   const step = (endAz - startAz) / steps;
@@ -43,7 +45,7 @@ export function createSectorPoints(
   for (let i = 0; i <= steps; i++) {
     const az = startAz + i * step;
     const dest = getDestinationPoint(centerLat, centerLng, az, radiusMeters);
-    points.push([dest.lat, dest.lng]);
+    points.push({ lat: dest.lat, lng: dest.lng });
   }
 
   return points;

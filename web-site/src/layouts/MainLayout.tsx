@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { YamakageMap } from '../features/map/components/YamakageMap';
-import { CalculatorPanel } from '../features/calculator/components/CalculatorPanel';
+import type React from 'react';
+import { useEffect, useState } from 'react';
+import { AboutDialog } from '../components/ui/AboutDialog';
 import { LoadingScreen } from '../components/ui/LoadingScreen';
 import { SettingsDialog } from '../components/ui/SettingsDialog';
-import { AboutDialog } from '../components/ui/AboutDialog';
-import { SmartwatchDialog } from '../components/ui/SmartwatchDialog';
 import { ShareDialog } from '../components/ui/ShareDialog';
+import { SmartwatchDialog } from '../components/ui/SmartwatchDialog';
+import { CalculatorPanel } from '../features/calculator/components/CalculatorPanel';
+import { YamakageMap } from '../features/map/components/YamakageMap';
 
 export const MainLayout: React.FC = () => {
   const [isAppReady, setIsAppReady] = useState(false);
@@ -21,7 +22,7 @@ export const MainLayout: React.FC = () => {
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-slate-900">
       <LoadingScreen isReady={isAppReady} />
-      
+
       <SettingsDialog />
       <AboutDialog />
       <SmartwatchDialog />
@@ -30,7 +31,7 @@ export const MainLayout: React.FC = () => {
       <div className="absolute inset-0 z-0">
         <YamakageMap />
       </div>
-      
+
       <CalculatorPanel />
     </main>
   );

@@ -1,13 +1,34 @@
-import React from 'react';
-import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TerrainAzimuthProfile, SunPathPoint } from '../api/calculateShadow';
-import { useCalculatorStore } from '../store/calculatorStore';
+import {
+  Area,
+  CartesianGrid,
+  ComposedChart,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import type { SunPathPoint, TerrainAzimuthProfile } from '../api/calculateShadow';
 import { useSkylineData } from '../hooks/useSkylineData';
+import { useCalculatorStore } from '../store/calculatorStore';
 
 interface Props {
   azimuthProfiles: TerrainAzimuthProfile[];
   sunPath: SunPathPoint[];
+}
+
+interface RechartsEvent {
+  activeLabel?: string | number | null;
+  activePayload?: Array<{
+    value?: number | string | null;
+    name?: string | number;
+    dataKey?: string | number;
+    payload?: Record<string, unknown>;
+  }>;
+  isTooltipActive?: boolean;
+  [key: string]: unknown;
 }
 
 export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
@@ -15,7 +36,7 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
   const setHoveredAzimuth = useCalculatorStore((state) => state.setHoveredAzimuth);
   const mergedData = useSkylineData(azimuthProfiles, sunPath);
 
-  const handleMouseMove = (e: any) => {
+  const handleMouseMove = (e: RechartsEvent | null | undefined) => {
     if (e && e.activeLabel !== undefined && e.activeLabel !== null) {
       setHoveredAzimuth(Number(e.activeLabel));
     }
@@ -41,8 +62,8 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
       </div>
 
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart 
-          data={mergedData} 
+        <ComposedChart
+          data={mergedData}
           margin={{ top: 20, right: 10, left: -25, bottom: 0 }}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
@@ -51,11 +72,11 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
           onTouchEnd={handleMouseLeave}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-          <XAxis 
-            dataKey="azimuth" 
-            type="number" 
-            domain={[0, 360]} 
-            ticks={[0, 90, 180, 270, 360]} 
+          <XAxis
+            dataKey="azimuth"
+            type="number"
+            domain={[0, 360]}
+            ticks={[0, 90, 180, 270, 360]}
             tickFormatter={(val) => {
               if (val === 0 || val === 360) return 'N';
               if (val === 90) return 'E';
@@ -63,27 +84,42 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
               if (val === 270) return 'W';
               return String(val);
             }}
-            stroke="#64748b" 
-            tick={{ fontSize: 10 }} 
+            stroke="#64748b"
+            tick={{ fontSize: 10 }}
           />
           <YAxis stroke="#64748b" tick={{ fontSize: 10 }} />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: 'rgba(15, 23, 42, 0.8)', 
-              borderColor: '#334155', 
-              color: '#fff', 
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'rgba(15, 23, 42, 0.8)',
+              borderColor: '#334155',
+              color: '#fff',
               borderRadius: '8px',
-              backdropFilter: 'blur(4px)' 
+              backdropFilter: 'blur(4px)',
             }}
             labelFormatter={(label) => `${t('azimuth')}: ${Number(label).toFixed(0)}°`}
-            formatter={(value: any, name: any) => [
+            formatter={(value, name) => [
               value !== undefined && value !== null ? `${Number(value).toFixed(1)}°` : '',
-              name === 'terrain' ? t('skyline_terrain') : t('sun_path')
+              name === 'terrain' ? t('skyline_terrain') : t('sun_path'),
             ]}
             cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '5 5' }}
           />
-          <Area type="monotone" dataKey="terrain" fill="#475569" stroke="#94a3b8" fillOpacity={0.7} isAnimationActive={false} />
-          <Line type="monotone" dataKey="sun" stroke="#f97316" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+          <Area
+            type="monotone"
+            dataKey="terrain"
+            fill="#475569"
+            stroke="#94a3b8"
+            fillOpacity={0.7}
+            isAnimationActive={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="sun"
+            stroke="#f97316"
+            strokeWidth={2}
+            dot={false}
+            connectNulls
+            isAnimationActive={false}
+          />
         </ComposedChart>
       </ResponsiveContainer>
     </div>

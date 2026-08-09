@@ -1,16 +1,14 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { Sunrise, Sunset } from 'lucide-react';
+import type React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCalculatorStore } from '../store/calculatorStore';
 import { ResultCard } from './ResultCard';
 import { SkylineChart } from './SkylineChart';
 
 export const CalculatorResults: React.FC = () => {
   const { t } = useTranslation();
-  const { 
-    error, isPolar, sunriseTime, sunsetTime, 
-    timezone, azimuthProfiles, sunPath 
-  } = useCalculatorStore();
+  const { error, isPolar, sunriseTime, sunsetTime, timezone, azimuthProfiles, sunPath } =
+    useCalculatorStore();
 
   if (!sunriseTime && !sunsetTime && !isPolar && !error && azimuthProfiles.length === 0) {
     return null;
@@ -23,17 +21,17 @@ export const CalculatorResults: React.FC = () => {
 
       {(sunriseTime || sunsetTime) && (
         <div className="space-y-3 pt-4 border-t border-slate-700/50">
-          <ResultCard 
-            icon={<Sunrise className="w-5 h-5 text-yellow-500" />} 
-            label={t('sunrise_label')} 
-            timestamp={sunriseTime} 
+          <ResultCard
+            icon={<Sunrise className="w-5 h-5 text-yellow-500" />}
+            label={t('sunrise_label')}
+            timestamp={sunriseTime}
             color="text-yellow-500"
             timezone={timezone}
           />
-          <ResultCard 
-            icon={<Sunset className="w-5 h-5 text-purple-400" />} 
-            label={t('sunset_label')} 
-            timestamp={sunsetTime} 
+          <ResultCard
+            icon={<Sunset className="w-5 h-5 text-purple-400" />}
+            label={t('sunset_label')}
+            timestamp={sunsetTime}
             color="text-purple-400"
             timezone={timezone}
           />
@@ -41,10 +39,7 @@ export const CalculatorResults: React.FC = () => {
       )}
 
       {azimuthProfiles.length > 0 && (
-        <SkylineChart 
-          azimuthProfiles={azimuthProfiles} 
-          sunPath={sunPath}
-        />
+        <SkylineChart azimuthProfiles={azimuthProfiles} sunPath={sunPath} />
       )}
     </>
   );
