@@ -12,7 +12,7 @@ import Hal.LocalStorage;
 import Hal.Strings;
 
 (:background)
-class YamakageBackground extends ServiceDelegate {
+class YamakageBackground extends System.ServiceDelegate {
     var _targetTime as Number = 0;
 
     function initialize() {
