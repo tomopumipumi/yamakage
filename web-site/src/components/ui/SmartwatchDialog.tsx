@@ -1,5 +1,5 @@
-import React from 'react';
-import { Watch, ExternalLink, Activity } from 'lucide-react';
+import { Activity, ExternalLink, Watch } from 'lucide-react';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUiStore } from '../../store/uiStore';
 import { BaseDialog } from './BaseDialog';
@@ -33,7 +33,7 @@ export const SmartwatchDialog: React.FC = () => {
             <p className="text-slate-400 text-sm mb-6 flex-1 relative z-10">
               {t('smartwatch.garmin.desc')}
             </p>
-            <a 
+            <a
               href={t('smartwatch.garmin.url')}
               target="_blank"
               rel="noopener noreferrer"

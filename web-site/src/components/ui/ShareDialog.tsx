@@ -1,26 +1,27 @@
-import React, { useState, useMemo } from 'react';
-import { Share2, Copy, Check, X } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { useUiStore } from '../../store/uiStore';
-import { useCalculatorStore } from '../../features/calculator/store/calculatorStore';
 import { format, toZonedTime } from 'date-fns-tz';
+import { Check, Copy, Share2, X } from 'lucide-react';
+import type React from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useCalculatorStore } from '../../features/calculator/store/calculatorStore';
+import { useUiStore } from '../../store/uiStore';
 import { BaseDialog } from './BaseDialog';
 
 type ShareFormat = 'text' | 'json';
+
+const formatTime = (timestamp: number | null, tz: string) => {
+  if (!timestamp) return '--:--';
+  const date = new Date(timestamp * 1000);
+  return format(toZonedTime(date, tz), 'HH:mm', { timeZone: tz });
+};
 
 export const ShareDialog: React.FC = () => {
   const { t } = useTranslation();
   const { isShareOpen, setShareOpen } = useUiStore();
   const { position, sunriseTime, sunsetTime, timezone, isPolar } = useCalculatorStore();
-  
+
   const [activeFormat, setActiveFormat] = useState<ShareFormat>('text');
   const [isCopied, setIsCopied] = useState(false);
-
-  const formatTime = (timestamp: number | null, tz: string) => {
-    if (!timestamp) return '--:--';
-    const date = new Date(timestamp * 1000);
-    return format(toZonedTime(date, tz), 'HH:mm', { timeZone: tz });
-  };
 
   const shareContent = useMemo(() => {
     if (!position || (!sunriseTime && !sunsetTime && !isPolar)) {
@@ -32,24 +33,26 @@ export const ShareDialog: React.FC = () => {
     const shareUrl = `${currentUrl}?lat=${position.lat.toFixed(4)}&lng=${position.lng.toFixed(4)}&tz=${encodedTz}`;
 
     if (activeFormat === 'text') {
-      return `⛰️ YAMAKAGE - ${t('app_subtitle')}\n\n` +
-             `📍 ${t('position_format', { lat: position.lat.toFixed(4), lon: position.lng.toFixed(4) })}\n` +
-             `🕒 ${t('timezone')}: ${timezone}\n` +
-             `🌅 ${t('sunrise_label')}: ${formatTime(sunriseTime, timezone)}\n` +
-             `🌇 ${t('sunset_label')}: ${formatTime(sunsetTime, timezone)}\n\n` +
-             `🔗 ${shareUrl}`;
+      return (
+        `⛰️ YAMAKAGE - ${t('app_subtitle')}\n\n` +
+        `📍 ${t('position_format', { lat: position.lat.toFixed(4), lon: position.lng.toFixed(4) })}\n` +
+        `🕒 ${t('timezone')}: ${timezone}\n` +
+        `🌅 ${t('sunrise_label')}: ${formatTime(sunriseTime, timezone)}\n` +
+        `🌇 ${t('sunset_label')}: ${formatTime(sunsetTime, timezone)}\n\n` +
+        `🔗 ${shareUrl}`
+      );
     }
 
     const jsonObj = {
-      app: "YAMAKAGE",
+      app: 'YAMAKAGE',
       coordinates: { lat: Number(position.lat.toFixed(4)), lng: Number(position.lng.toFixed(4)) },
       timezone,
       results: {
         sunrise: formatTime(sunriseTime, timezone),
         sunset: formatTime(sunsetTime, timezone),
-        isPolar
+        isPolar,
       },
-      url: shareUrl
+      url: shareUrl,
     };
     return JSON.stringify(jsonObj, null, 2);
   }, [activeFormat, position, sunriseTime, sunsetTime, timezone, isPolar, t]);
@@ -81,24 +84,28 @@ export const ShareDialog: React.FC = () => {
     >
       <div className="space-y-4">
         {!shareContent ? (
-          <div className="text-center py-10 text-slate-400">
-            {t('share.not_calculated')}
-          </div>
+          <div className="text-center py-10 text-slate-400">{t('share.not_calculated')}</div>
         ) : (
           <>
             <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
               <button
+                type="button"
                 onClick={() => setActiveFormat('text')}
                 className={`flex-1 py-2 text-sm font-bold rounded-md transition-all cursor-pointer ${
-                  activeFormat === 'text' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                  activeFormat === 'text'
+                    ? 'bg-slate-700 text-white shadow'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 {t('share.format_text')}
               </button>
               <button
+                type="button"
                 onClick={() => setActiveFormat('json')}
                 className={`flex-1 py-2 text-sm font-bold rounded-md transition-all cursor-pointer ${
-                  activeFormat === 'json' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                  activeFormat === 'json'
+                    ? 'bg-slate-700 text-white shadow'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 {t('share.format_json')}
@@ -112,16 +119,22 @@ export const ShareDialog: React.FC = () => {
             />
 
             <div className="flex gap-3">
-              <button 
+              <button
+                type="button"
                 onClick={handleCopy}
                 className="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white rounded-lg font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
-                {isCopied ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5" />}
+                {isCopied ? (
+                  <Check className="w-5 h-5 text-emerald-400" />
+                ) : (
+                  <Copy className="w-5 h-5" />
+                )}
                 {isCopied ? t('share.copied') : t('share.copy_button')}
               </button>
-              
+
               {activeFormat === 'text' && (
-                <button 
+                <button
+                  type="button"
                   onClick={handleShareX}
                   className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >

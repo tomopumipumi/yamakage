@@ -1,5 +1,5 @@
-import React from 'react';
 import { format, toZonedTime } from 'date-fns-tz';
+import type React from 'react';
 
 interface Props {
   icon: React.ReactNode;
@@ -21,9 +21,7 @@ export const ResultCard: React.FC<Props> = ({ icon, label, timestamp, color, tim
   return (
     <div className="bg-slate-800/80 rounded-xl p-4 flex items-center justify-between border border-slate-700">
       <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${color} bg-opacity-20`}>
-          {icon}
-        </div>
+        <div className={`p-2 rounded-lg ${color} bg-opacity-20`}>{icon}</div>
         <span className="text-slate-300 font-medium">{label}</span>
       </div>
       <span className="text-2xl font-bold text-white">{timeString}</span>
