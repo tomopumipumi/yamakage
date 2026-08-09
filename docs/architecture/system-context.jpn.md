@@ -20,19 +20,19 @@ flowchart TB
     end
 
     subgraph Cloudflare ["Cloudflare (バックエンド層)"]
-        Turnstile{"Turnstile\n(Bot検証)"}:::cloudflare
-        RateLimiter{"Rate Limiter\n(流量制限)"}:::cloudflare
-        API["YAMAKAGE API\n(Workers / Hono)"]:::cloudflare
-        R2[("Cloudflare R2\n(標高タイルキャッシュ)")]:::database
-        Pages["yamakage-site\n(Pages)"]:::cloudflare
+        Turnstile{"Turnstile<br/>(Bot検証)"}:::cloudflare
+        RateLimiter{"Rate Limiter<br/>(流量制限)"}:::cloudflare
+        API["YAMAKAGE API<br/>(Workers / Hono)"]:::cloudflare
+        R2[("Cloudflare R2<br/>(標高タイルキャッシュ)")]:::database
+        Pages["yamakage-site<br/>(Pages)"]:::cloudflare
     end
 
     subgraph External ["外部サービス"]
-        AWS[("AWS Open Data\n(Terrain Tiles)")]:::external
+        AWS[("AWS Open Data<br/>(Terrain Tiles)")]:::external
     end
 
-    Garmin -- "緯度・経度送信\n(Bearer Auth)" --> RateLimiter
-    Web -- "緯度・経度送信\n(Turnstile Token)" --> Turnstile
+    Garmin -- "緯度・経度送信<br/>(Bearer Auth)" --> RateLimiter
+    Web -- "緯度・経度送信<br/>(Turnstile Token)" --> Turnstile
     Turnstile -- "検証成功" --> RateLimiter
     RateLimiter -- "リクエスト通過" --> API
     Pages -- "HTML配信" --> Web
@@ -41,9 +41,9 @@ flowchart TB
     R2 -- "2a. Hit (PNG)" --> API
     API -- "2b. Miss" --> AWS
     AWS -- "3. タイル取得 (PNG)" --> API
-    API -. "4. 非同期でキャッシュ保存\n(waitUntil)" .-> R2
+    API -. "4. 非同期でキャッシュ保存<br/>(waitUntil)" .-> R2
 
-    API -- "5. 地形・太陽軌道計算\n(ShadowCalculationEngine)" --> API
+    API -- "5. 地形・太陽軌道計算<br/>(ShadowCalculationEngine)" --> API
     API -- "6. 計算結果返却 (JSON)" --> Garmin
     API -- "6. 計算結果返却 (JSON)" --> Web
 ```

@@ -49,7 +49,7 @@ sequenceDiagram
     
     Usecase-->>API: 計算結果 (minutesToShadow, shadowTimeUnix, 等)
     
-    note left of API: Garminのメモリ制限(32KB)に対応するため<br>極小の配列フォーマットで返却
+    note left of API: Garminのメモリ制限に対応するため<br>極小の配列フォーマットで返却
     API-->>Garmin: 200 OK: { d: [45, 1718000000, 30, 1718040000] }
 ```
 
