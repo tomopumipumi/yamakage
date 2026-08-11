@@ -1,10 +1,12 @@
 import type React from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Area,
   CartesianGrid,
   ComposedChart,
   Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -33,8 +35,10 @@ interface RechartsEvent {
 
 export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
   const { t } = useTranslation();
-  const setHoveredAzimuth = useCalculatorStore((state) => state.setHoveredAzimuth);
+  const { setHoveredAzimuth, pinnedAzimuth, setPinnedAzimuth } = useCalculatorStore();
   const mergedData = useSkylineData(azimuthProfiles, sunPath);
+
+  const lastTouchTime = useRef<number>(0);
 
   const handleMouseMove = (e: RechartsEvent | null | undefined) => {
     if (e && e.activeLabel !== undefined && e.activeLabel !== null) {
@@ -46,19 +50,43 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
     setHoveredAzimuth(null);
   };
 
+  const handleTouch = (e: RechartsEvent | null | undefined) => {
+    lastTouchTime.current = Date.now();
+    if (e && e.activeLabel !== undefined && e.activeLabel !== null) {
+      const az = Number(e.activeLabel);
+      setHoveredAzimuth(az);
+      setPinnedAzimuth(az);
+    }
+  };
+
+  const handleClick = (e: RechartsEvent | null | undefined) => {
+    if (Date.now() - lastTouchTime.current < 500) return;
+
+    if (e && e.activeLabel !== undefined && e.activeLabel !== null) {
+      const az = Number(e.activeLabel);
+      setPinnedAzimuth(pinnedAzimuth === az ? null : az);
+    }
+  };
+
   if (!mergedData.length) return null;
 
   return (
     <div className="w-full h-40 mt-4 bg-slate-950 rounded-xl p-2 border border-slate-700 relative overflow-hidden group touch-pan-y">
-      <div className="absolute top-2 left-3 text-xs font-bold text-slate-400 z-10 flex items-center gap-3">
+      <div className="absolute top-2 left-3 text-xs font-bold text-slate-400 z-10 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 bg-slate-600 rounded-sm"></div>
+          <div className="w-3 h-3 bg-slate-600 rounded-sm" />
           {t('skyline_terrain')}
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-1 bg-orange-500 rounded-full"></div>
+          <div className="w-3 h-1 bg-orange-500 rounded-full" />
           {t('sun_path')}
         </div>
+        {pinnedAzimuth !== null && (
+          <div className="flex items-center gap-1">
+            <div className="w-0.5 h-3 bg-yellow-500" />
+            <span className="text-yellow-500">{pinnedAzimuth.toFixed(1)}°</span>
+          </div>
+        )}
       </div>
 
       <ResponsiveContainer width="100%" height="100%">
@@ -67,8 +95,9 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
           margin={{ top: 20, right: 10, left: -25, bottom: 0 }}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          onTouchStart={handleMouseMove}
-          onTouchMove={handleMouseMove}
+          onClick={handleClick}
+          onTouchStart={handleTouch}
+          onTouchMove={handleTouch}
           onTouchEnd={handleMouseLeave}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
@@ -103,6 +132,7 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
             ]}
             cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '5 5' }}
           />
+
           <Area
             type="monotone"
             dataKey="terrain"
@@ -120,6 +150,22 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
             connectNulls
             isAnimationActive={false}
           />
+
+          {pinnedAzimuth !== null && (
+            <ReferenceLine
+              x={pinnedAzimuth}
+              stroke="#eab308"
+              strokeWidth={2}
+              strokeDasharray="3 3"
+              label={{
+                position: 'insideTopLeft',
+                value: `${pinnedAzimuth.toFixed(1)}°`,
+                fill: '#eab308',
+                fontSize: 10,
+                fontWeight: 'bold',
+              }}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
     </div>
