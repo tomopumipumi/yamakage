@@ -55,6 +55,24 @@ export const useShare = () => {
     return createSectorPoints(position.lat, position.lng, activeAzimuth, radiusMeters, spreadDeg);
   }, [position, activeAzimuth, azimuthProfiles, radiusMeters]);
 
+  const highestObstaclePoint = useMemo(() => {
+    if (activeAzimuth === null || !azimuthProfiles || azimuthProfiles.length === 0) return null;
+
+    let closestProfile = azimuthProfiles[0];
+    let minDiff = 360;
+
+    for (const profile of azimuthProfiles) {
+      let diff = Math.abs(profile.azimuthDeg - activeAzimuth);
+      if (diff > 180) diff = 360 - diff;
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestProfile = profile;
+      }
+    }
+
+    return closestProfile.highestPoint || null;
+  }, [activeAzimuth, azimuthProfiles]);
+
   const cardProps = position
     ? {
         position,
@@ -67,6 +85,7 @@ export const useShare = () => {
         currentLayer,
         zoom,
         sectorPositions,
+        highestObstaclePoint,
         pinnedAzimuth,
         t,
         formatTime,

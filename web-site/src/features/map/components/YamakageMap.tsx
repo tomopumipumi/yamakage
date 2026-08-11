@@ -1,7 +1,15 @@
 import L from 'leaflet';
 import type React from 'react';
 import { useEffect, useMemo } from 'react';
-import { MapContainer, Marker, Polygon, Polyline, TileLayer, useMap, useMapEvents } from 'react-leaflet'; // ← Polylineを追加インポート
+import {
+  MapContainer,
+  Marker,
+  Polygon,
+  Polyline,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet'; // ← Polylineを追加インポート
 import { useCalculatorStore } from '../../calculator/store/calculatorStore';
 import { useMapStore } from '../store/mapStore';
 import { createSectorPoints } from '../utils/geoUtils';
@@ -86,10 +94,10 @@ export const YamakageMap = () => {
 
   const highestObstaclePoint = useMemo(() => {
     if (activeAzimuth === null || !azimuthProfiles || azimuthProfiles.length === 0) return null;
-    
+
     let closestProfile = azimuthProfiles[0];
     let minDiff = 360;
-    
+
     for (const profile of azimuthProfiles) {
       let diff = Math.abs(profile.azimuthDeg - activeAzimuth);
       if (diff > 180) diff = 360 - diff;
@@ -98,7 +106,7 @@ export const YamakageMap = () => {
         closestProfile = profile;
       }
     }
-    
+
     return closestProfile.highestPoint || null;
   }, [activeAzimuth, azimuthProfiles]);
 
@@ -134,14 +142,19 @@ export const YamakageMap = () => {
 
         {highestObstaclePoint && position && (
           <Polyline
-            positions={[[position.lat, position.lng], [highestObstaclePoint.lat, highestObstaclePoint.lng]]}
+            positions={[
+              [position.lat, position.lng],
+              [highestObstaclePoint.lat, highestObstaclePoint.lng],
+            ]}
             pathOptions={{ color: '#ef4444', dashArray: '5, 5', weight: 2 }}
           />
         )}
         {highestObstaclePoint && (
-          <Marker position={[highestObstaclePoint.lat, highestObstaclePoint.lng]} icon={obstacleIcon} />
+          <Marker
+            position={[highestObstaclePoint.lat, highestObstaclePoint.lng]}
+            icon={obstacleIcon}
+          />
         )}
-
       </MapContainer>
     </div>
   );

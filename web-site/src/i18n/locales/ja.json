@@ -106,7 +106,7 @@
     "share_x": "Xでポスト",
     "not_calculated": "計算してからシェアしてください。",
     "error_gen_image": "画像の生成に失敗しました。",
-    "save_image": "画像を保存",
+    "save_image": "画像を保存・シェア",
     "generating": "生成中..."
   },
   "skyline_terrain": "地形の仰角",

@@ -3,7 +3,7 @@ import type { TFunction } from 'i18next';
 import L from 'leaflet';
 import { Calendar, Globe, MapPin, Sunrise, Sunset } from 'lucide-react';
 import type React from 'react';
-import { MapContainer, Marker, Polygon, TileLayer } from 'react-leaflet';
+import { MapContainer, Marker, Polygon, Polyline, TileLayer } from 'react-leaflet';
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, XAxis, YAxis } from 'recharts';
 
 import iconUrl from '../../../assets/icon.svg';
@@ -32,6 +32,22 @@ const customIcon = new L.DivIcon({
   iconAnchor: [16, 32],
 });
 
+const obstacleIconHtml = `
+  <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#ef4444" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+      <circle cx="12" cy="10" r="3" fill="white"/>
+    </svg>
+  </div>
+`;
+
+const obstacleIcon = new L.DivIcon({
+  html: obstacleIconHtml,
+  className: '',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
+
 export interface ShareImageCardProps {
   position: { lat: number; lng: number };
   timezone: string;
@@ -43,6 +59,7 @@ export interface ShareImageCardProps {
   currentLayer: MapLayerOption;
   zoom: number;
   sectorPositions: { lat: number; lng: number }[] | null;
+  highestObstaclePoint: { lat: number; lng: number } | null;
   pinnedAzimuth: number | null;
   t: TFunction;
   formatTime: (timestamp: number | null, tz: string) => string;
@@ -59,6 +76,7 @@ export const ShareImageCard: React.FC<ShareImageCardProps> = ({
   currentLayer,
   zoom,
   sectorPositions,
+  highestObstaclePoint,
   pinnedAzimuth,
   t,
   formatTime,
@@ -76,11 +94,28 @@ export const ShareImageCard: React.FC<ShareImageCardProps> = ({
           style={{ width: '100%', height: '100%' }}
         >
           <TileLayer url={currentLayer.url} crossOrigin="anonymous" />
+
           <Marker position={[position.lat, position.lng]} icon={customIcon} />
           {sectorPositions && (
             <Polygon
               positions={sectorPositions}
               pathOptions={{ color: '#f97316', fillColor: '#f97316', fillOpacity: 0.35, weight: 2 }}
+            />
+          )}
+
+          {highestObstaclePoint && position && (
+            <Polyline
+              positions={[
+                [position.lat, position.lng],
+                [highestObstaclePoint.lat, highestObstaclePoint.lng],
+              ]}
+              pathOptions={{ color: '#ef4444', dashArray: '5, 5', weight: 2 }}
+            />
+          )}
+          {highestObstaclePoint && (
+            <Marker
+              position={[highestObstaclePoint.lat, highestObstaclePoint.lng]}
+              icon={obstacleIcon}
             />
           )}
         </MapContainer>

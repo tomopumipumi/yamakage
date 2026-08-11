@@ -13,7 +13,7 @@ export const TerrainProfileEngine = {
 
     return panorama.map((pane) => {
       let maxAngle = -0.833;
-      let highestPoint: { lat: number; lng: number } | undefined = undefined;
+      let highestPoint: { lat: number; lng: number } | undefined;
 
       for (const p of pane.points) {
         const altitude = elevationsMap.get(`${getIntCoordinate(p.lat)}_${getIntCoordinate(p.lng)}`);
