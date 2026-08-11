@@ -5,7 +5,6 @@ export interface SkylineChartPoint {
   azimuth: number;
   sun?: number;
   terrain: number;
-  isTerrainBase?: boolean;
 }
 
 export const useSkylineData = (
@@ -15,29 +14,50 @@ export const useSkylineData = (
   return useMemo(() => {
     if (!azimuthProfiles.length) return [];
 
-    const dataPoints: { azimuth: number; sun?: number; isTerrainBase?: boolean }[] = [];
+    const pointMap = new Map<number, SkylineChartPoint & { hasTerrain: boolean }>();
 
-    for (let az = 0; az <= 360; az += 2) {
-      dataPoints.push({ azimuth: az, isTerrainBase: true });
-    }
+    azimuthProfiles.forEach((profile) => {
+      pointMap.set(profile.azimuthDeg, {
+        azimuth: profile.azimuthDeg,
+        terrain: Math.max(0, profile.maxObstacleAngleDeg),
+        hasTerrain: true,
+      });
+    });
 
     if (sunPath && sunPath.length > 0) {
       sunPath.forEach((sun) => {
-        dataPoints.push({ azimuth: sun.azimuth, sun: sun.altitude });
+        const existing = pointMap.get(sun.azimuth);
+        if (existing) {
+          existing.sun = sun.altitude;
+        } else {
+          pointMap.set(sun.azimuth, {
+            azimuth: sun.azimuth,
+            sun: sun.altitude,
+            terrain: 0,
+            hasTerrain: false,
+          });
+        }
       });
     }
 
-    dataPoints.sort((a, b) => a.azimuth - b.azimuth);
+    const mergedData = Array.from(pointMap.values()).sort((a, b) => a.azimuth - b.azimuth);
 
     const sortedTerrain = [...azimuthProfiles].sort((a, b) => a.azimuthDeg - b.azimuthDeg);
 
-    return dataPoints.map((pt) => {
-      const az = pt.azimuth;
+    return mergedData.map((pt) => {
+      if (pt.hasTerrain) {
+        const { hasTerrain, ...rest } = pt;
+        return rest;
+      }
+
       let left = sortedTerrain[sortedTerrain.length - 1];
       let right = sortedTerrain[0];
 
       for (let i = 0; i < sortedTerrain.length - 1; i++) {
-        if (az >= sortedTerrain[i].azimuthDeg && az <= sortedTerrain[i + 1].azimuthDeg) {
+        if (
+          pt.azimuth >= sortedTerrain[i].azimuthDeg &&
+          pt.azimuth <= sortedTerrain[i + 1].azimuthDeg
+        ) {
           left = sortedTerrain[i];
           right = sortedTerrain[i + 1];
           break;
@@ -46,15 +66,16 @@ export const useSkylineData = (
 
       let diffRL = right.azimuthDeg - left.azimuthDeg;
       if (diffRL < 0) diffRL += 360;
-      let diffAL = az - left.azimuthDeg;
+      let diffAL = pt.azimuth - left.azimuthDeg;
       if (diffAL < 0) diffAL += 360;
 
       const ratio = diffRL === 0 ? 0 : diffAL / diffRL;
       const terrainAlt =
         left.maxObstacleAngleDeg + ratio * (right.maxObstacleAngleDeg - left.maxObstacleAngleDeg);
 
+      const { hasTerrain, ...rest } = pt;
       return {
-        ...pt,
+        ...rest,
         terrain: Math.max(0, terrainAlt),
       };
     });

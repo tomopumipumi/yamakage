@@ -42,24 +42,28 @@ const PinMarker: React.FC<{ position: { lat: number; lng: number } }> = ({ posit
 
 // YamakageMap-----
 export const YamakageMap = () => {
-  const position = useCalculatorStore((state) => state.position);
+  const { position, hoveredAzimuth, azimuthProfiles, radiusMeters } = useCalculatorStore();
   const currentLayer = useMapStore((state) => state.currentLayer);
-  const hoveredAzimuth = useCalculatorStore((state) => state.hoveredAzimuth);
 
   const initialCenter: [number, number] = position
     ? [position.lat, position.lng]
     : [35.3606, 138.7274];
 
   const sectorPositions = useMemo(() => {
-    return position && hoveredAzimuth !== null
-      ? createSectorPoints(position.lat, position.lng, hoveredAzimuth)
-      : null;
-  }, [position, hoveredAzimuth]);
+    if (!position || hoveredAzimuth === null) return null;
+
+    let spreadDeg = 7.5;
+    if (azimuthProfiles && azimuthProfiles.length >= 2) {
+      const step = Math.abs(azimuthProfiles[1].azimuthDeg - azimuthProfiles[0].azimuthDeg);
+      spreadDeg = step / 2;
+    }
+
+    return createSectorPoints(position.lat, position.lng, hoveredAzimuth, radiusMeters, spreadDeg);
+  }, [position, hoveredAzimuth, azimuthProfiles, radiusMeters]);
 
   return (
     <div className="relative w-full h-full">
       <LayerSelecter />
-
       <MapContainer center={initialCenter} zoom={11} className="w-full h-full" zoomControl={false}>
         <TileLayer
           key={currentLayer.id}

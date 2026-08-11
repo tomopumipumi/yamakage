@@ -57,7 +57,7 @@ export const createWebShadowRouter = (logger: Logger) => {
       lat: lat,
       lng: lng,
       targetTime: targetTime,
-      stepDeg: 1,
+      stepDeg: 3,
     });
 
     if (result.isPolar || !result.sunsetResult || !result.sunriseResult) {
@@ -68,6 +68,7 @@ export const createWebShadowRouter = (logger: Logger) => {
           sunriseTime: null,
           minutesToSunrise: null,
           isPolar: true,
+          radiusMeters: 0,
         },
         200,
       );
@@ -82,6 +83,7 @@ export const createWebShadowRouter = (logger: Logger) => {
         isPolar: false,
         azimuthProfiles: result.azimuthProfiles,
         sunPath: result.sunPath,
+        radiusMeters: 30000,
       },
       200,
     );

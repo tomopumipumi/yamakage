@@ -17,6 +17,7 @@ export interface ShadowResult {
   isPolar: boolean;
   azimuthProfiles?: TerrainAzimuthProfile[];
   sunPath?: SunPathPoint[];
+  radiusMeters: number;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';

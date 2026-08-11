@@ -106,7 +106,6 @@ export const TerrainSamplingEngine = {
           maxDistanceMeters: 30000,
           intervalMeters: 500,
         }),
-
       ];
 
       return { azimuth: az, points };

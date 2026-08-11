@@ -56,6 +56,7 @@ interface CalculatorState {
   isPolar: boolean;
   azimuthProfiles: TerrainAzimuthProfile[];
   sunPath: SunPathPoint[];
+  radiusMeters: number;
   hoveredAzimuth: number | null;
 
   setPosition: (pos: Position) => void;
@@ -73,6 +74,7 @@ const RESET_RESULT_STATE = {
   isPolar: false,
   azimuthProfiles: [],
   sunPath: [],
+  radiusMeters: 0,
   hoveredAzimuth: null,
 };
 
@@ -88,6 +90,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
   isPolar: false,
   azimuthProfiles: [],
   sunPath: [],
+  radiusMeters: 0,
   hoveredAzimuth: null,
 
   setPosition: (pos) => {
@@ -140,6 +143,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
         isPolar: result.isPolar,
         azimuthProfiles: result.azimuthProfiles || [],
         sunPath: result.sunPath || [],
+        radiusMeters: result.radiusMeters,
         isLoading: false,
       });
     } catch (e) {

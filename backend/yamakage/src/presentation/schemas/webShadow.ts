@@ -18,6 +18,7 @@ export const WebShadowResponseSchema = z
     isPolar: z.boolean().describe('True if polar day or night applies'),
     azimuthProfiles: z.array(z.any()).optional(),
     sunPath: z.array(z.any()).optional(),
+    radiusMeters: z.number().optional().describe('Radius of the sun path in meters'),
   })
   .openapi({
     description: 'Rich JSON format for web clients',
@@ -27,5 +28,6 @@ export const WebShadowResponseSchema = z
       sunriseTime: 1718040000,
       minutesToSunrise: 30,
       isPolar: false,
+      radiusMeters: 30000,
     },
   });
