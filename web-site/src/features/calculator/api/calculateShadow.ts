@@ -1,6 +1,7 @@
 export interface TerrainAzimuthProfile {
   azimuthDeg: number;
   maxObstacleAngleDeg: number;
+  highestPoint?: { lat: number; lng: number };
 }
 
 export interface SunPathPoint {
