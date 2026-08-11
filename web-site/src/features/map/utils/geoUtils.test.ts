@@ -32,7 +32,7 @@ describe('geoUtils', () => {
       const points = createSectorPoints(35.0, 135.0, 90, 10000, 15, 10);
 
       expect(points.length).toBe(12);
-      expect(points[0]).toEqual([35.0, 135.0]);
+      expect(points[0]).toEqual({ lat: 35.0, lng: 135.0 });
     });
   });
 });
