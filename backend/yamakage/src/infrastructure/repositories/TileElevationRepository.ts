@@ -89,7 +89,8 @@ export const createTileElevationRepository = (
               const g = data[idx + 1];
               const b = data[idx + 2];
               const elevation = r * 256 + g + b / 256 - 32768;
-              return [p.key, Math.round(elevation)];
+              const adjustedElevation = Math.max(0, Math.round(elevation));
+              return [p.key, adjustedElevation];
             });
           } catch (e) {
             logger.error(`Failed to decode PNG for tile ${tilePath}`, e);
