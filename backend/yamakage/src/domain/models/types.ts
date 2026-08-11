@@ -32,4 +32,5 @@ export interface SunriseCalculationResult {
 export interface TerrainAzimuthProfile {
   azimuthDeg: number;
   maxObstacleAngleDeg: number;
+  highestPoint?: Coordinate;
 }
