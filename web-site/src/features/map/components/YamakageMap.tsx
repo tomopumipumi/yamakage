@@ -17,10 +17,14 @@ const MapUpdater: React.FC<{ position: { lat: number; lng: number } | null }> = 
 
 const MapEvents = () => {
   const setPosition = useCalculatorStore((state) => state.setPosition);
+  const setZoom = useMapStore((state) => state.setZoom);
 
   useMapEvents({
     click(e) {
       setPosition({ lat: e.latlng.lat, lng: e.latlng.lng });
+    },
+    zoomend(e) {
+      setZoom(e.target.getZoom());
     },
   });
   return null;

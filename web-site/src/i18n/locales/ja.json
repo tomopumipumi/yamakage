@@ -8,7 +8,8 @@
   "timezone": "タイムゾーン",
   "local_time": "📍 現地時間 ({{tz}})",
   "local_standard_time": "📍 現地の標準時 ({{tzName}})",
-  "target_date": "予測日時",
+  "target_datetime": "予測日時",
+  "target_date": "予測日",
   "calculate_button": "計算する",
   "polar_alert": "白夜または極夜の地域・日時です。",
   "sunrise_label": "日の出 (地形考慮)",
@@ -101,7 +102,8 @@
     "copy_button": "コピーする",
     "copied": "コピーしました！",
     "share_x": "Xでポスト",
-    "not_calculated": "計算してからシェアしてください。"
+    "not_calculated": "計算してからシェアしてください。",
+    "error_gen_image": "画像の生成に失敗しました。"
   },
   "skyline_terrain": "地形の仰角",
   "sun_path": "太陽の軌道",

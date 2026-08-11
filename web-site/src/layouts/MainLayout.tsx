@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react';
 import { AboutDialog } from '../components/ui/AboutDialog';
 import { LoadingScreen } from '../components/ui/LoadingScreen';
 import { SettingsDialog } from '../components/ui/SettingsDialog';
-import { ShareDialog } from '../components/ui/ShareDialog';
 import { SmartwatchDialog } from '../components/ui/SmartwatchDialog';
 import { CalculatorPanel } from '../features/calculator/components/CalculatorPanel';
 import { YamakageMap } from '../features/map/components/YamakageMap';
+import { ShareDialog } from '../features/share/components/ShareDialog';
 
 export const MainLayout: React.FC = () => {
   const [isAppReady, setIsAppReady] = useState(false);

@@ -47,17 +47,20 @@ interface MapState {
   currentLayerId: string;
   isMenuOpen: boolean;
   currentLayer: MapLayerOption;
+  zoom: number;
 
   getPosition: () => Position | null;
 
   setCurrentLayerId: (id: string) => void;
   setIsMenuOpen: (isOpen: boolean) => void;
+  setZoom: (zoom: number) => void;
 }
 
 export const useMapStore = create<MapState>((set, _get) => ({
   currentLayerId: MapLayerType.OSM,
   isMenuOpen: false,
   currentLayer: MAP_LAYERS[0],
+  zoom: 11,
 
   getPosition: () => useCalculatorStore.getState().position,
 
@@ -71,5 +74,9 @@ export const useMapStore = create<MapState>((set, _get) => ({
 
   setIsMenuOpen: (isOpen) => {
     set({ isMenuOpen: isOpen });
+  },
+
+  setZoom: (zoom) => {
+    set({ zoom });
   },
 }));

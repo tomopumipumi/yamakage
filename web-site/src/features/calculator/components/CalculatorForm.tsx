@@ -94,7 +94,7 @@ export const CalculatorForm: React.FC<CalculatorFormProps> = ({ turnstileRef, on
           htmlFor="target-date-input"
           className="text-sm text-slate-400 font-medium flex items-center gap-2"
         >
-          <Calendar className="w-4 h-4" /> {t('target_date')}
+          <Calendar className="w-4 h-4" /> {t('target_datetime')}
         </label>
         <input
           id="target-date-input"
