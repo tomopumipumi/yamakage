@@ -25,7 +25,7 @@ flowchart TD
     subgraph Phase3 [3. Simulation of Sun Path & Mountain Shadow Intersection]
         SCE[ShadowCalculationEngine]:::engine
         SPE[SunPositionEngine]:::engine
-        Note3(Advances time minute by minute<br/>to detect the moment the sun's altitude<br/>and interpolated terrain elevation angle invert)
+        Note3(Advances time minute by minute to detect the moment the sun's altitude and interpolated terrain elevation angle invert)
         
         SCE --> |Minute-by-minute Time| SPE
         SPE --> |Sun Azimuth & Altitude| SCE
@@ -51,10 +51,10 @@ flowchart TD
 
 To increase the accuracy of the near-field view while keeping computational costs low, the sampling intervals are dynamically adjusted based on distance.
 
-- **0–500m:** 100m intervals
-- **500m–2km:** 300m intervals
-- **2km–10km:** 2,000m intervals
-- **10km–20km:** 5,000m intervals
+- **10–1000m:** 30m intervals
+- **1.1m–5km:** 100m intervals
+- **5.1km–15km:** 250m intervals
+- **15km–30km:** 500m intervals
 
 ### Consideration of Earth's Curvature and Atmospheric Refraction (TerrainProfileEngine)
 

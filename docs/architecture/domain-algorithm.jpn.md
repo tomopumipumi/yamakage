@@ -11,7 +11,7 @@ flowchart TD
 
     subgraph Phase1 [1. 空間サンプリング]
         TSE[TerrainSamplingEngine]:::engine
-        Note1(近距離は細かく、遠距離は粗く<br/>最大20kmまで15度刻みで放射状にサンプリング座標を生成)
+        Note1(近距離は細かく、遠距離は粗く<br/>最大30kmまで1-3度刻みで放射状にサンプリング座標を生成)
         TSE -.- Note1
     end
 
@@ -26,7 +26,7 @@ flowchart TD
     subgraph Phase3 [3. 太陽軌道と山影の交差シミュレーション]
         SCE[ShadowCalculationEngine]:::engine
         SPE[SunPositionEngine]:::engine
-        Note3(時間を1分ずつ進めながら<br/>太陽の高度と、補間した地形仰角の<br/>逆転タイミングを検出)
+        Note3(時間を1分ずつ進めながら太陽の高度と、補間した地形仰角の逆転タイミングを検出)
         
         SCE --> |分単位の時刻| SPE
         SPE --> |太陽の方位角・高度| SCE
@@ -52,13 +52,13 @@ flowchart TD
 
 計算量を抑えつつ近景の精度を上げるため、距離に応じてサンプリング間隔を動的に変更しています。
 
-- 0〜500m: 100m間隔
+- 10〜1000m: 30m間隔
 
-- 500〜2km: 300m間隔
+- 1.1km〜5km: 100m間隔
 
-- 2km〜10km: 2000m間隔
+- 5.1km〜15km: 250m間隔
 
-- 10km〜20km: 5000m間隔
+- 15km〜30km: 500m間隔
 
 
 ### 地球の曲率と大気差の考慮 (TerrainProfileEngine)
