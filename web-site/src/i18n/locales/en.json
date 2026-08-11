@@ -106,7 +106,8 @@
     "share_x": "Post on X",
     "not_calculated": "Please calculate the shadow first to share the results.",
     "error_gen_image": "Failed to generate the image.",
-    "save_image": "Save Image"
+    "save_image": "Save Image",
+    "generating": "Generating..."
   },
   "skyline_terrain": "Terrain Elevation",
   "sun_path": "Sun Trajectory",
