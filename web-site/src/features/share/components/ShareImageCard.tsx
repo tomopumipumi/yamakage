@@ -10,7 +10,6 @@ import iconUrl from '../../../assets/icon.svg';
 import type { SkylineChartPoint } from '../../calculator/hooks/useSkylineData';
 import type { MapLayerOption } from '../../map/store/mapStore';
 
-
 const stripHtml = (html: string) => {
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
