@@ -16,7 +16,7 @@ describe('TerrainSamplingEngine', () => {
 
     panorama.forEach((pane) => {
       expect(pane.points.length).toBeGreaterThan(0);
-      expect(pane.points.length).toBe(130);
+      expect(pane.points.length).toBe(145);
 
       pane.points.forEach((p) => {
         expect(p).toHaveProperty('lat');
@@ -61,22 +61,22 @@ describe('TerrainSamplingEngine', () => {
     const panorama = TerrainSamplingEngine.generateFullPanorama(lat, lng, 360); // Generates 0 degrees only
     const points = panorama[0].points;
 
-    expect(points.length).toBe(130);
+    expect(points.length).toBe(145);
 
-    // 0-1km: 50m intervals (20 points)
-    expect(points[0].distance).toBe(50);
-    expect(points[19].distance).toBe(1000);
+    // 0-1km: 30m intervals starting from 10m (34 points)
+    expect(points[0].distance).toBe(10);
+    expect(points[33].distance).toBe(1000);
 
     // 1km-5km: 100m intervals (40 points)
-    expect(points[20].distance).toBe(1100);
-    expect(points[59].distance).toBe(5000);
+    expect(points[34].distance).toBe(1100);
+    expect(points[73].distance).toBe(5000);
 
     // 5km-15km: 250m intervals (40 points)
-    expect(points[60].distance).toBe(5250);
-    expect(points[99].distance).toBe(15000);
+    expect(points[74].distance).toBe(5100);
+    expect(points[113].distance).toBe(14850);
 
-    // 15km-30km: 500m intervals (30 points)
-    expect(points[100].distance).toBe(15500);
-    expect(points[129].distance).toBe(30000);
+    // 15km-30km: 500m intervals (31 points)
+    expect(points[114].distance).toBe(15000);
+    expect(points[144].distance).toBe(30000);
   });
 });
