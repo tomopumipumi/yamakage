@@ -50,10 +50,15 @@ export const createWebShadowRouter = (logger: Logger) => {
 
     const executer = createCalculateShadowUseCase({
       elevationRepository: elevationRepo,
-      logger,
+      logger: logger,
     });
 
-    const result = await executer.executeAsync(lat, lng, targetTime);
+    const result = await executer.executeAsync({
+      lat: lat,
+      lng: lng,
+      targetTime: targetTime,
+      stepDeg: 5,
+    });
 
     if (result.isPolar || !result.sunsetResult || !result.sunriseResult) {
       return c.json(

@@ -44,10 +44,15 @@ export const createShadowRouter = (logger: Logger) => {
 
     const executer = createCalculateShadowUseCase({
       elevationRepository: elevationRepo,
-      logger,
+      logger: logger,
     });
 
-    const result = await executer.executeAsync(lat, lng, targetTime);
+    const result = await executer.executeAsync({
+      lat: lat,
+      lng: lng,
+      targetTime: targetTime,
+      stepDeg: 5,
+    });
 
     if (result.isPolar || !result.sunsetResult || !result.sunriseResult) {
       return c.json({ d: [0, 0, 0, 0] }, 200);
