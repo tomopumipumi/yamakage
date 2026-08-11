@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Area,
@@ -37,6 +38,8 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
   const { setHoveredAzimuth, pinnedAzimuth, setPinnedAzimuth } = useCalculatorStore();
   const mergedData = useSkylineData(azimuthProfiles, sunPath);
 
+  const lastTouchTime = useRef<number>(0);
+
   const handleMouseMove = (e: RechartsEvent | null | undefined) => {
     if (e && e.activeLabel !== undefined && e.activeLabel !== null) {
       setHoveredAzimuth(Number(e.activeLabel));
@@ -47,7 +50,18 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
     setHoveredAzimuth(null);
   };
 
+  const handleTouch = (e: RechartsEvent | null | undefined) => {
+    lastTouchTime.current = Date.now();
+    if (e && e.activeLabel !== undefined && e.activeLabel !== null) {
+      const az = Number(e.activeLabel);
+      setHoveredAzimuth(az);
+      setPinnedAzimuth(az);
+    }
+  };
+
   const handleClick = (e: RechartsEvent | null | undefined) => {
+    if (Date.now() - lastTouchTime.current < 500) return;
+
     if (e && e.activeLabel !== undefined && e.activeLabel !== null) {
       const az = Number(e.activeLabel);
       setPinnedAzimuth(pinnedAzimuth === az ? null : az);
@@ -81,10 +95,10 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
           margin={{ top: 20, right: 10, left: -25, bottom: 0 }}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          onTouchStart={handleMouseMove}
-          onTouchMove={handleMouseMove}
-          onTouchEnd={handleMouseLeave}
           onClick={handleClick}
+          onTouchStart={handleTouch}
+          onTouchMove={handleTouch}
+          onTouchEnd={handleMouseLeave}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
           <XAxis

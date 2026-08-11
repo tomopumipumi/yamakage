@@ -172,6 +172,13 @@ export const useShare = () => {
         URL.revokeObjectURL(url);
       }
     } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.name === 'AbortError' || error.message.toLowerCase().includes('cancel'))
+      ) {
+        return;
+      }
+
       console.error('Image generation failed', error);
       alert(t('error_calculation_failed'));
     } finally {
