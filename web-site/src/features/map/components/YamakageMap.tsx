@@ -44,17 +44,20 @@ const PinMarker: React.FC<{ position: { lat: number; lng: number } }> = ({ posit
   return <Marker position={[position.lat, position.lng]} icon={customIcon} />;
 };
 
-// YamakageMap-----
 export const YamakageMap = () => {
-  const { position, hoveredAzimuth, azimuthProfiles, radiusMeters } = useCalculatorStore();
+  const { position, hoveredAzimuth, pinnedAzimuth, azimuthProfiles, radiusMeters } =
+    useCalculatorStore();
   const currentLayer = useMapStore((state) => state.currentLayer);
+  const zoom = useMapStore((state) => state.zoom);
 
   const initialCenter: [number, number] = position
     ? [position.lat, position.lng]
     : [35.3606, 138.7274];
 
+  const activeAzimuth = pinnedAzimuth !== null ? pinnedAzimuth : hoveredAzimuth;
+
   const sectorPositions = useMemo(() => {
-    if (!position || hoveredAzimuth === null) return null;
+    if (!position || activeAzimuth === null) return null;
 
     let spreadDeg = 7.5;
     if (azimuthProfiles && azimuthProfiles.length >= 2) {
@@ -62,13 +65,18 @@ export const YamakageMap = () => {
       spreadDeg = step / 2;
     }
 
-    return createSectorPoints(position.lat, position.lng, hoveredAzimuth, radiusMeters, spreadDeg);
-  }, [position, hoveredAzimuth, azimuthProfiles, radiusMeters]);
+    return createSectorPoints(position.lat, position.lng, activeAzimuth, radiusMeters, spreadDeg);
+  }, [position, activeAzimuth, azimuthProfiles, radiusMeters]);
 
   return (
     <div className="relative w-full h-full">
       <LayerSelecter />
-      <MapContainer center={initialCenter} zoom={11} className="w-full h-full" zoomControl={false}>
+      <MapContainer
+        center={initialCenter}
+        zoom={zoom}
+        className="w-full h-full"
+        zoomControl={false}
+      >
         <TileLayer
           key={currentLayer.id}
           attribution={currentLayer.attribution}

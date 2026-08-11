@@ -9,7 +9,6 @@ import { ShareImageCard } from './ShareImageCard';
 export const ShareDialog: React.FC = () => {
   const { isShareOpen, setShareOpen } = useUiStore();
 
-  // ロジックはすべて Custom Hook に委譲
   const {
     t,
     isCalculated,
@@ -34,7 +33,6 @@ export const ShareDialog: React.FC = () => {
       icon={<Share2 className="w-5 h-5 text-blue-400" />}
       maxWidth="max-w-xl"
     >
-      {/* 画像生成用DOM (画面外に実寸大でレンダリングしておく) */}
       {cardProps && isShareOpen && (
         <div className="fixed top-[200vh] left-[200vw] pointer-events-none">
           <div id="capture-target">
@@ -48,7 +46,6 @@ export const ShareDialog: React.FC = () => {
           <div className="text-center py-10 text-slate-400">{t('share.not_calculated')}</div>
         ) : (
           <>
-            {/* フォーマット切り替えタブ */}
             <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
               {(['image', 'text', 'json'] as const).map((fmt) => (
                 <button
@@ -61,12 +58,11 @@ export const ShareDialog: React.FC = () => {
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  {t(`share.format_${fmt}`, fmt === 'image' ? '画像' : fmt.toUpperCase())}
+                  {t(`share.format_${fmt}`, fmt.toUpperCase())}
                 </button>
               ))}
             </div>
 
-            {/* プレビュー表示 */}
             {activeFormat === 'image' && cardProps ? (
               <div
                 ref={previewContainerRef}
@@ -87,7 +83,6 @@ export const ShareDialog: React.FC = () => {
               />
             )}
 
-            {/* アクションボタン */}
             <div className="flex gap-3">
               {activeFormat === 'image' ? (
                 <button
@@ -101,9 +96,7 @@ export const ShareDialog: React.FC = () => {
                   ) : (
                     <ImageIcon className="w-5 h-5" />
                   )}
-                  {isGenerating
-                    ? t('share.generating', '画像生成中...')
-                    : t('share.share_image', '画像を保存・シェア')}
+                  {isGenerating ? t('share.generating') : t('share.save_image')}
                 </button>
               ) : (
                 <>

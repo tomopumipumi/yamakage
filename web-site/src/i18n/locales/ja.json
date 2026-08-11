@@ -4,7 +4,7 @@
   "selected_location": "選択中の地点",
   "click_to_select": "地図をクリックして地点を選択",
   "position_format": "緯度: {{lat}}, 経度: {{lon}}",
-  "can_change_location": "地図をタップ・クリックして位置を変更できます",
+  "can_change_location": "地図をタップ・クリックして位置を固定",
   "timezone": "タイムゾーン",
   "local_time": "📍 現地時間 ({{tz}})",
   "local_standard_time": "📍 現地の標準時 ({{tzName}})",
@@ -17,6 +17,7 @@
   "settings": "設定",
   "language": "言語 / Language",
   "close": "閉じる",
+  "pinned_azimuth": "固定方位角",
   "error_no_position": "地図上で地点を選択してください。",
   "error_no_turnstile": "Bot検証が完了していません。",
   "error_calculation_failed": "計算に失敗しました。時間をおいて再試行してください。",
@@ -97,13 +98,15 @@
   "share": {
     "menu_title": "シェア",
     "title": "計算結果を共有",
+    "format_image": "画像",
     "format_text": "テキスト",
     "format_json": "JSON",
     "copy_button": "コピーする",
     "copied": "コピーしました！",
     "share_x": "Xでポスト",
     "not_calculated": "計算してからシェアしてください。",
-    "error_gen_image": "画像の生成に失敗しました。"
+    "error_gen_image": "画像の生成に失敗しました。",
+    "save_image": "画像を保存"
   },
   "skyline_terrain": "地形の仰角",
   "sun_path": "太陽の軌道",

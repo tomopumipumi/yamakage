@@ -58,12 +58,14 @@ interface CalculatorState {
   sunPath: SunPathPoint[];
   radiusMeters: number;
   hoveredAzimuth: number | null;
+  pinnedAzimuth: number | null;
 
   setPosition: (pos: Position) => void;
   setTargetDate: (date: string) => void;
   setTimezone: (tz: string) => void;
   setTurnstileToken: (token: string | null) => void;
   setHoveredAzimuth: (azimuth: number | null) => void;
+  setPinnedAzimuth: (azimuth: number | null) => void;
   calculate: () => Promise<void>;
 }
 
@@ -76,6 +78,7 @@ const RESET_RESULT_STATE = {
   sunPath: [],
   radiusMeters: 0,
   hoveredAzimuth: null,
+  pinnedAzimuth: null,
 };
 
 export const useCalculatorStore = create<CalculatorState>((set, get) => ({
@@ -92,6 +95,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
   sunPath: [],
   radiusMeters: 0,
   hoveredAzimuth: null,
+  pinnedAzimuth: null,
 
   setPosition: (pos) => {
     const detectedTz = detectTimezone(pos.lat, pos.lng);
@@ -117,6 +121,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
 
   setTurnstileToken: (token) => set({ turnstileToken: token }),
   setHoveredAzimuth: (azimuth) => set({ hoveredAzimuth: azimuth }),
+  setPinnedAzimuth: (azimuth) => set({ pinnedAzimuth: azimuth }),
 
   calculate: async () => {
     const { position, targetDate, timezone, turnstileToken } = get();
