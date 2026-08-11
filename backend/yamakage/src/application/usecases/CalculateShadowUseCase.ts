@@ -55,21 +55,20 @@ export const createCalculateShadowUseCase = ({
       return { isPolar: true, sunsetResult: null, sunriseResult: null };
     }
 
-
     // Generate sampling points for the terrain profile
     const t0 = performance.now();
     const fullPanorama = TerrainSamplingEngine.generateFullPanorama(lat, lng, stepDeg);
     const allSamplingPoints = [{ lat, lng, distance: 0 }, ...fullPanorama.flatMap((p) => p.points)];
     const t1 = performance.now();
-    logger.debug(`[Perf: CPU] 1. Sampling points generated in ${(t1 - t0).toFixed(2)}ms`, { totalPoints: allSamplingPoints.length });
-
+    logger.debug(`[Perf: CPU] 1. Sampling points generated in ${(t1 - t0).toFixed(2)}ms`, {
+      totalPoints: allSamplingPoints.length,
+    });
 
     // Fetch elevation data for all sampling points
     const t2 = performance.now();
     const elevationsMap = await elevationRepository.getElevations(allSamplingPoints);
     const t3 = performance.now();
     logger.debug(`[Perf: I/O] 2. Elevation data fetched in ${(t3 - t2).toFixed(2)}ms`);
-
 
     // Build azimuth profiles from the fetched elevation data
     const t4 = performance.now();
@@ -81,7 +80,6 @@ export const createCalculateShadowUseCase = ({
     );
     const t5 = performance.now();
     logger.debug(`[Perf: CPU] 3. Azimuth profiles built in ${(t5 - t4).toFixed(2)}ms`);
-
 
     // Calculate true sunset and sunrise times based on the azimuth profiles
     const t6 = performance.now();
@@ -99,7 +97,6 @@ export const createCalculateShadowUseCase = ({
     );
     const t7 = performance.now();
     logger.debug(`[Perf: CPU] 4. Shadow crossing calculated in ${(t7 - t6).toFixed(2)}ms`);
-
 
     // Calculate the sun's path for visualization purposes
     const t8 = performance.now();
@@ -124,12 +121,14 @@ export const createCalculateShadowUseCase = ({
     const t9 = performance.now();
     logger.debug(`[Perf: CPU] 5. Sun path calculated in ${(t9 - t8).toFixed(2)}ms`);
 
-
     const totalEnd = performance.now();
-    logger.info(`Shadow calculation completed successfully. Total Time: ${(totalEnd - totalStart).toFixed(2)}ms`, {
-      minutesToSunsetShadow: sunsetResult.minutesToShadow,
-      minutesToSunriseShadow: sunriseResult.minutesToSunrise,
-    });
+    logger.info(
+      `Shadow calculation completed successfully. Total Time: ${(totalEnd - totalStart).toFixed(2)}ms`,
+      {
+        minutesToSunsetShadow: sunsetResult.minutesToShadow,
+        minutesToSunriseShadow: sunriseResult.minutesToSunrise,
+      },
+    );
 
     return {
       isPolar: false,

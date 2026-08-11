@@ -2,21 +2,34 @@ import type { SamplingPoint } from '../models/types';
 
 const EARTH_RADIUS_M = 6371e3;
 
-const generateLinePoints = (
-  startLat: number,
-  startLng: number,
-  azimuthDeg: number,
-  intervalMeters: number = 100,
-  maxDistanceMeters: number = 10000,
-): SamplingPoint[] => {
+interface GenerateLinePointsContext {
+  startLat: number;
+  startLng: number;
+  azimuthDeg: number;
+  startDistanceMeters: number;
+  maxDistanceMeters: number;
+  intervalMeters: number;
+}
+
+const generateLinePoints = ({
+  startLat,
+  startLng,
+  azimuthDeg,
+  startDistanceMeters,
+  maxDistanceMeters,
+  intervalMeters,
+}: GenerateLinePointsContext): SamplingPoint[] => {
   const startLatRad = startLat * (Math.PI / 180);
   const startLngRad = startLng * (Math.PI / 180);
   const azimuthRad = azimuthDeg * (Math.PI / 180);
 
-  const numSteps = Math.floor(maxDistanceMeters / intervalMeters);
+  const points: SamplingPoint[] = [];
 
-  return Array.from({ length: numSteps }, (_, index) => {
-    const distance = (index + 1) * intervalMeters;
+  for (
+    let distance = startDistanceMeters;
+    distance <= maxDistanceMeters;
+    distance += intervalMeters
+  ) {
     const angularDistance = distance / EARTH_RADIUS_M;
 
     const latRad = Math.asin(
@@ -31,12 +44,14 @@ const generateLinePoints = (
         Math.cos(angularDistance) - Math.sin(startLatRad) * Math.sin(latRad),
       );
 
-    return {
+    points.push({
       lat: latRad * (180 / Math.PI),
       lng: lngRad * (180 / Math.PI),
       distance,
-    };
-  });
+    });
+  }
+
+  return points;
 };
 
 export interface TerrainProfile {
@@ -56,19 +71,42 @@ export const TerrainSamplingEngine = {
       const az = index * stepDeg;
 
       const points: SamplingPoint[] = [
-        // 0-500m: 100m interval (5 points)
-        ...generateLinePoints(startLat, startLng, az, 100, 500),
+        ...generateLinePoints({
+          startLat: startLat,
+          startLng: startLng,
+          azimuthDeg: az,
+          startDistanceMeters: 50,
+          maxDistanceMeters: 1000,
+          intervalMeters: 50,
+        }),
 
-        // 500-2km: 300m interval (5 points)
-        ...generateLinePoints(startLat, startLng, az, 300, 2000).filter((p) => p.distance > 500),
+        ...generateLinePoints({
+          startLat: startLat,
+          startLng: startLng,
+          azimuthDeg: az,
+          startDistanceMeters: 1100,
+          maxDistanceMeters: 5000,
+          intervalMeters: 100,
+        }),
 
-        // 2-10km: 2000m interval (4 points)
-        ...generateLinePoints(startLat, startLng, az, 2000, 10000).filter((p) => p.distance > 2000),
+        ...generateLinePoints({
+          startLat: startLat,
+          startLng: startLng,
+          azimuthDeg: az,
+          startDistanceMeters: 5250,
+          maxDistanceMeters: 15000,
+          intervalMeters: 250,
+        }),
 
-        // 10-20km: 5000m interval (4 points)
-        ...generateLinePoints(startLat, startLng, az, 5000, 20000).filter(
-          (p) => p.distance > 10000,
-        ),
+        ...generateLinePoints({
+          startLat: startLat,
+          startLng: startLng,
+          azimuthDeg: az,
+          startDistanceMeters: 15500,
+          maxDistanceMeters: 30000,
+          intervalMeters: 500,
+        }),
+
       ];
 
       return { azimuth: az, points };
