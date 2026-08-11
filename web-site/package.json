@@ -4,13 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "deploy": "npx wrangler pages deploy dist",
     "dev": "vite",
     "build": "tsc && vite build",
+    "deploy": "npx wrangler pages deploy dist",
     "test": "vitest",
+    "test:ci": "vitest run",
     "fmt": "biome format --write .",
     "lint": "biome lint .",
-    "fix": "biome check --write ."
+    "fix": "biome check --write .",
+    "lint:ci": "biome ci .",
+    "typecheck": "tsc --noEmit",
+    "ci": "pnpm run lint:ci && pnpm run typecheck && pnpm run test:ci"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.5.5",
@@ -24,6 +28,7 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-i18next": "^17.0.11",
+    "react-icons": "^5.7.0",
     "react-leaflet": "^5.0.0",
     "recharts": "^3.10.1",
     "tz-lookup": "^6.1.25",
@@ -45,6 +50,6 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
-    "vitest": "^4.1.10"
+    "vitest": "~3.2.0"
   }
 }

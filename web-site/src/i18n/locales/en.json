@@ -62,7 +62,7 @@
       },
       "2": {
         "title": "2. Terrain Data Retrieval",
-        "desc": "Instantly retrieves elevation data from a public AWS dataset for hundreds of sampling points within a 20km radius, covering 360 degrees (in 15-degree increments) around your location."
+        "desc": "We acquire tens of thousands of elevation data points within a 30km radius in all 360-degree directions from the current location (in 3-degree increments for the Web version and 1-degree increments for the Garmin version) from AWS public datasets."
       },
       "3": {
         "title": "3. Terrain Profile Construction",
@@ -76,6 +76,10 @@
         "title": "5. Result Output",
         "desc": "Finally, the 'true sunset' and 'true sunrise' times—when the sun actually hides behind or emerges from the physical terrain—are determined and displayed."
       }
+    },
+    "link": {
+      "title": "This is an open-source project. \nYou can view the repository here.",
+      "href": "https://github.com/tomopumipumi/yamakage"
     }
   },
   "smartwatch": {

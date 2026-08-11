@@ -19,15 +19,15 @@ function detectTimezone(lat: number, lng: number): string {
 
 function getInitialParams() {
   if (typeof window === 'undefined') {
-    return { lat: 35.3606, lng: 138.7274, tz: 'Asia/Tokyo' };
+    return { lat: 35.3628, lng: 138.7308, tz: 'Asia/Tokyo' };
   }
 
   const urlParams = new URLSearchParams(window.location.search);
   const latStr = urlParams.get('lat');
   const lngStr = urlParams.get('lng');
 
-  const lat = latStr && !Number.isNaN(parseFloat(latStr)) ? parseFloat(latStr) : 35.3606;
-  const lng = lngStr && !Number.isNaN(parseFloat(lngStr)) ? parseFloat(lngStr) : 138.7274;
+  const lat = latStr && !Number.isNaN(parseFloat(latStr)) ? parseFloat(latStr) : 35.3628;
+  const lng = lngStr && !Number.isNaN(parseFloat(lngStr)) ? parseFloat(lngStr) : 138.7308;
 
   const tz = urlParams.get('tz') || detectTimezone(lat, lng);
 
