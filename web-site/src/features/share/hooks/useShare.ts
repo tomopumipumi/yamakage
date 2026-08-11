@@ -30,8 +30,10 @@ export const useShare = () => {
     azimuthProfiles,
     sunPath,
     hoveredAzimuth,
+    pinnedAzimuth,
     radiusMeters,
   } = useCalculatorStore();
+
   const currentLayer = useMapStore((state) => state.currentLayer);
   const zoom = useMapStore((state) => state.zoom);
 
@@ -42,14 +44,16 @@ export const useShare = () => {
 
   const mergedData = useSkylineData(azimuthProfiles, sunPath);
 
+  const activeAzimuth = pinnedAzimuth !== null ? pinnedAzimuth : hoveredAzimuth;
+
   const sectorPositions = useMemo(() => {
-    if (!position || hoveredAzimuth === null) return null;
+    if (!position || activeAzimuth === null) return null;
     let spreadDeg = 7.5;
     if (azimuthProfiles && azimuthProfiles.length >= 2) {
       spreadDeg = Math.abs(azimuthProfiles[1].azimuthDeg - azimuthProfiles[0].azimuthDeg) / 2;
     }
-    return createSectorPoints(position.lat, position.lng, hoveredAzimuth, radiusMeters, spreadDeg);
-  }, [position, hoveredAzimuth, azimuthProfiles, radiusMeters]);
+    return createSectorPoints(position.lat, position.lng, activeAzimuth, radiusMeters, spreadDeg);
+  }, [position, activeAzimuth, azimuthProfiles, radiusMeters]);
 
   const cardProps = position
     ? {
@@ -63,6 +67,7 @@ export const useShare = () => {
         currentLayer,
         zoom,
         sectorPositions,
+        pinnedAzimuth,
         t,
         formatTime,
       }
@@ -86,12 +91,21 @@ export const useShare = () => {
     const formattedTargetDate = format(new Date(targetDate), 'yyyy/MM/dd');
 
     if (activeFormat === 'text') {
-      return `⛰️ YAMAKAGE - ${t('app_subtitle')}\n\n📅 ${t('target_date')}: ${formattedTargetDate}\n📍 ${t('position_format', { lat: position.lat.toFixed(4), lon: position.lng.toFixed(4) })}\n🕒 ${t('timezone')}: ${timezone}\n🌅 ${t('sunrise_label')}: ${formatTime(sunriseTime, timezone)}\n🌇 ${t('sunset_label')}: ${formatTime(sunsetTime, timezone)}\n\n🔗 ${shareUrl}`;
+      return `⛰️ YAMAKAGE - ${t('app_subtitle')}
+
+📅 ${t('target_date')}: ${formattedTargetDate}
+📍 ${t('position_format', { lat: position.lat.toFixed(4), lon: position.lng.toFixed(4) })}
+🕒 ${t('timezone')}: ${timezone}
+
+🌅 ${t('sunrise_label')}: ${formatTime(sunriseTime, timezone)}
+🌇 ${t('sunset_label')}: ${formatTime(sunsetTime, timezone)}
+
+🔗 ${shareUrl}`;
     }
     if (activeFormat === 'json') {
       return JSON.stringify(
         {
-          app: t('app_title'),
+          app: 'YAMAKAGE',
           targetDate: formattedTargetDate,
           coordinates: {
             lat: Number(position.lat.toFixed(4)),
@@ -145,7 +159,7 @@ export const useShare = () => {
 
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({
-          title: t('app_title'),
+          title: 'YAMAKAGE',
           text: t('app_subtitle'),
           files: [file],
         });
@@ -159,7 +173,7 @@ export const useShare = () => {
       }
     } catch (error) {
       console.error('Image generation failed', error);
-      alert(t('error_gen_image'));
+      alert(t('error_calculation_failed'));
     } finally {
       setIsGenerating(false);
     }

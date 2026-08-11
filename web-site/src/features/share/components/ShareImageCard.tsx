@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { Calendar, Globe, MapPin, Sunrise, Sunset } from 'lucide-react';
 import type React from 'react';
 import { MapContainer, Marker, Polygon, TileLayer } from 'react-leaflet';
-import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
+import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, XAxis, YAxis } from 'recharts';
 
 import iconUrl from '../../../assets/icon.svg';
 import type { SkylineChartPoint } from '../../calculator/hooks/useSkylineData';
@@ -43,6 +43,7 @@ export interface ShareImageCardProps {
   currentLayer: MapLayerOption;
   zoom: number;
   sectorPositions: { lat: number; lng: number }[] | null;
+  pinnedAzimuth: number | null;
   t: TFunction;
   formatTime: (timestamp: number | null, tz: string) => string;
 }
@@ -58,6 +59,7 @@ export const ShareImageCard: React.FC<ShareImageCardProps> = ({
   currentLayer,
   zoom,
   sectorPositions,
+  pinnedAzimuth,
   t,
   formatTime,
 }) => {
@@ -162,6 +164,14 @@ export const ShareImageCard: React.FC<ShareImageCardProps> = ({
               <div className="w-4 h-1.5 bg-orange-500 rounded-full" />
               {t('sun_path')}
             </div>
+            {pinnedAzimuth !== null && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-0.5 h-3 bg-yellow-500" />
+                <span className="text-yellow-500 font-bold">
+                  {t('pinned_azimuth')}: {pinnedAzimuth.toFixed(1)}°
+                </span>
+              </div>
+            )}
           </div>
 
           <ComposedChart
@@ -187,6 +197,7 @@ export const ShareImageCard: React.FC<ShareImageCardProps> = ({
               }}
             />
             <YAxis stroke="#64748b" tick={{ fontSize: 12 }} />
+
             <Area
               type="monotone"
               dataKey="terrain"
@@ -204,6 +215,22 @@ export const ShareImageCard: React.FC<ShareImageCardProps> = ({
               connectNulls
               isAnimationActive={false}
             />
+
+            {pinnedAzimuth !== null && (
+              <ReferenceLine
+                x={pinnedAzimuth}
+                stroke="#eab308"
+                strokeWidth={2}
+                strokeDasharray="3 3"
+                label={{
+                  position: 'insideTopLeft',
+                  value: `${pinnedAzimuth.toFixed(1)}°`,
+                  fill: '#eab308',
+                  fontSize: 14,
+                  fontWeight: 'bold',
+                }}
+              />
+            )}
           </ComposedChart>
         </div>
       </div>
