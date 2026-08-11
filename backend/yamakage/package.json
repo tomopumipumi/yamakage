@@ -3,14 +3,23 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"deploy": "npx wrangler deploy",
 		"dev": "wrangler dev",
 		"dev:ui": "concurrently \"pnpm dev\" \"wait-on http-get://localhost:8787/ && start http://localhost:8787/ui\"",
-		"test": "vitest",
+		"deploy": "npx wrangler deploy",
 		"cf-typegen": "wrangler types",
+
+		"test": "vitest",
+		"test:ci": "vitest run",
+
 		"fmt": "biome format --write .",
 		"lint": "biome lint .",
 		"fix": "biome check --write .",
+
+		"lint:ci": "biome ci .",
+		"typecheck": "tsc --noEmit",
+
+		"ci": "pnpm run lint:ci && pnpm run typecheck && pnpm run test:ci",
+
 		"r2:create": "npx wrangler r2 bucket create yamakage-terrain-tiles",
 		"register:apikey": "npx wrangler secret put YAMAKAGE_API_KEY",
 		"register:turnstile-key": "npx wrangler secret put TURNSTILE_SECRET_KEY"
