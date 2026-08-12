@@ -15,8 +15,8 @@ describe('TerrainProfileEngine', () => {
     ];
 
     const elevationsMap = new Map<string, number>();
-    elevationsMap.set(`${Math.round(lat * 1000)}_${Math.round(lng * 1000)}`, 100);
-    elevationsMap.set(`${Math.round(34.82 * 1000)}_${Math.round(135.534 * 1000)}`, 500);
+    elevationsMap.set(`${Math.round(lat * 100000)}_${Math.round(lng * 100000)}`, 100);
+    elevationsMap.set(`${Math.round(34.82 * 100000)}_${Math.round(135.534 * 100000)}`, 500);
 
     const result = TerrainProfileEngine.buildAzimuthProfiles(lat, lng, panorama, elevationsMap);
 
@@ -40,9 +40,9 @@ describe('TerrainProfileEngine', () => {
     ];
 
     const elevationsMap = new Map<string, number>();
-    elevationsMap.set(`${Math.round(lat * 1000)}_${Math.round(lng * 1000)}`, 100);
+    elevationsMap.set(`${Math.round(lat * 100000)}_${Math.round(lng * 100000)}`, 100);
     // Assume data for 34.82 is missing (undefined)
-    elevationsMap.set(`${Math.round(34.83 * 1000)}_${Math.round(135.534 * 1000)}`, 500);
+    elevationsMap.set(`${Math.round(34.83 * 100000)}_${Math.round(135.534 * 100000)}`, 500);
 
     const result = TerrainProfileEngine.buildAzimuthProfiles(lat, lng, panorama, elevationsMap);
 
@@ -65,9 +65,9 @@ describe('TerrainProfileEngine', () => {
     ];
 
     const elevationsMap = new Map<string, number>();
-    elevationsMap.set(`${Math.round(lat * 1000)}_${Math.round(lng * 1000)}`, 100);
-    elevationsMap.set(`${Math.round(34.815 * 1000)}_${Math.round(135.534 * 1000)}`, 150); // Elevation angle approx. 2.8 degrees
-    elevationsMap.set(`${Math.round(34.85 * 1000)}_${Math.round(135.534 * 1000)}`, 2000); // Elevation angle approx. 21 degrees
+    elevationsMap.set(`${Math.round(lat * 100000)}_${Math.round(lng * 100000)}`, 100);
+    elevationsMap.set(`${Math.round(34.815 * 100000)}_${Math.round(135.534 * 100000)}`, 150); // Elevation angle approx. 2.8 degrees
+    elevationsMap.set(`${Math.round(34.85 * 100000)}_${Math.round(135.534 * 100000)}`, 2000); // Elevation angle approx. 21 degrees
 
     const result = TerrainProfileEngine.buildAzimuthProfiles(lat, lng, panorama, elevationsMap);
 
@@ -86,8 +86,8 @@ describe('TerrainProfileEngine', () => {
     ];
 
     const elevationsMap = new Map<string, number>();
-    elevationsMap.set(`${Math.round(lat * 1000)}_${Math.round(lng * 1000)}`, 3000); // Located at the peak
-    elevationsMap.set(`${Math.round(34.82 * 1000)}_${Math.round(135.534 * 1000)}`, 1000); // Surrounding terrain is lower
+    elevationsMap.set(`${Math.round(lat * 100000)}_${Math.round(lng * 100000)}`, 3000); // Located at the peak
+    elevationsMap.set(`${Math.round(34.82 * 100000)}_${Math.round(135.534 * 100000)}`, 1000); // Surrounding terrain is lower
 
     const result = TerrainProfileEngine.buildAzimuthProfiles(lat, lng, panorama, elevationsMap);
 
