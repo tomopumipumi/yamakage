@@ -7,7 +7,7 @@ export const TerrainProfileEngine = {
     panorama: { azimuth: number; points: SamplingPoint[] }[],
     elevationsMap: Map<string, number>,
   ): TerrainAzimuthProfile[] => {
-    const getIntCoordinate = (coord: number) => Math.round(coord * 1000);
+    const getIntCoordinate = (coord: number) => Math.round(coord * 100000);
     const currentAltitude =
       elevationsMap.get(`${getIntCoordinate(currentLat)}_${getIntCoordinate(currentLng)}`) || 0;
 
