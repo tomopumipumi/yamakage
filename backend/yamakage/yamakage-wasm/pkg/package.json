@@ -1,0 +1,15 @@
+{
+  "name": "yamakage-wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "yamakage_wasm_bg.wasm",
+    "yamakage_wasm.js",
+    "yamakage_wasm.d.ts"
+  ],
+  "main": "yamakage_wasm.js",
+  "types": "yamakage_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

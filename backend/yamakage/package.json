@@ -18,6 +18,8 @@
 		"lint:ci": "biome ci .",
 		"typecheck": "tsc --noEmit",
 
+		"build:wasm": "cd yamakage-wasm && wasm-pack build --target web && node -e \"require('fs').rmSync('pkg/.gitignore', { force: true })\"",
+
 		"ci": "pnpm run lint:ci && pnpm run typecheck && pnpm run test:ci",
 
 		"r2:create": "npx wrangler r2 bucket create yamakage-terrain-tiles",

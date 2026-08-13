@@ -25,20 +25,6 @@ jobs:
           node-version: '24'
           cache: 'pnpm'
 
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-
-      - name: Install wasm-pack
-        uses: jetli/wasm-pack-action@v0.4.0
-        with:
-          version: 'latest'
-
-      - name: Build WASM module
-        working-directory: backend/yamakage/yamakage-wasm
-        run: wasm-pack build --target web
-
       - name: Install dependencies
         run: |
           pnpm install --frozen-lockfile
