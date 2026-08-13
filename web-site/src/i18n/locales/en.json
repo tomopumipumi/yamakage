@@ -79,6 +79,21 @@
         "desc": "Finally, the 'true sunset' and 'true sunrise' times—when the sun actually hides behind or emerges from the physical terrain—are determined and displayed."
       }
     },
+    "notes_title": "Limitations & Disclaimers",
+    "notes": {
+      "altitude": {
+        "title": "Regarding Altitude Data",
+        "desc": "Currently, calculations are based on ground elevation data, not the actual altitude from your device. Significant errors may occur if you are on a tall building, bridge, or other elevated structures. (Integration with device altitude is planned for a future update.)"
+      },
+      "reclaimed_land": {
+        "title": "Reclaimed Land & Sea Areas",
+        "desc": "Due to the resolution and update frequency of the terrain dataset, artificial islands or recently reclaimed lands might cause terrain pins to appear slightly offshore. This generally has a minimal impact on the actual sunrise and sunset times."
+      },
+      "flatland_pins": {
+        "title": "Pins in Flatlands or Towards the Sea",
+        "desc": "In flat areas or looking towards the ocean, the terrain pin may appear just a few dozen meters away. Because the Earth is round, the distant horizon actually dips 'below' your eye level. As a result, tiny bumps or data noise right next to you can be mathematically calculated as the 'highest' angle. This simply indicates an unobstructed view and does not significantly affect the calculation times."
+      }
+    },
     "link": {
       "title": "This is an open-source project. \nYou can view the repository here.",
       "href": "https://github.com/tomopumipumi/yamakage"

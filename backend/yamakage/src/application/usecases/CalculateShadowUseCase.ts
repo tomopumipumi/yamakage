@@ -1,14 +1,7 @@
-import * as SunCalc from 'suncalc';
-import { ShadowCalculationEngine } from '../../domain/engines/ShadowCalculationEngine';
-import { SunPositionEngine } from '../../domain/engines/SunPositionEngine';
-import { TerrainProfileEngine } from '../../domain/engines/TerrainProfileEngine';
-import { TerrainSamplingEngine } from '../../domain/engines/TerrainSamplingEngine';
-import type {
-  ShadowCalculationResult,
-  SunriseCalculationResult,
-  TerrainAzimuthProfile,
-} from '../../domain/models/types';
-import type { ElevationRepository } from '../../domain/repositories/ElevationRepository';
+import init, { type InitOutput, ShadowEngine } from '../../../yamakage-wasm/pkg/yamakage_wasm';
+import wasmModule from '../../../yamakage-wasm/pkg/yamakage_wasm_bg.wasm';
+
+import type { ElevationRepository } from '../../application/interfaces/ElevationRepository';
 import type { Logger } from '../interfaces/Logger';
 
 interface CalculateShadowUseCaseProps {
@@ -21,122 +14,87 @@ interface executeContext {
   lng: number;
   targetTime: Date;
   stepDeg: number;
+  quality?: 0 | 1 | 2;
 }
 
-interface CalculateShadowExecuter {
-  executeAsync: ({ lat, lng, targetTime, stepDeg }: executeContext) => Promise<ShadowExecuteResult>;
-}
-
-interface ShadowExecuteResult {
-  isPolar: boolean;
-  sunsetResult: ShadowCalculationResult | null;
-  sunriseResult: SunriseCalculationResult | null;
-  azimuthProfiles?: TerrainAzimuthProfile[];
-  sunPath?: { time: number; azimuth: number; altitude: number }[];
-}
+let wasmInstance: InitOutput | null = null;
 
 export const createCalculateShadowUseCase = ({
   elevationRepository,
   logger,
-}: CalculateShadowUseCaseProps): CalculateShadowExecuter => {
-  const executeAsync = async ({
-    lat,
-    lng,
-    targetTime,
-    stepDeg,
-  }: executeContext): Promise<ShadowExecuteResult> => {
-    logger.debug('Starting Shadow Calculation', { lat, lng, targetTime: targetTime.toISOString() });
+}: CalculateShadowUseCaseProps) => {
+  const executeAsync = async ({ lat, lng, targetTime, stepDeg, quality = 1 }: executeContext) => {
+    logger.debug('Starting Wasm Shadow Calculation', { lat, lng, quality });
     const totalStart = performance.now();
 
-    const times = SunCalc.getTimes(targetTime, lat, lng);
-    const isPolar = !times.sunset || !times.sunrise;
-    if (isPolar) {
-      logger.info('Detected polar day/night. Calculation skipped.', { lat, lng });
-      return { isPolar: true, sunsetResult: null, sunriseResult: null };
-    }
+    if (!wasmInstance) wasmInstance = await init(wasmModule);
 
-    // Generate sampling points for the terrain profile
-    const t0 = performance.now();
-    const fullPanorama = TerrainSamplingEngine.generateFullPanorama(lat, lng, stepDeg);
-    const allSamplingPoints = [{ lat, lng, distance: 0 }, ...fullPanorama.flatMap((p) => p.points)];
-    const t1 = performance.now();
-    logger.debug(`[Perf: CPU] 1. Sampling points generated in ${(t1 - t0).toFixed(2)}ms`, {
-      totalPoints: allSamplingPoints.length,
-    });
+    const engine = new ShadowEngine();
 
-    // Fetch elevation data for all sampling points
-    const t2 = performance.now();
-    const elevationsMap = await elevationRepository.getElevations(allSamplingPoints);
-    const t3 = performance.now();
-    logger.debug(`[Perf: I/O] 2. Elevation data fetched in ${(t3 - t2).toFixed(2)}ms`);
+    try {
+      const t0 = performance.now();
+      const pointCount = engine.generate_sampling_points(lat, lng, stepDeg, quality);
+      const t1 = performance.now();
+      logger.debug(`[Perf: Wasm CPU] Generated ${pointCount} points in ${(t1 - t0).toFixed(2)}ms`);
 
-    // Build azimuth profiles from the fetched elevation data
-    const t4 = performance.now();
-    const fullAzimuthProfiles = TerrainProfileEngine.buildAzimuthProfiles(
-      lat,
-      lng,
-      fullPanorama,
-      elevationsMap,
-    );
-    const t5 = performance.now();
-    logger.debug(`[Perf: CPU] 3. Azimuth profiles built in ${(t5 - t4).toFixed(2)}ms`);
+      const lats = new Float64Array(wasmInstance.memory.buffer, engine.get_lats_ptr(), pointCount);
+      const lngs = new Float64Array(wasmInstance.memory.buffer, engine.get_lngs_ptr(), pointCount);
 
-    // Calculate true sunset and sunrise times based on the azimuth profiles
-    const t6 = performance.now();
-    const sunsetResult = ShadowCalculationEngine.calculateTrueSunset(
-      lat,
-      lng,
-      targetTime,
-      fullAzimuthProfiles,
-    );
-    const sunriseResult = ShadowCalculationEngine.calculateTrueSunrise(
-      lat,
-      lng,
-      targetTime,
-      fullAzimuthProfiles,
-    );
-    const t7 = performance.now();
-    logger.debug(`[Perf: CPU] 4. Shadow crossing calculated in ${(t7 - t6).toFixed(2)}ms`);
-
-    // Calculate the sun's path for visualization purposes
-    const t8 = performance.now();
-    const sunPath: { time: number; azimuth: number; altitude: number }[] = [];
-    const baseTime = targetTime.getTime();
-    // Loop from -720 minutes (-12 hours) to +720 minutes (+12 hours)
-    for (let i = -72; i <= 72; i++) {
-      const t = new Date(baseTime + i * 10 * 60000); // 10-minute intervals
-
-      const pos = SunPositionEngine.getPosition(t, lat, lng);
-
-      // Extract points where the sun is above -15 degrees,
-      // as lower positions are not needed for chart rendering.
-      if (pos.altitudeDeg > -15) {
-        sunPath.push({
-          time: Math.floor(t.getTime() / 1000),
-          azimuth: pos.azimuthDeg,
-          altitude: pos.altitudeDeg,
-        });
+      const allSamplingPoints = [{ lat, lng, distance: 0 }];
+      for (let i = 0; i < pointCount; i++) {
+        allSamplingPoints.push({ lat: lats[i], lng: lngs[i], distance: 0 });
       }
+
+      const t2 = performance.now();
+      const elevationsMap = await elevationRepository.getElevations(allSamplingPoints);
+      const t3 = performance.now();
+      logger.debug(`[Perf: TS I/O] Fetched elevation data in ${(t3 - t2).toFixed(2)}ms`);
+
+      const getIntCoord = (c: number) => Math.round(c * 1000000);
+      const currentAltitude = elevationsMap.get(`${getIntCoord(lat)}_${getIntCoord(lng)}`) || 0;
+
+      const elevations = new Float64Array(
+        wasmInstance.memory.buffer,
+        engine.get_elevations_ptr(),
+        pointCount,
+      );
+      for (let i = 0; i < pointCount; i++) {
+        const alt = elevationsMap.get(`${getIntCoord(lats[i])}_${getIntCoord(lngs[i])}`) || 0;
+        elevations[i] = alt;
+      }
+
+      const t4 = performance.now();
+      const result = engine.calculate_shadow(lat, lng, targetTime.getTime(), currentAltitude);
+      const t5 = performance.now();
+      logger.debug(`[Perf: Wasm CPU] Shadow calculation finished in ${(t5 - t4).toFixed(2)}ms`);
+
+      const totalEnd = performance.now();
+      logger.info(
+        `Wasm calculation completed successfully. Total: ${(totalEnd - totalStart).toFixed(2)}ms`,
+      );
+
+      return {
+        isPolar: result.isPolar,
+        sunsetResult:
+          result.sunsetTimeUnix > 0
+            ? {
+                minutesToShadow: result.minutesToSunset,
+                shadowTimeUnix: result.sunsetTimeUnix,
+              }
+            : null,
+        sunriseResult:
+          result.sunriseTimeUnix > 0
+            ? {
+                minutesToSunrise: result.minutesToSunrise,
+                sunriseTimeUnix: result.sunriseTimeUnix,
+              }
+            : null,
+        azimuthProfiles: result.azimuthProfiles,
+        sunPath: result.sunPath,
+      };
+    } finally {
+      engine.free();
     }
-    const t9 = performance.now();
-    logger.debug(`[Perf: CPU] 5. Sun path calculated in ${(t9 - t8).toFixed(2)}ms`);
-
-    const totalEnd = performance.now();
-    logger.info(
-      `Shadow calculation completed successfully. Total Time: ${(totalEnd - totalStart).toFixed(2)}ms`,
-      {
-        minutesToSunsetShadow: sunsetResult.minutesToShadow,
-        minutesToSunriseShadow: sunriseResult.minutesToSunrise,
-      },
-    );
-
-    return {
-      isPolar: false,
-      sunsetResult,
-      sunriseResult,
-      azimuthProfiles: fullAzimuthProfiles,
-      sunPath,
-    };
   };
 
   return { executeAsync };

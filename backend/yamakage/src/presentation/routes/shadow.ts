@@ -52,6 +52,7 @@ export const createShadowRouter = (logger: Logger) => {
       lng: lng,
       targetTime: targetTime,
       stepDeg: 1,
+      quality: 2,
     });
 
     if (result.isPolar || !result.sunsetResult || !result.sunriseResult) {

@@ -25,6 +25,16 @@ jobs:
           node-version: '24'
           cache: 'pnpm'
 
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM module
+        working-directory: backend/yamakage/yamakage-wasm
+        run: wasm-pack build --target web
+
       - name: Install dependencies
         run: |
           pnpm install --frozen-lockfile

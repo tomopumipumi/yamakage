@@ -58,6 +58,7 @@ export const createWebShadowRouter = (logger: Logger) => {
       lng: lng,
       targetTime: targetTime,
       stepDeg: 3,
+      quality: 2,
     });
 
     if (result.isPolar || !result.sunsetResult || !result.sunriseResult) {

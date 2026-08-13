@@ -1,7 +1,7 @@
 import { decode } from 'fast-png';
+import type { ElevationRepository } from '../../application/interfaces/ElevationRepository';
 import type { Logger } from '../../application/interfaces/Logger';
-import type { Coordinate } from '../../domain/models/types';
-import type { ElevationRepository } from '../../domain/repositories/ElevationRepository';
+import type { Coordinate } from '../../application/types/calculator';
 import { getTileCoordinates, ZOOM_LEVEL } from '../../utils/tileMath';
 import { fetchTileFromAWS } from '../clients/AwsTerrainClient';
 
@@ -17,7 +17,7 @@ export const createTileElevationRepository = (
   runInBackground: (promise: Promise<void>) => void,
   logger: Logger,
 ): ElevationRepository => {
-  const getIntCoordinate = (coord: number) => Math.round(coord * 1000);
+  const getIntCoordinate = (coord: number) => Math.round(coord * 1000000);
 
   return {
     getElevations: async (points: Coordinate[]): Promise<Map<string, number>> => {

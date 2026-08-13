@@ -9,7 +9,7 @@ import {
   TileLayer,
   useMap,
   useMapEvents,
-} from 'react-leaflet'; // ← Polylineを追加インポート
+} from 'react-leaflet';
 import { useCalculatorStore } from '../../calculator/store/calculatorStore';
 import { useMapStore } from '../store/mapStore';
 import { createSectorPoints } from '../utils/geoUtils';
