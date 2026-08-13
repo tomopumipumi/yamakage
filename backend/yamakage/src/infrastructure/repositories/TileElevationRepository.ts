@@ -17,7 +17,7 @@ export const createTileElevationRepository = (
   runInBackground: (promise: Promise<void>) => void,
   logger: Logger,
 ): ElevationRepository => {
-  const getIntCoordinate = (coord: number) => Math.round(coord * 100000);
+  const getIntCoordinate = (coord: number) => Math.round(coord * 1000000);
 
   return {
     getElevations: async (points: Coordinate[]): Promise<Map<string, number>> => {
