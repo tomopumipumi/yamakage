@@ -21,7 +21,7 @@ fn get_quality_configs(quality: u8) -> &'static [LineConfig] {
     match quality {
         2 => &[
             LineConfig {
-                start_dist: 10.0,
+                start_dist: 100.0,
                 max_dist: 2000.0,
                 interval: 30.0,
             },
@@ -38,7 +38,7 @@ fn get_quality_configs(quality: u8) -> &'static [LineConfig] {
         ],
         1 => &[
             LineConfig {
-                start_dist: 10.0,
+                start_dist: 100.0,
                 max_dist: 1000.0,
                 interval: 30.0,
             },
@@ -60,7 +60,7 @@ fn get_quality_configs(quality: u8) -> &'static [LineConfig] {
         ],
         _ => &[
             LineConfig {
-                start_dist: 10.0,
+                start_dist: 100.0,
                 max_dist: 1000.0,
                 interval: 50.0,
             },
