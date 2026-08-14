@@ -1,5 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import app from '../../index';
+
+beforeAll(() => {
+  vi.spyOn(console, 'debug').mockImplementation(() => {});
+  vi.spyOn(console, 'info').mockImplementation(() => {});
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterAll(() => {
+  vi.restoreAllMocks();
+});
 
 const mockEnv = {
   YAMAKAGE_API_KEY: 'valid-api-key',

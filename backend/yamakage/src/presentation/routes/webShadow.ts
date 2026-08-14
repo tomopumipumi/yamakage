@@ -1,6 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { Logger } from '../../application/interfaces/Logger';
-import { createCalculateShadowUseCase } from '../../application/usecases/CalculateShadowUseCase';
+import { Effect, Exit } from 'effect';
+import { ElevationRepositoryService } from '../../application/interfaces/ElevationRepository';
+import { type Logger, LoggerService } from '../../application/interfaces/Logger';
+import { calculateShadow } from '../../application/usecases/CalculateShadowUseCase';
 import { createTileElevationRepository } from '../../infrastructure/repositories/TileElevationRepository';
 import type { Bindings } from '../../types/env';
 import { createTurnstileAuthMiddleware } from '../middlewares/turnstileAuth';
@@ -30,64 +32,57 @@ export const postWebShadowRoute = {
 
 export const createWebShadowRouter = (logger: Logger) => {
   const router = new OpenAPIHono<{ Bindings: Bindings }>();
-
   router.use('*', createTurnstileAuthMiddleware(logger));
 
   router.openapi(postWebShadowRoute, async (c) => {
     const { lat, lng, time } = c.req.valid('json');
-
     const targetTime = time ? new Date(time < 10000000000 ? time * 1000 : time) : new Date();
 
-    const runInBackground = (promise: Promise<void>) => {
-      c.executionCtx.waitUntil(promise);
-    };
-
+    const runInBackground = (promise: Promise<void>) => c.executionCtx.waitUntil(promise);
     const elevationRepo = createTileElevationRepository(
       c.env.yamakage_terrain_tiles,
       runInBackground,
-      logger,
     );
 
-    const executer = createCalculateShadowUseCase({
-      elevationRepository: elevationRepo,
-      logger: logger,
-    });
+    const program = calculateShadow({ lat, lng, targetTime, stepDeg: 3, quality: 2 }).pipe(
+      Effect.provideService(ElevationRepositoryService, elevationRepo),
+      Effect.provideService(LoggerService, logger),
+    );
 
-    const result = await executer.executeAsync({
-      lat: lat,
-      lng: lng,
-      targetTime: targetTime,
-      stepDeg: 3,
-      quality: 2,
-    });
+    const exit = await Effect.runPromiseExit(program);
 
-    if (result.isPolar || !result.sunsetResult || !result.sunriseResult) {
+    if (Exit.isSuccess(exit)) {
+      const result = exit.value;
+      if (result.isPolar || !result.sunsetResult || !result.sunriseResult) {
+        return c.json(
+          {
+            sunsetTime: null,
+            minutesToSunset: null,
+            sunriseTime: null,
+            minutesToSunrise: null,
+            isPolar: true,
+            radiusMeters: 0,
+          },
+          200,
+        );
+      }
       return c.json(
         {
-          sunsetTime: null,
-          minutesToSunset: null,
-          sunriseTime: null,
-          minutesToSunrise: null,
-          isPolar: true,
-          radiusMeters: 0,
+          sunsetTime: result.sunsetResult.shadowTimeUnix,
+          minutesToSunset: result.sunsetResult.minutesToShadow,
+          sunriseTime: result.sunriseResult.sunriseTimeUnix,
+          minutesToSunrise: result.sunriseResult.minutesToSunrise,
+          isPolar: false,
+          azimuthProfiles: result.azimuthProfiles,
+          sunPath: result.sunPath,
+          radiusMeters: 30000,
         },
         200,
       );
+    } else {
+      logger.error('Web shadow calculation failed', exit.cause);
+      return c.json({ error: 'Internal Server Error' }, 500);
     }
-
-    return c.json(
-      {
-        sunsetTime: result.sunsetResult.shadowTimeUnix,
-        minutesToSunset: result.sunsetResult.minutesToShadow,
-        sunriseTime: result.sunriseResult.sunriseTimeUnix,
-        minutesToSunrise: result.sunriseResult.minutesToSunrise,
-        isPolar: false,
-        azimuthProfiles: result.azimuthProfiles,
-        sunPath: result.sunPath,
-        radiusMeters: 30000,
-      },
-      200,
-    );
   });
 
   return router;
