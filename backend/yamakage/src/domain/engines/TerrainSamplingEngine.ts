@@ -72,39 +72,28 @@ export const TerrainSamplingEngine = {
 
       const points: SamplingPoint[] = [
         ...generateLinePoints({
-          startLat: startLat,
-          startLng: startLng,
+          startLat,
+          startLng,
           azimuthDeg: az,
-          startDistanceMeters: 10,
-          maxDistanceMeters: 1000,
+          startDistanceMeters: 100,
+          maxDistanceMeters: 2000,
           intervalMeters: 30,
         }),
-
         ...generateLinePoints({
-          startLat: startLat,
-          startLng: startLng,
+          startLat,
+          startLng,
           azimuthDeg: az,
-          startDistanceMeters: 1100,
-          maxDistanceMeters: 5000,
-          intervalMeters: 100,
+          startDistanceMeters: 2090,
+          maxDistanceMeters: 10000,
+          intervalMeters: 90,
         }),
-
         ...generateLinePoints({
-          startLat: startLat,
-          startLng: startLng,
+          startLat,
+          startLng,
           azimuthDeg: az,
-          startDistanceMeters: 5100,
-          maxDistanceMeters: 15000,
-          intervalMeters: 250,
-        }),
-
-        ...generateLinePoints({
-          startLat: startLat,
-          startLng: startLng,
-          azimuthDeg: az,
-          startDistanceMeters: 15000,
+          startDistanceMeters: 10200,
           maxDistanceMeters: 30000,
-          intervalMeters: 500,
+          intervalMeters: 200,
         }),
       ];
 

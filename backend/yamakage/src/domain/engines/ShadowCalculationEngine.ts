@@ -5,6 +5,8 @@ import type {
 } from '../models/types';
 import { SunPositionEngine } from './SunPositionEngine';
 
+const SUN_RADIUS_DEG = 0.266;
+
 const getInterpolatedObstacleAngle = (
   azimuthProfiles: TerrainAzimuthProfile[],
   azimuth: number,
@@ -42,23 +44,27 @@ const findSunCrossing = (
   azimuthProfiles: TerrainAzimuthProfile[],
   isCrossing: CrossingCondition,
 ) => {
-  const prevSunPos = SunPositionEngine.getPosition(startTime, lat, lng);
-  let prevAltitude = prevSunPos.altitudeDeg;
-  let prevObstacleAngle = getInterpolatedObstacleAngle(azimuthProfiles, prevSunPos.azimuthDeg);
-
   const startUnix = startTime.getTime();
 
-  for (let i = 1; i <= 2880; i++) {
+  const initialTime = new Date(startUnix - 720 * 60000);
+  const initialSunPos = SunPositionEngine.getPosition(initialTime, lat, lng);
+
+  let prevAltitude = initialSunPos.altitudeDeg + SUN_RADIUS_DEG;
+  let prevObstacleAngle = getInterpolatedObstacleAngle(azimuthProfiles, initialSunPos.azimuthDeg);
+
+  for (let i = -719; i <= 2880; i++) {
     const currentUnix = startUnix + i * 60000;
     const checkTime = new Date(currentUnix);
     const sunPos = SunPositionEngine.getPosition(checkTime, lat, lng);
     const obstacleAngle = getInterpolatedObstacleAngle(azimuthProfiles, sunPos.azimuthDeg);
 
-    if (isCrossing(prevAltitude, prevObstacleAngle, sunPos.altitudeDeg, obstacleAngle)) {
+    const sunTopAlt = sunPos.altitudeDeg + SUN_RADIUS_DEG;
+
+    if (i > 0 && isCrossing(prevAltitude, prevObstacleAngle, sunTopAlt, obstacleAngle)) {
       return { minutes: i, timeUnix: Math.floor(currentUnix / 1000) };
     }
 
-    prevAltitude = sunPos.altitudeDeg;
+    prevAltitude = sunTopAlt;
     prevObstacleAngle = obstacleAngle;
   }
   return { minutes: 0, timeUnix: -1 };
