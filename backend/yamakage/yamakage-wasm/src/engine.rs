@@ -9,6 +9,7 @@ use crate::types::{
 const RAD: f64 = std::f64::consts::PI / 180.0;
 const EARTH_RADIUS: f64 = 6371000.0;
 const REFRACTION_COEFF: f64 = 0.86;
+const SUN_RADIUS_DEG: f64 = 0.266;
 
 struct LineConfig {
     start_dist: f64,
@@ -238,10 +239,13 @@ pub fn simulate_sun_path(
         let sun_pos = get_sun_position(current_ms, ctx.lat, ctx.lng);
         let obs = get_interpolated_angle(profiles, sun_pos.azimuth_deg);
 
+        let sun_top_alt = sun_pos.altitude_deg + SUN_RADIUS_DEG;
+        let prev_sun_top_alt = state.prev_alt + SUN_RADIUS_DEG;
+
         if i > 0
             && state.sunset_time_unix < 0.0
-            && state.prev_alt >= state.prev_obs
-            && sun_pos.altitude_deg < obs
+            && prev_sun_top_alt >= state.prev_obs
+            && sun_top_alt < obs
         {
             state.sunset_minutes = i as f64;
             state.sunset_time_unix = (current_ms / 1000.0).floor();
@@ -249,8 +253,8 @@ pub fn simulate_sun_path(
 
         if i > 0
             && state.sunrise_time_unix < 0.0
-            && state.prev_alt <= state.prev_obs
-            && sun_pos.altitude_deg > obs
+            && prev_sun_top_alt <= state.prev_obs
+            && sun_top_alt > obs
         {
             state.sunrise_minutes = i as f64;
             state.sunrise_time_unix = (current_ms / 1000.0).floor();
