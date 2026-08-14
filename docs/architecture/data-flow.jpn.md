@@ -43,18 +43,19 @@ sequenceDiagram
         Repo->>Repo: PNGをデコードし、RGB値から標高(m)を算出
     end
     
-    Repo-->>Usecase: 座標ごとの標高マップを返却
+    Repo-->>Usecase: 座標ごとの標高マップ(elevationsMap)を返却
     
-    Usecase->>Usecase: 地形断面図と太陽軌道から、真の日没・日の出を計算
+    Usecase->>Usecase: [Wasm] 地形断面図と太陽軌道から真の日没・日の出を計算
     
     Usecase-->>API: 計算結果 (minutesToShadow, shadowTimeUnix, 等)
     
     note left of API: Garminのメモリ制限に対応するため<br>極小の配列フォーマットで返却
     API-->>Garmin: 200 OK: { d: [45, 1718000000, 30, 1718040000] }
+
 ```
 
-
 ## Web版
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -78,10 +79,13 @@ sequenceDiagram
     
     API->>Usecase: 計算処理開始
     
-    note over Usecase: ※標高取得と日没・日の出計算は<br>Garmin版(フロー1)と同一のため省略
+    note over Usecase: ※標高マップの取得とWasmの計算は<br>Garmin版(フロー1)と同一のため省略
     
-    Usecase-->>API: 計算結果 + 太陽軌道データ + 地形断面データ
+    Usecase->>Usecase: [TS] Wasmの計算結果(最高地点の座標)を用いて<br>elevationsMapから標高(m)を抽出・付与
     
-    note left of API: Web画面描画のため、断面グラフや<br>太陽軌道パスを含むリッチなJSONを返す
-    API-->>Web: 200 OK: { sunsetTime: ..., isPolar: ..., azimuthProfiles: [...], sunPath: [...] }
+    Usecase-->>API: 計算結果 + 太陽軌道データ + 地形断面データ + 標高データ(currentAltitude等)
+    
+    note left of API: Web画面描画のため、断面グラフや標高<br>太陽軌道パスを含むリッチなJSONを返す
+    API-->>Web: 200 OK: { sunsetTime: ..., currentAltitude: ..., azimuthProfiles: [...], sunPath: [...] }
+
 ```
