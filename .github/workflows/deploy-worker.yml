@@ -2,10 +2,9 @@ name: Deploy Cloudflare Workers
 
 on:
   push:
-    branches:
-      - main
     paths:
       - 'backend/yamakage/**'
+      - '.github/workflows/deploy-worker.yml'
 
 jobs:
   deploy:
@@ -34,6 +33,7 @@ jobs:
         run: pnpm run ci
 
       - name: Deploy Worker
+        if: github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
