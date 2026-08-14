@@ -2,6 +2,7 @@ export interface TerrainAzimuthProfile {
   azimuthDeg: number;
   maxObstacleAngleDeg: number;
   highestPoint?: { lat: number; lng: number };
+  highestAltitude?: number;
 }
 
 export interface SunPathPoint {
@@ -19,6 +20,7 @@ export interface ShadowResult {
   azimuthProfiles?: TerrainAzimuthProfile[];
   sunPath?: SunPathPoint[];
   radiusMeters: number;
+  currentAltitude: number;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';

@@ -32,6 +32,7 @@ export const useShare = () => {
     hoveredAzimuth,
     pinnedAzimuth,
     radiusMeters,
+    currentAltitude,
   } = useCalculatorStore();
 
   const currentLayer = useMapStore((state) => state.currentLayer);
@@ -87,6 +88,7 @@ export const useShare = () => {
         sectorPositions,
         highestObstaclePoint,
         pinnedAzimuth,
+        currentAltitude,
         t,
         formatTime,
       }

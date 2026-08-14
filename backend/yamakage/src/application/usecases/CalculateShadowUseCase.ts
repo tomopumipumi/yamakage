@@ -5,7 +5,7 @@ import wasmModule from '../../../yamakage-wasm/pkg/yamakage_wasm_bg.wasm';
 import { WasmError } from '../errors';
 import { ElevationRepositoryService } from '../interfaces/ElevationRepository';
 import { LoggerService } from '../interfaces/Logger';
-import type { Coordinate } from '../types/calculator';
+import type { Coordinate, TerrainAzimuthProfile } from '../types/calculator';
 
 interface ExecuteContext {
   lat: number;
@@ -129,7 +129,39 @@ export const calculateShadow = ({ lat, lng, targetTime, stepDeg, quality = 1 }: 
               `[Perf: Wasm CPU] Shadow calculation finished in ${(t5 - t4).toFixed(2)}ms`,
             );
 
-            return res;
+            const getIntCoord = (c: number) => Math.round(c * 1000000);
+
+            const azimuthProfiles: TerrainAzimuthProfile[] = res.azimuthProfiles.map(
+              (p: TerrainAzimuthProfile) => {
+                let highestAltitude = 0;
+                if (p.highestPoint) {
+                  const hLat = getIntCoord(p.highestPoint.lat);
+                  const hLng = getIntCoord(p.highestPoint.lng);
+                  highestAltitude = elevationsMap.get(`${hLat}_${hLng}`) || 0;
+                }
+                return {
+                  azimuthDeg: p.azimuthDeg,
+                  maxObstacleAngleDeg: p.maxObstacleAngleDeg,
+                  highestPoint: p.highestPoint,
+                  highestAltitude,
+                };
+              },
+            );
+
+            return {
+              isPolar: res.isPolar,
+              sunsetResult:
+                res.sunsetTimeUnix > 0
+                  ? { minutesToShadow: res.minutesToSunset, shadowTimeUnix: res.sunsetTimeUnix }
+                  : null,
+              sunriseResult:
+                res.sunriseTimeUnix > 0
+                  ? { minutesToSunrise: res.minutesToSunrise, sunriseTimeUnix: res.sunriseTimeUnix }
+                  : null,
+              azimuthProfiles,
+              sunPath: res.sunPath,
+              currentAltitude,
+            };
           }),
         (engine) => Effect.sync(() => engine.free()),
       ),
@@ -140,17 +172,5 @@ export const calculateShadow = ({ lat, lng, targetTime, stepDeg, quality = 1 }: 
       `Wasm calculation completed successfully. Total: ${(totalEnd - totalStart).toFixed(2)}ms`,
     );
 
-    return {
-      isPolar: result.isPolar,
-      sunsetResult:
-        result.sunsetTimeUnix > 0
-          ? { minutesToShadow: result.minutesToSunset, shadowTimeUnix: result.sunsetTimeUnix }
-          : null,
-      sunriseResult:
-        result.sunriseTimeUnix > 0
-          ? { minutesToSunrise: result.minutesToSunrise, sunriseTimeUnix: result.sunriseTimeUnix }
-          : null,
-      azimuthProfiles: result.azimuthProfiles,
-      sunPath: result.sunPath,
-    };
+    return result;
   });

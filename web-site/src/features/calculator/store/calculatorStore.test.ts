@@ -8,6 +8,7 @@ vi.mock('../api/calculateShadow', () => ({
     isPolar: false,
     azimuthProfiles: [],
     sunPath: [],
+    currentAltitude: 500,
   }),
 }));
 
@@ -69,5 +70,6 @@ describe('calculatorStore', () => {
     expect(state.error).toBeNull();
     expect(state.sunsetTime).toBe(1234567890);
     expect(state.sunriseTime).toBe(1234560000);
+    expect(state.currentAltitude).toBe(500);
   });
 });

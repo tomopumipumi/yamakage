@@ -82,4 +82,47 @@ describe('POST /api/v1/web/shadow', () => {
 
     expect(res.status).toBe(400);
   });
+
+  it('should return 200 and shadow data when valid request is sent', async () => {
+    const fetchMock = vi.fn().mockImplementation(async (url: string | URL | Request) => {
+      const urlStr = url.toString();
+
+      if (urlStr.includes('siteverify')) {
+        return {
+          json: async () => ({ success: true }),
+        };
+      }
+
+      if (urlStr.includes('s3.amazonaws.com')) {
+        return {
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+        };
+      }
+
+      return { ok: true };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await app.request(
+      '/api/v1/web/shadow',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Turnstile-Token': 'valid-token',
+        },
+        body: JSON.stringify({ lat: 35.3606, lng: 138.7274 }),
+      },
+      mockEnv,
+    );
+
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json).toHaveProperty('currentAltitude');
+    expect(json).toHaveProperty('sunsetTime');
+    expect(json).toHaveProperty('sunriseTime');
+  });
 });

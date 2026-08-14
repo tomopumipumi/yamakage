@@ -13,6 +13,7 @@ import {
 import { useCalculatorStore } from '../../calculator/store/calculatorStore';
 import { useMapStore } from '../store/mapStore';
 import { createSectorPoints } from '../utils/geoUtils';
+import { getObstacleColor, getObstacleIcon, getObstacleType } from '../utils/obstacleUtils';
 import { LayerSelecter } from './LayerSelecter';
 
 const MapUpdater: React.FC<{ position: { lat: number; lng: number } | null }> = ({ position }) => {
@@ -48,29 +49,19 @@ const customIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-const obstacleIconHtml = `
-  <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="#ef4444" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-      <circle cx="12" cy="10" r="3" fill="white"/>
-    </svg>
-  </div>
-`;
-
-const obstacleIcon = new L.DivIcon({
-  html: obstacleIconHtml,
-  className: '',
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-});
-
 const PinMarker: React.FC<{ position: { lat: number; lng: number } }> = ({ position }) => {
   return <Marker position={[position.lat, position.lng]} icon={customIcon} />;
 };
 
 export const YamakageMap = () => {
-  const { position, hoveredAzimuth, pinnedAzimuth, azimuthProfiles, radiusMeters } =
-    useCalculatorStore();
+  const {
+    position,
+    hoveredAzimuth,
+    pinnedAzimuth,
+    azimuthProfiles,
+    radiusMeters,
+    currentAltitude,
+  } = useCalculatorStore();
   const currentLayer = useMapStore((state) => state.currentLayer);
   const zoom = useMapStore((state) => state.zoom);
 
@@ -92,7 +83,7 @@ export const YamakageMap = () => {
     return createSectorPoints(position.lat, position.lng, activeAzimuth, radiusMeters, spreadDeg);
   }, [position, activeAzimuth, azimuthProfiles, radiusMeters]);
 
-  const highestObstaclePoint = useMemo(() => {
+  const targetProfile = useMemo(() => {
     if (activeAzimuth === null || !azimuthProfiles || azimuthProfiles.length === 0) return null;
 
     let closestProfile = azimuthProfiles[0];
@@ -107,8 +98,20 @@ export const YamakageMap = () => {
       }
     }
 
-    return closestProfile.highestPoint || null;
+    return closestProfile;
   }, [activeAzimuth, azimuthProfiles]);
+
+  const highestObstaclePoint = targetProfile?.highestPoint || null;
+
+  const targetPoint = targetProfile
+    ? {
+        azimuth: targetProfile.azimuthDeg,
+        terrain: targetProfile.maxObstacleAngleDeg,
+        highestAltitude: targetProfile.highestAltitude,
+      }
+    : undefined;
+
+  const obstacleType = getObstacleType(targetPoint, currentAltitude);
 
   return (
     <div className="relative w-full h-full">
@@ -146,13 +149,17 @@ export const YamakageMap = () => {
               [position.lat, position.lng],
               [highestObstaclePoint.lat, highestObstaclePoint.lng],
             ]}
-            pathOptions={{ color: '#ef4444', dashArray: '5, 5', weight: 2 }}
+            pathOptions={{
+              color: getObstacleColor(obstacleType),
+              dashArray: '5, 5',
+              weight: 2,
+            }}
           />
         )}
         {highestObstaclePoint && (
           <Marker
             position={[highestObstaclePoint.lat, highestObstaclePoint.lng]}
-            icon={obstacleIcon}
+            icon={getObstacleIcon(obstacleType)}
           />
         )}
       </MapContainer>

@@ -19,6 +19,7 @@ export const WebShadowResponseSchema = z
     azimuthProfiles: z.array(z.any()).optional(),
     sunPath: z.array(z.any()).optional(),
     radiusMeters: z.number().optional().describe('Radius of the sun path in meters'),
+    currentAltitude: z.number().describe('Elevation of the current location in meters'),
   })
   .openapi({
     description: 'Rich JSON format for web clients',
@@ -29,5 +30,6 @@ export const WebShadowResponseSchema = z
       minutesToSunrise: 30,
       isPolar: false,
       radiusMeters: 30000,
+      currentAltitude: 50,
     },
   });

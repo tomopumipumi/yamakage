@@ -57,6 +57,7 @@ interface CalculatorState {
   azimuthProfiles: TerrainAzimuthProfile[];
   sunPath: SunPathPoint[];
   radiusMeters: number;
+  currentAltitude: number | null;
   hoveredAzimuth: number | null;
   pinnedAzimuth: number | null;
 
@@ -77,6 +78,7 @@ const RESET_RESULT_STATE = {
   azimuthProfiles: [],
   sunPath: [],
   radiusMeters: 0,
+  currentAltitude: null,
   hoveredAzimuth: null,
   pinnedAzimuth: null,
 };
@@ -94,6 +96,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
   azimuthProfiles: [],
   sunPath: [],
   radiusMeters: 0,
+  currentAltitude: null,
   hoveredAzimuth: null,
   pinnedAzimuth: null,
 
@@ -149,6 +152,7 @@ export const useCalculatorStore = create<CalculatorState>((set, get) => ({
         azimuthProfiles: result.azimuthProfiles || [],
         sunPath: result.sunPath || [],
         radiusMeters: result.radiusMeters,
+        currentAltitude: result.currentAltitude,
         isLoading: false,
       });
     } catch (e) {

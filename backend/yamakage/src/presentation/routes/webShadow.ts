@@ -62,6 +62,7 @@ export const createWebShadowRouter = (logger: Logger) => {
             minutesToSunrise: null,
             isPolar: true,
             radiusMeters: 0,
+            currentAltitude: result.currentAltitude,
           },
           200,
         );
@@ -76,6 +77,7 @@ export const createWebShadowRouter = (logger: Logger) => {
           azimuthProfiles: result.azimuthProfiles,
           sunPath: result.sunPath,
           radiusMeters: 30000,
+          currentAltitude: result.currentAltitude,
         },
         200,
       );

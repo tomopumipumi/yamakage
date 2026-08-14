@@ -5,6 +5,7 @@ export interface SkylineChartPoint {
   azimuth: number;
   sun?: number;
   terrain: number;
+  highestAltitude?: number;
 }
 
 export const useSkylineData = (
@@ -20,6 +21,7 @@ export const useSkylineData = (
       pointMap.set(profile.azimuthDeg, {
         azimuth: profile.azimuthDeg,
         terrain: Math.max(0, profile.maxObstacleAngleDeg),
+        highestAltitude: profile.highestAltitude,
         hasTerrain: true,
       });
     });
