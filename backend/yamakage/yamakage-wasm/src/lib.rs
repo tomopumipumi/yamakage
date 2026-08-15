@@ -1,4 +1,5 @@
 mod arena;
+mod decoder;
 mod engine;
 mod sun_calc;
 mod types;
@@ -7,11 +8,13 @@ use arena::SamplingArena;
 use types::CalculationContext;
 use wasm_bindgen::prelude::*;
 
-use crate::types::EngineError;
-
 #[wasm_bindgen]
 pub struct ShadowEngine {
     arena: SamplingArena,
+    result_buffer: Vec<f64>,
+    io_u8_buffer: Vec<u8>,
+    io_u32_buffer: Vec<u32>,
+    center_elevation: f64,
 }
 
 #[wasm_bindgen]
@@ -20,6 +23,10 @@ impl ShadowEngine {
     pub fn new() -> ShadowEngine {
         ShadowEngine {
             arena: SamplingArena::new(),
+            result_buffer: Vec::with_capacity(2048),
+            io_u8_buffer: Vec::new(),
+            io_u32_buffer: Vec::new(),
+            center_elevation: 0.0,
         }
     }
 
@@ -46,21 +53,56 @@ impl ShadowEngine {
         self.arena.elevations.as_mut_ptr()
     }
 
+    pub fn get_io_u8_ptr(&mut self, size: usize) -> *mut u8 {
+        self.io_u8_buffer.resize(size, 0);
+        self.io_u8_buffer.as_mut_ptr()
+    }
+
+    pub fn get_io_u32_ptr(&mut self, size: usize) -> *mut u32 {
+        self.io_u32_buffer.resize(size, 0);
+        self.io_u32_buffer.as_mut_ptr()
+    }
+
+    pub fn get_center_elevation(&self) -> f64 {
+        self.center_elevation
+    }
+
+    pub fn get_elevation_at(&self, index: usize) -> f64 {
+        self.arena.elevations.get(index).copied().unwrap_or(0.0)
+    }
+
+    pub fn decode_tile_elevations(&mut self, png_size: usize, num_points: usize) -> bool {
+        decoder::decode_and_store_elevations(
+            &self.io_u8_buffer[..png_size],
+            &self.io_u32_buffer[..num_points * 3],
+            num_points,
+            &mut self.arena,
+            &mut self.center_elevation,
+        )
+    }
+
     pub fn calculate_shadow(
-        &self,
+        &mut self,
         lat: f64,
         lng: f64,
         target_time_ms: f64,
         current_altitude: f64,
-    ) -> Result<JsValue, JsError> {
-        let ctx = CalculationContext::try_new(lat, lng, target_time_ms, current_altitude)
-            .map_err(|e| JsError::new(&e.to_string()))?;
+    ) -> *const f64 {
+        self.result_buffer.clear();
+
+        let ctx = match CalculationContext::try_new(lat, lng, target_time_ms, current_altitude) {
+            Ok(c) => c,
+            Err(_) => {
+                self.result_buffer.push(f64::NAN);
+                return self.result_buffer.as_ptr();
+            }
+        };
 
         let profiles = engine::calculate_azimuth_profiles(&self.arena, ctx.eye_level_altitude);
-
         let result = engine::simulate_sun_path(&ctx, &profiles);
 
-        serde_wasm_bindgen::to_value(&result)
-            .map_err(|e| JsError::new(&EngineError::SerializationFailed(e.to_string()).to_string()))
+        result.pack_into_buffer(&mut self.result_buffer);
+
+        self.result_buffer.as_ptr()
     }
 }

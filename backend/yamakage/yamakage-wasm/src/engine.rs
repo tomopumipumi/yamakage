@@ -150,11 +150,12 @@ pub fn calculate_azimuth_profiles(
                     let drop = (dist * dist) / (2.0 * EARTH_RADIUS) * REFRACTION_COEFF;
                     let effective_diff = alt - eye_level_altitude - drop;
                     let angle_deg = effective_diff.atan2(dist) / RAD;
-                    (angle_deg, arena.lats[i], arena.lngs[i])
+                    (angle_deg, arena.lats[i], arena.lngs[i], alt)
                 })
                 .max_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
 
-            let (max_angle, max_lat, max_lng) = max_point.unwrap_or((-0.833, 0.0, 0.0));
+            let (max_angle, max_lat, max_lng, max_alt) =
+                max_point.unwrap_or((-0.833, 0.0, 0.0, 0.0));
             let angle = max_angle.max(-0.833);
 
             TerrainAzimuthProfileWasm {
@@ -168,6 +169,7 @@ pub fn calculate_azimuth_profiles(
                 } else {
                     None
                 },
+                highest_altitude: if angle > -0.833 { max_alt } else { 0.0 },
             }
         })
         .collect()
@@ -316,6 +318,7 @@ mod tests {
         assert_eq!(profiles.len(), 1);
         assert_eq!(profiles[0].azimuth_deg, 90.0);
         assert!(profiles[0].max_obstacle_angle_deg > 0.0);
+        assert!(profiles[0].highest_altitude > 0.0);
     }
 
     #[test]
@@ -325,11 +328,13 @@ mod tests {
                 azimuth_deg: 0.0,
                 max_obstacle_angle_deg: 10.0,
                 highest_point: None,
+                highest_altitude: 0.0,
             },
             TerrainAzimuthProfileWasm {
                 azimuth_deg: 180.0,
                 max_obstacle_angle_deg: 20.0,
                 highest_point: None,
+                highest_altitude: 0.0,
             },
         ];
 

@@ -17,7 +17,10 @@ const mockEnv = {
   RATE_LIMITER: {
     limit: async () => ({ success: true }),
   } as unknown as RateLimit,
-  yamakage_terrain_tiles: {} as R2Bucket,
+  yamakage_terrain_tiles: {
+    get: async () => null,
+    put: async () => {},
+  } as unknown as R2Bucket,
 };
 
 describe('POST /api/v1/web/shadow', () => {

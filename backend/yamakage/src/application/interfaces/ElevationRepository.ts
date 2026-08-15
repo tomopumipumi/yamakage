@@ -3,10 +3,15 @@ import type { ElevationFetchError } from '../errors';
 import type { Coordinate } from '../types/calculator';
 import type { Logger } from './Logger';
 
+export interface TileFetchResult {
+  buffer: ArrayBuffer | null;
+  points: { index: number; px: number; py: number }[];
+}
+
 export interface ElevationRepository {
-  getElevations(
+  fetchTileData(
     points: Coordinate[],
-  ): Effect.Effect<Map<string, number>, ElevationFetchError, Logger>;
+  ): Effect.Effect<TileFetchResult[], ElevationFetchError, Logger>;
 }
 
 export const ElevationRepositoryService = Context.GenericTag<ElevationRepository>(

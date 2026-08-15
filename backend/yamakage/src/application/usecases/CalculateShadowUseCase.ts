@@ -29,60 +29,36 @@ const ensureWasmInitialized = Effect.gen(function* (_) {
   return wasmInstance;
 });
 
-const generatePoints = (
+const decodeTilesInWasm = (
   engine: ShadowEngine,
   wasm: InitOutput,
-  lat: number,
-  lng: number,
-  stepDeg: number,
-  quality: number,
-) =>
-  Effect.gen(function* (_) {
-    const logger = yield* _(LoggerService);
-
-    const t0 = performance.now();
-    const pointCount = engine.generate_sampling_points(lat, lng, stepDeg, quality);
-    const t1 = performance.now();
-
-    logger.debug(`[Perf: Wasm CPU] Generated ${pointCount} points in ${(t1 - t0).toFixed(2)}ms`);
-
-    const lats = new Float64Array(wasm.memory.buffer, engine.get_lats_ptr(), pointCount);
-    const lngs = new Float64Array(wasm.memory.buffer, engine.get_lngs_ptr(), pointCount);
-
-    const samplingPoints: Coordinate[] = [{ lat, lng }];
-    for (let i = 0; i < pointCount; i++) {
-      samplingPoints.push({ lat: lats[i], lng: lngs[i] });
-    }
-
-    return { pointCount, lats, lngs, samplingPoints };
-  });
-
-const writeElevationsToWasm = (
-  engine: ShadowEngine,
-  wasm: InitOutput,
-  pointCount: number,
-  lat: number,
-  lng: number,
-  lats: Float64Array,
-  lngs: Float64Array,
-  elevationsMap: Map<string, number>,
+  tileResults: {
+    buffer: ArrayBuffer | null;
+    points: { index: number; px: number; py: number }[];
+  }[],
 ) =>
   Effect.sync(() => {
-    const getIntCoord = (c: number) => Math.round(c * 1000000);
-    const currentAltitude = elevationsMap.get(`${getIntCoord(lat)}_${getIntCoord(lng)}`) || 0;
+    for (const tile of tileResults) {
+      if (!tile.buffer) continue;
 
-    const elevationsWasmArray = new Float64Array(
-      wasm.memory.buffer,
-      engine.get_elevations_ptr(),
-      pointCount,
-    );
+      const numPoints = tile.points.length;
 
-    for (let i = 0; i < pointCount; i++) {
-      elevationsWasmArray[i] =
-        elevationsMap.get(`${getIntCoord(lats[i])}_${getIntCoord(lngs[i])}`) || 0;
+      const pngSize = tile.buffer.byteLength;
+      const pngPtr = engine.get_io_u8_ptr(pngSize);
+      const wasmU8Array = new Uint8Array(wasm.memory.buffer, pngPtr, pngSize);
+      wasmU8Array.set(new Uint8Array(tile.buffer));
+
+      const pointsPtr = engine.get_io_u32_ptr(numPoints * 3);
+      const wasmU32Array = new Uint32Array(wasm.memory.buffer, pointsPtr, numPoints * 3);
+
+      for (let i = 0; i < numPoints; i++) {
+        wasmU32Array[i * 3] = tile.points[i].index;
+        wasmU32Array[i * 3 + 1] = tile.points[i].px;
+        wasmU32Array[i * 3 + 2] = tile.points[i].py;
+      }
+
+      engine.decode_tile_elevations(pngSize, numPoints);
     }
-
-    return currentAltitude;
   });
 
 export const calculateShadow = ({ lat, lng, targetTime, stepDeg, quality = 1 }: ExecuteContext) =>
@@ -100,66 +76,126 @@ export const calculateShadow = ({ lat, lng, targetTime, stepDeg, quality = 1 }: 
         Effect.sync(() => new ShadowEngine()),
         (engine) =>
           Effect.gen(function* (_) {
-            const { pointCount, lats, lngs, samplingPoints } = yield* _(
-              generatePoints(engine, currentWasm, lat, lng, stepDeg, quality),
+            const t0 = performance.now();
+            const pointCount = engine.generate_sampling_points(lat, lng, stepDeg, quality);
+            const t1 = performance.now();
+            logger.debug(
+              `[Perf: Wasm CPU] Generated ${pointCount} points in ${(t1 - t0).toFixed(2)}ms`,
             );
+
+            const lats = new Float64Array(
+              currentWasm.memory.buffer,
+              engine.get_lats_ptr(),
+              pointCount,
+            );
+            const lngs = new Float64Array(
+              currentWasm.memory.buffer,
+              engine.get_lngs_ptr(),
+              pointCount,
+            );
+
+            const samplingPoints: Coordinate[] = new Array(pointCount + 1);
+            samplingPoints[0] = { lat, lng };
+            for (let i = 0; i < pointCount; i++) {
+              samplingPoints[i + 1] = { lat: lats[i], lng: lngs[i] };
+            }
 
             const t2 = performance.now();
-            const elevationsMap = yield* _(elevationRepo.getElevations(samplingPoints));
+            const tileResults = yield* _(elevationRepo.fetchTileData(samplingPoints));
             const t3 = performance.now();
-            logger.debug(`[Perf: TS I/O] Fetched elevation data in ${(t3 - t2).toFixed(2)}ms`);
+            logger.debug(`[Perf: TS I/O] Fetched tile data in ${(t3 - t2).toFixed(2)}ms`);
 
-            const currentAltitude = yield* _(
-              writeElevationsToWasm(
-                engine,
-                currentWasm,
-                pointCount,
-                lat,
-                lng,
-                lats,
-                lngs,
-                elevationsMap,
-              ),
-            );
-
+            const t3_5 = performance.now();
+            yield* _(decodeTilesInWasm(engine, currentWasm, tileResults));
             const t4 = performance.now();
-            const res = engine.calculate_shadow(lat, lng, targetTime.getTime(), currentAltitude);
+            logger.debug(`[Perf: Wasm CPU] Decoded PNG tiles in ${(t4 - t3_5).toFixed(2)}ms`);
+
+            const currentAltitude = engine.get_center_elevation();
+
+            const resultPtr = engine.calculate_shadow(
+              lat,
+              lng,
+              targetTime.getTime(),
+              currentAltitude,
+            ) as unknown as number;
+
             const t5 = performance.now();
             logger.debug(
               `[Perf: Wasm CPU] Shadow calculation finished in ${(t5 - t4).toFixed(2)}ms`,
             );
 
-            const getIntCoord = (c: number) => Math.round(c * 1000000);
+            const headerArray = new Float64Array(currentWasm.memory.buffer, resultPtr, 8);
+            if (Number.isNaN(headerArray[0])) {
+              return yield* _(
+                Effect.fail(new WasmError('Invalid coordinates or calculation context')),
+              );
+            }
 
-            const azimuthProfiles: TerrainAzimuthProfile[] = res.azimuthProfiles.map(
-              (p: TerrainAzimuthProfile) => {
-                let highestAltitude = 0;
-                if (p.highestPoint) {
-                  const hLat = getIntCoord(p.highestPoint.lat);
-                  const hLng = getIntCoord(p.highestPoint.lng);
-                  highestAltitude = elevationsMap.get(`${hLat}_${hLng}`) || 0;
-                }
-                return {
-                  azimuthDeg: p.azimuthDeg,
-                  maxObstacleAngleDeg: p.maxObstacleAngleDeg,
-                  highestPoint: p.highestPoint,
-                  highestAltitude,
-                };
-              },
+            const isPolar = headerArray[0] === 1.0;
+            const sunsetTimeUnix = headerArray[1];
+            const minutesToSunset = headerArray[2];
+            const sunriseTimeUnix = headerArray[3];
+            const minutesToSunrise = headerArray[4];
+            const numProfiles = headerArray[5];
+            const numSunPath = headerArray[6];
+
+            const profilesOffset = resultPtr + 8 * 8;
+            const profilesArray = new Float64Array(
+              currentWasm.memory.buffer,
+              profilesOffset,
+              numProfiles * 5,
             );
+            const azimuthProfiles: TerrainAzimuthProfile[] = [];
+
+            for (let i = 0; i < numProfiles; i++) {
+              const azimuthDeg = profilesArray[i * 5];
+              const maxObstacleAngleDeg = profilesArray[i * 5 + 1];
+              const hLat = profilesArray[i * 5 + 2];
+              const hLng = profilesArray[i * 5 + 3];
+              const highestAltitude = profilesArray[i * 5 + 4];
+
+              let highestPoint: Coordinate | undefined;
+
+              if (!Number.isNaN(hLat) && !Number.isNaN(hLng)) {
+                highestPoint = { lat: hLat, lng: hLng };
+              }
+
+              azimuthProfiles.push({
+                azimuthDeg,
+                maxObstacleAngleDeg,
+                highestPoint,
+                highestAltitude,
+              });
+            }
+
+            const sunPathOffset = profilesOffset + numProfiles * 5 * 8;
+            const sunPathArray = new Float64Array(
+              currentWasm.memory.buffer,
+              sunPathOffset,
+              numSunPath * 3,
+            );
+            const sunPath: { time: number; azimuth: number; altitude: number }[] = [];
+
+            for (let i = 0; i < numSunPath; i++) {
+              sunPath.push({
+                time: sunPathArray[i * 3],
+                azimuth: sunPathArray[i * 3 + 1],
+                altitude: sunPathArray[i * 3 + 2],
+              });
+            }
 
             return {
-              isPolar: res.isPolar,
+              isPolar,
               sunsetResult:
-                res.sunsetTimeUnix > 0
-                  ? { minutesToShadow: res.minutesToSunset, shadowTimeUnix: res.sunsetTimeUnix }
+                sunsetTimeUnix > 0
+                  ? { minutesToShadow: minutesToSunset, shadowTimeUnix: sunsetTimeUnix }
                   : null,
               sunriseResult:
-                res.sunriseTimeUnix > 0
-                  ? { minutesToSunrise: res.minutesToSunrise, sunriseTimeUnix: res.sunriseTimeUnix }
+                sunriseTimeUnix > 0
+                  ? { minutesToSunrise: minutesToSunrise, sunriseTimeUnix: sunriseTimeUnix }
                   : null,
               azimuthProfiles,
-              sunPath: res.sunPath,
+              sunPath,
               currentAltitude,
             };
           }),

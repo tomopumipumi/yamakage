@@ -1,46 +1,62 @@
 import { Effect, Option } from 'effect';
-import { decode } from 'fast-png';
 import { ElevationFetchError } from '../../application/errors';
-import type { ElevationRepository } from '../../application/interfaces/ElevationRepository';
+import type {
+  ElevationRepository,
+  TileFetchResult,
+} from '../../application/interfaces/ElevationRepository';
 import { type Logger, LoggerService } from '../../application/interfaces/Logger';
 import type { Coordinate } from '../../application/types/calculator';
 import { getTileCoordinates, ZOOM_LEVEL } from '../../utils/tileMath';
 import { fetchTileFromAWS } from '../clients/AwsTerrainClient';
 
+const memoryCache = new Map<string, ArrayBuffer>();
+
 interface TileRequest {
   z: number;
   x: number;
   y: number;
-  points: { key: string; px: number; py: number }[];
+  points: { index: number; px: number; py: number }[];
 }
 
-const getIntCoordinate = (coord: number) => Math.round(coord * 1000000);
+const getTileKey = (lat: number, lng: number, zoom: number) => {
+  const { tileX, tileY, pixelX, pixelY } = getTileCoordinates(lat, lng, zoom);
+  return { tileX, tileY, pixelX, pixelY, tileKey: `${zoom}/${tileX}/${tileY}` };
+};
 
 const groupPointsByTile = (points: Coordinate[]): Map<string, TileRequest> => {
-  return points.reduce((acc, p) => {
-    const key = `${getIntCoordinate(p.lat)}_${getIntCoordinate(p.lng)}`;
-    const { tileX, tileY, pixelX, pixelY } = getTileCoordinates(p.lat, p.lng, ZOOM_LEVEL);
-    const tileKey = `${ZOOM_LEVEL}/${tileX}/${tileY}`;
+  const tileMap = new Map<string, TileRequest>();
 
-    const existing = acc.get(tileKey) ?? { z: ZOOM_LEVEL, x: tileX, y: tileY, points: [] };
+  for (let index = 0; index < points.length; index++) {
+    const p = points[index];
+    const { tileX, tileY, pixelX, pixelY, tileKey } = getTileKey(p.lat, p.lng, ZOOM_LEVEL);
 
-    acc.set(tileKey, {
-      ...existing,
-      points: [...existing.points, { key, px: pixelX, py: pixelY }],
-    });
+    let req = tileMap.get(tileKey);
+    if (!req) {
+      req = { z: ZOOM_LEVEL, x: tileX, y: tileY, points: [] };
+      tileMap.set(tileKey, req);
+    }
 
-    return acc;
-  }, new Map<string, TileRequest>());
+    req.points.push({ index, px: pixelX, py: pixelY });
+  }
+
+  return tileMap;
 };
 
 const fetchFromR2 = (bucket: R2Bucket, tilePath: string) =>
   Effect.gen(function* (_) {
+    if (memoryCache.has(tilePath)) return Option.some(memoryCache.get(tilePath));
+
     const logger = yield* _(LoggerService);
     return yield* _(
       Effect.tryPromise({
         try: async () => {
           const r2Obj = await bucket.get(tilePath);
-          return r2Obj ? await r2Obj.arrayBuffer() : null;
+          if (r2Obj) {
+            const buffer = await r2Obj.arrayBuffer();
+            memoryCache.set(tilePath, buffer);
+            return buffer;
+          }
+          return null;
         },
         catch: (e) => new ElevationFetchError('R2 fetch failed', e),
       }).pipe(
@@ -72,7 +88,7 @@ const fetchFromAWSAndCache = (
     );
 
     if (Option.isSome(awsData)) {
-      const bufferForR2 = awsData.value.slice(0);
+      const bufferForR2 = awsData.value;
       runInBackground(
         (async () => {
           try {
@@ -87,46 +103,14 @@ const fetchFromAWSAndCache = (
     return awsData;
   });
 
-const decodeElevationData = (
-  imgData: ArrayBuffer,
-  points: TileRequest['points'],
-  tilePath: string,
-) =>
-  Effect.gen(function* (_) {
-    const logger = yield* _(LoggerService);
-    return yield* _(
-      Effect.try({
-        try: () => {
-          const png = decode(new Uint8Array(imgData));
-          const { width, data, channels } = png;
-
-          return points.map((p): [string, number] => {
-            const idx = (p.py * width + p.px) * channels;
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-            const elevation = r * 256 + g + b / 256 - 32768;
-            return [p.key, Math.max(0, Math.round(elevation))];
-          });
-        },
-        catch: (e) => new ElevationFetchError('PNG Decode Error', e),
-      }).pipe(
-        Effect.catchAll((e) => {
-          logger.error(`Failed to decode PNG for tile ${tilePath}`, e);
-          return Effect.succeed(points.map((p): [string, number] => [p.key, 0]));
-        }),
-      ),
-    );
-  });
-
 export const createTileElevationRepository = (
   bucket: R2Bucket,
   runInBackground: (promise: Promise<void>) => void,
 ): ElevationRepository => {
   return {
-    getElevations: (
+    fetchTileData: (
       points: Coordinate[],
-    ): Effect.Effect<Map<string, number>, ElevationFetchError, Logger> =>
+    ): Effect.Effect<TileFetchResult[], ElevationFetchError, Logger> =>
       Effect.gen(function* (_) {
         const logger = yield* _(LoggerService);
         const tileMap = groupPointsByTile(points);
@@ -136,7 +120,9 @@ export const createTileElevationRepository = (
           totalPoints: points.length,
         });
 
-        const processSingleTile = (tileReq: TileRequest) =>
+        const processSingleTile = (
+          tileReq: TileRequest,
+        ): Effect.Effect<TileFetchResult, ElevationFetchError, Logger> =>
           Effect.gen(function* (_) {
             const tilePath = `${tileReq.z}/${tileReq.x}/${tileReq.y}.png`;
 
@@ -148,20 +134,19 @@ export const createTileElevationRepository = (
               );
             }
 
-            if (Option.isSome(imgDataOpt)) {
-              return yield* _(decodeElevationData(imgDataOpt.value, tileReq.points, tilePath));
-            } else {
-              return tileReq.points.map((p): [string, number] => [p.key, 0]);
-            }
+            const buffer = Option.getOrNull(imgDataOpt);
+
+            return {
+              buffer: buffer !== undefined ? buffer : null,
+              points: tileReq.points,
+            };
           });
 
-        const resolvedTiles = yield* _(
+        return yield* _(
           Effect.all(Array.from(tileMap.values()).map(processSingleTile), {
             concurrency: 'unbounded',
           }),
         );
-
-        return new Map(resolvedTiles.flat());
       }),
   };
 };
