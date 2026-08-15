@@ -1,9 +1,3 @@
-TypeScriptベースの計算ロジックがWebAssembly（Rust）に移植された現在のアーキテクチャに合わせて、ドメインアーキテクチャ図と説明文をアップデートしました。
-
-計算負荷の高い空間サンプリングとシミュレーションを **Wasm（Rust）** に寄せ、I/Oが伴う標高データの取得を **TypeScript（Effect）** が担当してWasmのメモリ空間に直接データを注入する、ハイブリッドな構成を明確に表現しています。
-
----
-
 # ドメインアーキテクチャ図
 
 ## 1. バックエンド計算アルゴリズム (TypeScript + WebAssembly)
@@ -24,10 +18,11 @@ flowchart TD
         TSE -.- Note1
     end
 
-    subgraph Phase2 [2. 標高データ取得・注入]
+    subgraph Phase2 [2. 標高データ取得・Wasmデコード]
         UseCase[CalculateShadowUseCase<br/>TypeScript]:::ts
-        Repo[TileElevationRepository<br/>標高データ取得]:::external
-        Note2(TS側で座標に対応するタイルを取得・デコードし、<br/>Wasmのメモリ空間に直接標高値を書き込む)
+        Repo[TileElevationRepository<br/>R2 / AWSから画像取得]:::external
+        DECODE[decode_tile_elevations<br/>Wasm / Rust]:::wasm
+        Note2(TS側で未解凍のPNGバイナリを取得してWasmへ直接注入。<br/>Rust側で高速にデコードし、標高値を抽出・保存する)
         UseCase -.- Note2
     end
 
@@ -51,31 +46,34 @@ flowchart TD
 
     Start --> |Start Lat/Lng| TSE
     TSE --> |Panorama座標リスト| TPE_MEM
-    TPE_MEM --> |Lats/Lngs| UseCase
+    TPE_MEM --> |Lats/Lngs ポインタ読取| UseCase
     UseCase --> |座標リスト| Repo
-    Repo --> |ElevationsMap| UseCase
-    UseCase --> |標高データを注入| TPE_MEM
+    Repo --> |PNG生バイナリ| UseCase
+    UseCase --> |PNGバイナリと座標インデックスを注入| TPE_MEM
+    
+    TPE_MEM --> DECODE
+    DECODE --> |抽出した標高値| TPE_MEM
     
     TPE_MEM --> |緯度/経度/標高| TPE
     TPE --> |AzimuthProfiles<br/>方位角ごとの最大仰角| SCE
     Start --> |緯度,経度,時刻| SCE
     
-    SCE --> End
-
+    SCE --> |フラット配列ポインタ<br/>完全ゼロコピー読取| End
 
 ```
 
-### TypeScriptとWasmのメモリ共有アーキテクチャ
+### TypeScriptとWasmのアーキテクチャ
 
-パフォーマンスのボトルネックとなる計算処理をRust(Wasm)化しつつ、非同期I/O通信が必要な標高タイルの取得をTypeScript側で担っています。TypeScript側で取得した大量の標高データをWasmのメモリ空間へ直接書き込むことで、シリアライズ/デシリアライズのオーバーヘッドをゼロに抑えています。
+パフォーマンスのボトルネックとなる計算処理をRust(Wasm)化しつつ、非同期I/O通信が必要な標高タイルの取得をTypeScript側で担っています。
+最大の特長は、JS側で重い画像展開やJSONのシリアライズを一切行わない完全ゼロコピー設計です。TS側で取得した未解凍のPNGバイナリをWasmのメモリ空間へ直接流し込み、Rust側で画像のデコードと標高抽出を行うことで、JS側のメモリ膨張（GCのスパイク）を完全に排除しています。また、出力結果もフラットな1次元配列のポインタ経由で読み取ることで、レスポンス速度とコンテナリソースの節約を実現しています。
 
 ### サンプリング間隔の最適化
 
 計算量を抑えつつ近景の精度を上げ、かつ足元のノイズを誤検知しないよう、距離に応じてサンプリング間隔を動的に変更しています（Quality2の場合）。
 
-* 100〜2000m: 30m間隔
-* 2.1km〜10km: 90m間隔
-* 10.2km〜30km: 200m間隔
+- 100〜2000m: 30m間隔
+- 2.1km〜10km: 90m間隔
+- 10.2km〜30km: 200m間隔
 
 ### 地球の曲率と大気差の考慮 (TerrainProfileEngine)
 

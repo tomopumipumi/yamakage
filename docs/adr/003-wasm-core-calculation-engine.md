@@ -2,32 +2,33 @@
 
 ## Context
 
-The YAMAKAGE API is a BFF (Backend For Frontends) service that calculates the "true sunset and sunrise times" hidden by mountain shadows in real-time. It does this by combining the sun's trajectory with tens of thousands of terrain data points around the user's current location (up to a 30km radius).
+YAMAKAGE API is a BFF (Backend For Frontends) service that calculates the "true sunset and sunrise times" hidden behind mountain shadows in real-time by combining tens of thousands of terrain data points within a 30km radius of the user's current location with solar trajectories.
 
-In the initial implementation using only TypeScript, the following issues arose:
+In the initial TypeScript-only implementation and the early WebAssembly adoption phase, the following challenges arose:
 
-### 1. **Increased Latency Due to CPU-Bound Processing**:
+### 1. **Increased Latency Due to CPU-Bound Processing and Serialization**:
 
-- Calculation of radial sampling coordinates (thousands to tens of thousands of points).
-- Scanning for the maximum obstacle elevation angle in all directions, accounting for Earth's curvature and atmospheric refraction.
-- Minute-by-minute calculation of the sun's position and linear interpolation intersection detection over a period spanning 12 hours in the past to 48 hours in the future (3,600 minutes total).
-These highly repetitive and floating-point-intensive operations strained the V8 engine's CPU time, leading to degraded response speeds.
+- Radial sampling coordinate calculations (thousands to tens of thousands of points), scanning for the maximum obstacle elevation angle in all directions, and minute-by-minute solar position calculations.
+- Parallel decoding of over 60 PNG tile images using `fast-png` on the JS side.
+- Serialization and deserialization processing into giant JSON object trees via `serde` when returning calculation results from Wasm to TypeScript.
+- These repetitive and floating-point-intensive operations heavily strained the V8 engine's CPU time, causing response speed degradation.
 
-### 2. **Memory Consumption and GC (Garbage Collection) Overhead**:
+### 2. **Memory Consumption and GC Overhead**:
 
-- The frequent creation and destruction of massive amounts of coordinate objects (e.g., `{ lat, lng }`) caused GC spikes.
+- Generation of huge pixel arrays (`Uint8Array`) on the JS side, along with millions of string-key-based `Map` object constructions and destructions per request, caused GC spikes and memory expansion.
 
-### 3. **Cloudflare Workers CPU Time Limits**:
+### 3. **Cloudflare Workers CPU Time and Memory Limits**:
 
-- It was necessary to safely stay below the CPU time constraints typical of serverless environments (millisecond limits on standard plans) to ensure stable operation even under heavy load.
+- The need to strictly conserve CPU time constraints unique to serverless environments.
+- Eliminating Out of Memory (OOM) risks during access spikes against the memory limit per container (Isolate) of 128MB.
 
-### 4. **Limitations of JIT Compilation in Edge Serverless Environments**:
+### 4. **Limits of JIT Compilation in Edge Serverless Environments**:
 
-- The V8 engine's JIT compiler performs advanced optimizations based on runtime profiling in long-running processes. However, in environments like Cloudflare Workers, where code is executed per request in short-lived Isolates, JIT warm-up is rarely completed, preventing the system from fully benefiting from these excellent optimizations. Furthermore, the JIT compilation process itself consumed CPU time.
+- While the V8 engine's JIT compiler is highly efficient, environments like Cloudflare Workers—where short-lived Isolates execute per request—do not allow sufficient warmup time to benefit from the extreme optimizations seen in local environments.
 
 ## Decision
 
-We clearly separated computational processing from I/O processing and adopted a **hybrid architecture where the CPU-bound core calculation engine is implemented in Rust and compiled to WebAssembly (Wasm)**.
+We will clearly separate computational and I/O processes, adopting an architecture where **the CPU-bound core calculation engine and image decoding process are implemented in Rust, with JS and Wasm interacting via a completely "zero-copy" approach for both input and output**.
 
 ```mermaid
 flowchart TB
@@ -42,15 +43,15 @@ flowchart TB
         direction TB
 
         subgraph TS [TypeScript Layer -- Hono / Effect]
-            TS_Func["- Auth, Authorization, Rate Limiting (API Key/Turnstile)<br/>- Async I/O (R2 Cache / Fetch PNG tiles from AWS S3)<br/>- PNG decoding & elevation value extraction<br/>- Direct writing to Wasm memory"]
+            TS_Func["- Authentication, Authorization & Rate Limiting (API Key / Turnstile / RateLimit)<br/>- Asynchronous I/O (Fetching PNG tiles from R2 / AWS S3)<br/>- Direct injection of uncompressed binaries into Wasm memory<br/>- Reading results via pointers"]
         end
 
         subgraph WASM [Core Engine -- WebAssembly / Rust]
-            WASM_Func["- Generate spatial sampling points (generate_sampling_points)<br/>- Construct terrain profiles (calculate_azimuth_profiles)<br/>- Sun path & intersection simulation (simulate_sun_path)"]
+            WASM_Func["- Spatial sampling point generation (generate_sampling_points)<br/>- PNG binary decoding & elevation extraction (png crate)<br/>- Terrain profile construction<br/>- Solar trajectory & intersection judgment<br/>- Packing results into flat arrays"]
         end
 
-        TS -->|Pass ArrayBuffer pointers<br/>Zero-copy Memory Injection| WASM
-        WASM -->|Calculation Results| TS
+        TS -->|Uncompressed binary & coordinate pointer<br/>Zero-copy Input| WASM
+        WASM -->|Flat array pointer<br/>Zero-copy Output| TS
     end
 
     Client -->|Request| TS
@@ -62,97 +63,64 @@ flowchart TB
 
 ```
 
-### 1. Clear Separation of Concerns
+### 1. Clear Separation of Responsibilities
 
 #### **TypeScript Layer (Cloudflare Workers / Effect / Hono)**:
-- Request reception, validation, authentication, and rate limiting.
-- Asynchronous I/O processing (scanning the R2 bucket cache, fetching tiles from AWS Open Data).
-- Decoding PNG tile images and injecting data into Wasm memory.
 
+- Acts strictly as a "pipeline" dedicated to network I/O and routing.
+- PNG tile images fetched from R2 or AWS are not decoded on the JS side; they are passed directly to Wasm as uncompressed raw binaries (`ArrayBuffer`).
 
 #### **WebAssembly Layer (Rust / `yamakage-wasm`)**:
-- Specializes in pure, highly-intensive numerical calculations. It performs no external communication (network/storage I/O).
-- High-precision, high-speed sun position calculations using crates like `solar-positioning`.
-- Cache-efficient data scanning using contiguous memory (`SamplingArena`).
 
+- Handles pure functional, high-load numerical computations as well as **PNG image unpacking and decoding**.
+- Minimizes external package dependencies, utilizing the `png` crate for high-speed binary parsing and the `solar-positioning` crate for high-precision astronomical calculations.
 
+### 2. Elimination of Overhead Through Complete Sharing of Wasm Memory
 
-### 2. Overhead Minimization via Direct Wasm Memory Sharing
+- **Zero-Copy Input:** Eliminating TypeScript-side `Map` constructions and loop lookups by writing coordinate indices and raw PNG binaries directly into Wasm buffers (`io_u8_buffer`, `io_u32_buffer`).
+- **Zero-Copy Output:** Completely removing serialization into JS objects using `serde-wasm-bindgen`. The Rust side packs calculation results into a header-equipped 1D `Float64Array`, allowing the TypeScript side to read values directly from that memory address (pointer).
 
-- Instead of serializing/deserializing large JSON objects to pass between TypeScript and Wasm, we adopted **direct memory access via pointers (`Float64Array`)**.
-- By writing directly from the TypeScript side into coordinate buffers allocated inside Wasm (`lats_ptr`, `lngs_ptr`, `elevations_ptr`), the inter-process communication overhead is reduced to zero.
+### 3. Optimization of CI/CD and Build Operations
 
-### 3. CI/CD and Build Operations Optimization
+- Adopting a workflow that includes pre-built Wasm artifacts (`yamakage-wasm/pkg/`) under Git version control, rather than excluding `pkg/` via standard `.gitignore`.
+- Eliminating the need to set up the Rust toolchain or run `wasm-pack` builds in CI/CD pipelines like GitHub Actions, significantly improving deployment speed and build reproducibility.
 
-* Instead of the common practice of excluding `pkg/` via `.gitignore`, we adopted a workflow where pre-built Wasm artifacts (`yamakage-wasm/pkg/`) are included in Git version control.
-* This eliminates the need to set up the Rust toolchain and run `wasm-pack` builds during every CI/CD pipeline run (e.g., GitHub Actions), significantly improving deployment speed and build reproducibility.
+## Results and Impact
 
-## Consequences
+### Pros
 
-### Positive
+#### **Dramatic Reduction of CPU Time in Edge Environments (3x to 5x Acceleration)**:
 
-Here is the English translation of your text:
+- CPU runtime, which reached approximately **1,100ms to 2,000ms** in production with the TypeScript version (`fast-png` + JS loops), plummeted to **approximately 250ms to 500ms** with the zero-copy Wasm implementation.
+- Even during cold starts where JIT warmup is ineffective, AOT-compiled Rust delivers near-native peak performance from the first invocation, reducing timeout risks caused by CPU limits.
 
-#### **Benefits of AOT Compilation Ideal for Edge Environments**:
+#### **Halving Memory Consumption and Suppressing GC**:
 
-- In serverless environments, which struggle to benefit from the runtime optimizations of V8's JIT compilation, pre-compiled (AOT) Rust (Wasm) delivers near-native full performance from the very first execution. By eliminating JIT warm-up delays and compilation overhead, we have achieved highly stable, high-speed processing.
+- The elimination of massive `Uint8Array` allocations and temporary object creation on the JS heap reduced normal-state (P50) memory usage from **approximately 41.8MB to 23.9MB (about a 43% reduction)**.
+- A massive safety margin against the 128MB container memory limit was secured, improving stability during spikes and container survival rates (cache hit rates).
 
-Benefits of AOT Compilation for Edge Environments and Safe Scaling:
+#### **Maintenance of High Calculation Accuracy and Safety**:
 
-We conducted performance testing under identical heavy-load conditions in a local environment to compare the pure CPU computation times of the TypeScript and Wasm versions.
+- Rust's rigorous type system protects against Wasm memory boundary violations and access errors at compile time, realizing a robust BFF backend.
 
-Test Conditions:
+### Cons / Trade-offs
 
-    Target Time: 2026-08-01T06:00:00.000Z
+#### **Increase in Binary Size**:
 
-    Measurement Coordinates: 36.2487, 137.6380 (around the Northern Alps), 35.3628, 138.7307 (around Mt. Fuji), 35.0909, 138.8483 (around Numazu)
+- Including PNG decoding processing inside Wasm increased the Wasm binary size by several hundred KB (comfortably within the Worker script size limits).
 
-    Computational Load: 30,241 sampling points (Quality 2), 3,600 simulation loops (-12 hours to +48 hours)
+#### **Increased Complexity of Boundary Interfaces**:
 
-    I/O: All requests resulted in cache hits; only pure CPU computation time was measured, excluding network I/O.
+- Because Wasm and TS directly read and write memory, byte offset calculations and flat array packing/unpacking logic must be manually managed and maintained.
 
-Test Results and Discussion:
-In a continuously running local environment (`wrangler dev`), V8's JIT optimization operates at maximum efficiency. Consequently, the TypeScript version slightly outperformed the Wasm version, recording ~28–41ms compared to Wasm's ~46–56ms.
-However, in the production edge serverless environment (Cloudflare Workers)—where short-lived containers are spun up per request—there is insufficient time for JIT warm-up. Therefore, deploying such a massive computational load (30,241 points) to production using the TypeScript version would inevitably lead to prolonged CPU execution times.
-By adopting Ahead-of-Time (AOT) compiled Rust (Wasm), we ensure that the application consistently delivers the exact same full performance (~50ms) as measured locally from the very first request, even in cold production edge environments where JIT provides no benefit. As a result, we have achieved the robustness needed to safely and consistently return responses, even after increasing the number of sampling points by over 1.7 times compared to the previous setup.
+#### **Complication of Development Flow**:
 
+- Modifying computation logic requires running `pnpm run build:wasm` locally after editing Rust code to generate and commit `pkg/` diffs.
 
-#### **Computational Performance**:
-
-- The calculation time for spatial sampling and sun trajectory simulation has been reduced to sub-millisecond to single-digit millisecond order.
-
-#### **Improved Memory Efficiency and GC Reduction**:
-
-- Contiguous memory allocation using `SamplingArena` drastically reduced the creation of short-lived objects on the JavaScript heap.
-
-#### **Maintained High Calculation Accuracy**:
-
-- Rust's strict type system and unit tests (`cargo test`) have improved reliability against edge cases (e.g., midnight sun, polar night, invalid coordinates, floating-point exceptions).
-
-#### **Improved Serverless Aptitude**:
-
-- Cloudflare Workers CPU time consumption was minimized, reducing risks related to plan limits and costs.
-
-
-### Negative / Trade-offs
-
-#### **Increased Development Flow Complexity**:
-- When modifying calculation logic, developers must run `pnpm run build:wasm` locally after editing Rust code to generate and commit the `pkg/` diffs.
-
-
-#### **Increased Binary Size**:
-- Including the Wasm binary in the Workers bundle slightly increases the deployment artifact size (though it remains well within the Workers limits).
-
-
-#### **Debugging Difficulty**:
-- Runtime panics and invalid memory access inside Wasm are harder to trace via stack traces compared to pure TypeScript. Therefore, rigorous input validation on the Rust side (like `CalculationContext::try_new`) and maintaining Rust unit tests are essential.
-
-
-
-## Alternatives Considered
+## Comparison with Alternatives
 
 | Option | Evaluation | Reason for Rejection / Adoption |
 | --- | --- | --- |
-| **Full implementation in TypeScript only** | Rejected | Failed to meet CPU time limits and latency requirements during loop processing of tens of thousands of points and minute-by-minute intersection simulations. |
-| **Self-contained I/O (fetch) within Rust / Wasm** | Rejected | Asynchronous fetching and direct manipulation of Cloudflare bindings (R2) from within Wasm complicates the code and reduces compatibility with the Workers ecosystem. We chose a separated design leaving I/O to TypeScript. |
-| **Offloading to an external calculation server (ECS/Lambda, etc.)** | Rejected | Leads to cold starts, additional latency from network hops, and increased infrastructure management costs. Concluded that an edge-contained Wasm solution is optimal. |
+| **Complete implementation in TypeScript alone** | Rejected | Concerns remain regarding Cloudflare Workers' CPU time and memory constraints during tens of thousands of loop iterations and parallel PNG decoding. |
+| **Complete I/O (fetch) execution within Rust / Wasm** | Rejected | Asynchronous fetches or direct Cloudflare bindings (R2/KV) inside Wasm complicate code and reduce affinity with the Workers ecosystem, so I/O is left to TypeScript. |
+| **Offloading to an external computation server (ECS/Lambda, etc.)** | Rejected | Leads to additional latency from network hops and increased infrastructure management costs; an edge-contained Wasm architecture was deemed optimal. |
