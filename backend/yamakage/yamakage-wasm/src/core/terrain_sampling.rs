@@ -5,12 +5,30 @@ use crate::{
     memory::arena::{AzimuthGroup, SamplingArena},
 };
 
+/// Configuration for a sampling line segment along an azimuth.
+/// 方位角に沿ったサンプリングラインのセグメント設定を定義する構造体。
 pub(crate) struct LineConfig {
+    /// The starting distance from the origin in meters.
+    /// 起点からの開始距離（メートル）。
     pub(crate) start_dist: f64,
+
+    /// The maximum distance from the origin in meters.
+    /// 起点からの最大距離（メートル）。
     pub(crate) max_dist: f64,
+
+    /// The interval between sampling points in meters.
+    /// サンプリングポイント間の間隔（メートル）。
     pub(crate) interval: f64,
 }
 
+/// Retrieves the sampling line configurations based on the specified quality level.
+/// 指定された品質レベルに基づくサンプリングラインの設定を取得します。
+///
+/// Higher quality levels result in denser and farther-reaching sampling points.
+/// 品質レベルが高いほど、より遠くまで高密度なサンプリングポイントが設定されます。
+///
+/// # Arguments
+/// * `quality` - The quality level (e.g., 1 for standard, 2 for high) / 品質レベル（1:標準, 2:高品質 など）
 pub(crate) fn get_quality_configs(quality: u8) -> &'static [LineConfig] {
     match quality {
         2 => &[
@@ -72,11 +90,26 @@ pub(crate) fn get_quality_configs(quality: u8) -> &'static [LineConfig] {
     }
 }
 
-// --------------------------------------------------------------------
-// 数学公式: 球面三角法による順問題
-// 出発点の座標、方位角、大円距離から、目標点の緯度・経度を計算する。
-// ※ パフォーマンス最適化のため、sin/cosの事前計算値を引数に取る
-// --------------------------------------------------------------------
+/// Direct problem of spherical trigonometry.
+/// Calculates the target latitude and longitude given a starting coordinate, azimuth, and great-circle distance.
+///
+/// 球面三角法による順問題。
+/// 出発点の座標、方位角、大円距離から、目標点の緯度・経度を計算します。
+///
+/// For performance optimization, pre-calculated sine and cosine values are passed as arguments.
+/// パフォーマンス最適化のため、事前に計算されたsin/cos値を引数に取ります。
+///
+/// # Arguments
+/// * `sl_sin` - Sine of the starting latitude / 出発点緯度のsin値
+/// * `sl_cos` - Cosine of the starting latitude / 出発点緯度のcos値
+/// * `start_lng_rad` - Starting longitude in radians / 出発点経度(ラジアン)
+/// * `az_sin` - Sine of the azimuth angle / 方位角のsin値
+/// * `az_cos` - Cosine of the azimuth angle / 方位角のcos値
+/// * `dist_meters` - Distance to the target in meters / 目標点までの距離(メートル)
+///
+/// # Returns
+/// A tuple containing the target latitude and longitude in radians.
+/// 目標点の緯度と経度（ラジアン）のタプルを返します。
 pub(crate) fn calc_destination_coordinate(
     sl_sin: f64,
     sl_cos: f64,
@@ -96,6 +129,18 @@ pub(crate) fn calc_destination_coordinate(
     (target_lat_rad, target_lng_rad)
 }
 
+/// Generates geographic sampling points around a starting coordinate based on azimuth steps and quality.
+/// 指定された方位角のステップと品質に基づき、開始座標の周囲360度にサンプリングポイントを生成します。
+///
+/// The generated points are stored in the provided `SamplingArena` for further elevation processing.
+/// 生成されたポイント群は、標高処理のために提供された `SamplingArena` に格納されます。
+///
+/// # Arguments
+/// * `arena` - The arena where generated points and metadata will be stored / 生成されたポイントやメタデータを格納するアリーナ
+/// * `start_lat` - Starting latitude in degrees / 出発点の緯度（度）
+/// * `start_lng` - Starting longitude in degrees / 出発点の経度（度）
+/// * `step_deg` - Angle interval between each azimuth ray in degrees / 各方位角の射線の間隔（度）
+/// * `quality` - Quality level defining the distance and density of points / サンプリングの距離と密度を決定する品質レベル
 pub fn generate_sampling_points(
     arena: &mut SamplingArena,
     start_lat: f64,

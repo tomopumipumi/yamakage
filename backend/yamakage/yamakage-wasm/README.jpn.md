@@ -64,3 +64,8 @@ cargo test
 **`pkg/` ディレクトリのGit管理について**:
 通常、Wasmのビルド成果物である `pkg/` フォルダはGit管理外（`.gitignore`）にしますが、本プロジェクトでは CI/CD（GitHub Actions）の安定性とビルド速度向上のため、あえて `pkg/` フォルダを Git の管理下に含める運用としています。
 Rustのコードを修正した際は、必ずローカルで `pnpm run build:wasm` を実行し、生成された `pkg/` の差分を一緒にコミットしてPushしてください。
+
+**自動生成ドキュメント**
+```sh
+cargo doc --open --no-deps --document-private-items
+```
