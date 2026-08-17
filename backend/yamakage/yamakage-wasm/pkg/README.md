@@ -67,3 +67,8 @@ cargo test
 **Regarding the `pkg/` directory in version control**:
 Typically, the `pkg/` folder containing Wasm build artifacts is excluded from Git via `.gitignore`. However, to improve the stability and build speed of our CI/CD pipeline (GitHub Actions), we intentionally include the `pkg/` directory in Git.
 Whenever you modify the Rust code, you must build it locally by running `pnpm run build:wasm` and commit the resulting changes in the `pkg/` directory along with your source code.
+
+**Automatically generated documentation**
+```sh
+cargo doc --open --no-deps --document-private-items
+```

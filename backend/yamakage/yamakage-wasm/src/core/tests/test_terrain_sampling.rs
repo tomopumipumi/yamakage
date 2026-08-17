@@ -73,6 +73,65 @@ pub(crate) mod tests {
         assert_f64_eq(lng_deg, 0.0);
     }
 
+    #[test]
+    fn test_calc_destination_coordinate_longitude_wrap_around() {
+        let start_lat = 0.0_f64; // Equator / 赤道
+
+        let sl_sin = start_lat.sin();
+        let sl_cos = start_lat.cos();
+        let dist = 111195.0; // Approx 1 degree on Earth surface / 地表での約1度分の距離
+
+        // --- Case 1: Crossing the antimeridian going East (+180 deg) ---
+        // --- ケース1: 東へ進み、日付変更線(+180度)を超える場合 ---
+        let start_lng_east = 179.9_f64;
+        let start_lng_east_rad = start_lng_east * RADIANS_PER_DEGREE;
+
+        // Azimuth 90 = Due East / 方位角 90度 = 真東
+        let az_east = 90.0_f64 * RADIANS_PER_DEGREE;
+
+        let (lat_rad_1, lng_rad_1) = calc_destination_coordinate(
+            sl_sin,
+            sl_cos,
+            start_lng_east_rad,
+            az_east.sin(),
+            az_east.cos(),
+            dist,
+        );
+
+        let lat_deg_1 = lat_rad_1 * DEGREES_PER_RADIAN;
+        let lng_deg_1 = lng_rad_1 * DEGREES_PER_RADIAN;
+
+        // Latitude should remain 0 / 緯度は0度のまま
+        assert_f64_eq(lat_deg_1, 0.0);
+        // Longitude should wrap from 180.9 to -179.1 / 経度は 180.9度から -179.1度 へラップアラウンドされること
+        assert!(lng_deg_1 > -179.2 && lng_deg_1 < -179.0);
+
+        // --- Case 2: Crossing the antimeridian going West (-180 deg) ---
+        // --- ケース2: 西へ進み、日付変更線(-180度)を下回る場合 ---
+        let start_lng_west = -179.9_f64;
+        let start_lng_west_rad = start_lng_west * RADIANS_PER_DEGREE;
+
+        // Azimuth 270 = Due West / 方位角 270度 = 真西
+        let az_west = 270.0_f64 * RADIANS_PER_DEGREE;
+
+        let (lat_rad_2, lng_rad_2) = calc_destination_coordinate(
+            sl_sin,
+            sl_cos,
+            start_lng_west_rad,
+            az_west.sin(),
+            az_west.cos(),
+            dist,
+        );
+
+        let lat_deg_2 = lat_rad_2 * DEGREES_PER_RADIAN;
+        let lng_deg_2 = lng_rad_2 * DEGREES_PER_RADIAN;
+
+        // Latitude should remain 0 / 緯度は0度のまま
+        assert_f64_eq(lat_deg_2, 0.0);
+        // Longitude should wrap from -180.9 to 179.1 / 経度は -180.9度から +179.1度 へラップアラウンドされること
+        assert!(lng_deg_2 > 179.0 && lng_deg_2 < 179.2);
+    }
+
     // --------------------------------------------------------------------
     // Integration tests (Sampling Points Generation)
     // 統合テスト (サンプリングポイントの生成)

@@ -126,7 +126,14 @@ pub(crate) fn calc_destination_coordinate(
     let target_lng_rad =
         start_lng_rad + (az_sin * ad_sin * sl_cos).atan2(ad_cos - sl_sin * target_lat_rad.sin());
 
-    (target_lat_rad, target_lng_rad)
+    let mut normalized_lng_rad = target_lng_rad % (2.0 * std::f64::consts::PI);
+    if normalized_lng_rad > std::f64::consts::PI {
+        normalized_lng_rad -= 2.0 * std::f64::consts::PI;
+    } else if normalized_lng_rad <= -std::f64::consts::PI {
+        normalized_lng_rad += 2.0 * std::f64::consts::PI;
+    }
+
+    (target_lat_rad, normalized_lng_rad)
 }
 
 /// Generates geographic sampling points around a starting coordinate based on azimuth steps and quality.
