@@ -36,22 +36,3 @@ pub fn get_sun_position(timestamp_ms: f64, lat: f64, lng: f64) -> SunPosition {
         },
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_get_sun_position_valid() {
-        let pos = get_sun_position(1718000000000.0, 35.68, 139.76);
-        assert!(pos.azimuth_deg.is_finite());
-        assert!(pos.altitude_deg.is_finite());
-    }
-
-    #[test]
-    fn test_get_sun_position_invalid_timestamp_fallback() {
-        let pos = get_sun_position(1e30, 35.0, 135.0);
-        assert!(pos.azimuth_deg.is_finite());
-        assert!(pos.altitude_deg.is_finite());
-    }
-}

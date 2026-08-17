@@ -1,12 +1,15 @@
-mod arena;
-mod decoder;
-mod engine;
-mod sun_calc;
-mod types;
+mod core;
+mod io;
+mod memory;
+mod schemas;
 
-use arena::SamplingArena;
-use types::CalculationContext;
 use wasm_bindgen::prelude::*;
+
+use core::{azimuth_profile, simulate_sun_path, terrain_sampling};
+use io::tile_decoder;
+use memory::arena::SamplingArena;
+
+use crate::schemas::calculation_context::CalculationContext;
 
 #[wasm_bindgen]
 pub struct ShadowEngine {
@@ -37,7 +40,13 @@ impl ShadowEngine {
         step_deg: f64,
         quality: u8,
     ) -> usize {
-        engine::generate_sampling_points(&mut self.arena, start_lat, start_lng, step_deg, quality);
+        terrain_sampling::generate_sampling_points(
+            &mut self.arena,
+            start_lat,
+            start_lng,
+            step_deg,
+            quality,
+        );
         self.arena.lats.len()
     }
 
@@ -72,7 +81,7 @@ impl ShadowEngine {
     }
 
     pub fn decode_tile_elevations(&mut self, png_size: usize, num_points: usize) -> bool {
-        decoder::decode_and_store_elevations(
+        tile_decoder::decode_and_store_elevations(
             &self.io_u8_buffer[..png_size],
             &self.io_u32_buffer[..num_points * 3],
             num_points,
@@ -98,8 +107,9 @@ impl ShadowEngine {
             }
         };
 
-        let profiles = engine::calculate_azimuth_profiles(&self.arena, ctx.eye_level_altitude);
-        let result = engine::simulate_sun_path(&ctx, &profiles);
+        let profiles =
+            azimuth_profile::calculate_azimuth_profiles(&self.arena, ctx.eye_level_altitude);
+        let result = simulate_sun_path::simulate_sun_path(&ctx, &profiles);
 
         result.pack_into_buffer(&mut self.result_buffer);
 

@@ -1,5 +1,21 @@
-use crate::arena::SamplingArena;
+use png::ColorType;
 use std::io::Cursor;
+
+use crate::memory::arena::SamplingArena;
+
+pub(crate) fn calc_elevation_from_rgb(r: u8, g: u8, b: u8) -> f64 {
+    let r_f = r as f64;
+    let g_f = g as f64;
+    let b_f = b as f64;
+
+    let raw_elevation = r_f * 256.0 + g_f + b_f / 256.0 - 32768.0;
+
+    if raw_elevation < 0.0 {
+        0.0
+    } else {
+        raw_elevation.round()
+    }
+}
 
 pub fn decode_and_store_elevations(
     png_data: &[u8],
@@ -24,8 +40,8 @@ pub fn decode_and_store_elevations(
 
     let width = info.width as usize;
     let channels = match info.color_type {
-        png::ColorType::Rgb => 3,
-        png::ColorType::Rgba => 4,
+        ColorType::Rgb => 3,
+        ColorType::Rgba => 4,
         _ => return false,
     };
 
@@ -38,14 +54,8 @@ pub fn decode_and_store_elevations(
         let mut elevation = 0.0;
 
         if pixel_idx + 2 < buf.len() {
-            let r = buf[pixel_idx] as f64;
-            let g = buf[pixel_idx + 1] as f64;
-            let b = buf[pixel_idx + 2] as f64;
-            let mut raw_elevation = r * 256.0 + g + b / 256.0 - 32768.0;
-            if raw_elevation < 0.0 {
-                raw_elevation = 0.0;
-            }
-            elevation = raw_elevation.round();
+            elevation =
+                calc_elevation_from_rgb(buf[pixel_idx], buf[pixel_idx + 1], buf[pixel_idx + 2]);
         }
 
         if js_idx == 0 {
