@@ -1,127 +1,65 @@
-# YAMAKAGE (Garmin Connect IQ App)
+# YAMAKAGE (山影)
 
-## Overview
+YAMAKAGE は、ユーザーの現在地周辺または指定された地点の地形データと太陽の軌道を掛け合わせ、山や周囲の障害物の影に隠れる **「真の日の入り・日の出時刻」** を計算・シミュレーションするアプリケーションシステムです。
 
-A data field app for Garmin devices (Edge, Fenix, Forerunner, etc.) that displays the "true sunrise and sunset times" by taking the surrounding terrain (elevation) into account.
+登山中やアウトドアアクティビティにおいて、標準的な日没時刻よりも早く訪れる「実際の暗闇」を正確に予測し、安全な行動計画をサポートします。
 
-It communicates with a dedicated backend server (YAMAKAGE API) to calculate the height of surrounding mountains and obstacles from your current location, predicting accurate daylight hours.
+## 📦 リポジトリ構成 (モノレポ)
 
----
+本リポジトリは、バックエンドAPI、Webアプリフロントエンド、Garminスマートウォッチ向けアプリを内包するモノレポ構成となっています。
 
-## Preparation (Garmin SDK Setup)
-
-Before starting development, you need to prepare the official Garmin Connect IQ development environment.
-
-### 1. Installing Connect IQ SDK Manager
-
-Download and install the "Connect IQ SDK Manager" from the Garmin [developer site](https://developer.garmin.com/connect-iq/overview/), and download the latest SDK.
-
-### 2. Creating a Developer Key
-
-Create a private key (`.der` file) to build and sign the app.
-Open a terminal and use the `monkeyc` command located in the SDK's `bin` directory to generate the key.
-
-```sh
-# Example key generation command (replace the path with your environment's bin path)
-/path/to/connectiq-sdk/bin/monkeyc -a developer_key.der
+```text
+.
+├── backend/                # バックエンドAPI (BFF) & コア計算エンジン
+│   ├── yamakage/           # 🌐 Cloudflare Workers API (TypeScript / Hono)
+│   └── yamakage-wasm/      # ⚙️ コア計算エンジン (Rust / WebAssembly)
+├── web-site/               # 💻 Webフロントエンド (React / TypeScript / Vite)
+├── yamakage-datafield/     # ⌚️ Garmin Connect IQ アプリ のデータフィールド版(Monkey C)
+├── yamakage-datafield/devtools/icon_generater/
+│                           # 🔧 アイコン(svg)をGarminデバイスで使えるフォントファイルに変換するツール
+└── docs/                   # 📄 アーキテクチャドキュメント・ADR
 
 ```
 
-Place the generated `developer_key.der` in the project's root directory (Note: It will not be committed to Git as it is excluded via `.gitignore`).
+## 🚀 プロジェクトごとの役割
+
+### 1. Backend API (`backend/`)
+
+Cloudflare Workers 上で動作する BFF (Backend For Frontends) です。
+エッジ環境でのCPU・メモリ制約をクリアするため、**TypeScriptとRust(Wasm)によるゼロコピー・ハイブリッドアーキテクチャ**を採用しています。
+
+#### **`backend/yamakage/` (TypeScript / Hono / Effect):**
+ネットワークI/Oとルーティングを担当。GarminやWebからのリクエストを受け付け、AWS Open Dataからの地形タイル(PNG)のフェッチやCloudflare R2へのキャッシュ処理を行います。
+#### **`backend/yamakage-wasm/` (Rust / WebAssembly):**
+純粋で高負荷な計算ロジック（画像デコード、標高抽出、地形プロファイル構築、太陽軌道のシミュレーション）を担当します。TS層から直接メモリに流し込まれたPNGバイナリを処理し、結果をフラットな配列としてTS層へ返却します。
+
+### 2. Web Application (`web-site/`)
+
+ブラウザ上で動作するシミュレーション用Webアプリです（Cloudflare Pagesでホスティング）。
+地図上で任意の地点を指定し、周囲の地形プロファイル（各方位の最大仰角）や太陽の軌道グラフを視覚的に確認することができます。
+
+- **スタック:** React, TypeScript, Vite
+- **機能:** 地図クリックによる任意地点のシミュレーション、結果のグラフ表示（Skyline Chart）、SNSシェア機能など。
+
+### 3. Garmin Data Field App (`yamakage-datafield/`)
+
+Garmin製スマートウォッチ向けの Connect IQ データフィールドアプリです。
+登山中やランニング中などのアクティビティ画面に組み込み、現在地の真の日没時刻をリアルタイムに表示します。
+
+- **スタック:** Monkey C
+- **機能:** GPSによるバックグラウンド位置情報取得、APIへの定期通信、超低メモリ環境に最適化されたUI描画とデータ処理。
+    > ※重い計算処理をすべてバックエンドAPIにオフロードすることで、デバイスのバッテリー消費を抑えています。
+
+### 4. Documentation (`docs/`)
+
+システムのアーキテクチャ図や、設計上の意思決定記録をまとめています。
+
+## 📖 開発環境のセットアップ
+
+各プロジェクトのディレクトリに移動し、それぞれの `README.md` を参照してください。
 
 ---
 
-## Environment Setup
-
-### 1. Installing `pnpm`
-
-We use `pnpm` as the package manager and script runner.
-
-```sh
-npm install -g pnpm
-
-```
-
-### 2. Installing Dependencies
-
-Run the following command in the directory containing `package.json` to install development tools such as the code formatter (Prettier).
-
-```sh
-pnpm install
-
-```
-
-### 3. Setting Up Environment Variables
-
-Copy `.env.example` in the project root to create `.env`, and configure the necessary environment variables for your setup.
-
-```sh
-cp .env.example .env
-
-```
-
-Please enter the following variables in the `.env` file according to your environment.
-
-| Variable Name | Description | Example (Windows) | Example (Mac) |
-| --- | --- | --- | --- |
-| `GARMIN_DEVICE` | The target device ID to launch and test in the simulator. | `edge1040` | `edge1040` |
-| `GARMIN_KEY_PATH` | Absolute (or relative) path to the created developer key. | `C:\keys\developer_key.der` | `/Users/name/keys/developer_key.der` |
-| `GARMIN_SDK_BIN` | Absolute path to the `bin` folder of the downloaded Garmin SDK. | `C:\Users\name\AppData\Roaming\Garmin\ConnectIQ\Sdks\connectiq-X.Y.Z\bin` | `/Users/name/Library/Application Support/Garmin/ConnectIQ/Sdks/connectiq-X.Y.Z/bin` |
-
----
-
-## Local Execution & Development
-
-### 1. Launching the Simulator
-
-Running the following command will automatically build the code and launch the simulator for the configured `GARMIN_DEVICE`.
-
-```sh
-pnpm run dev
-
-```
-
-### 2. Testing Communication (Background Processing)
-
-Due to the specifications of data field apps, communication with external APIs is executed as a "background event" at a minimum interval of 5 minutes.
-When testing in the simulator, you can force this communication using the following steps:
-
-1. Open **[Simulation]** from the simulator's top menu.
-2. Click **[Background Events]**.
-3. Verify that `Event Type` is set to **Temporal Event** and `Target App` is set to **YAMAKAGE**, then press `OK`.
-
-*Note: If the background process does not run immediately, opening **Settings > Set Position** and pressing `OK`, or switching devices often triggers it.*
-
----
-
-## Commands
-
-| Command | Description |
-| --- | --- |
-| `pnpm run dev` | Executes a debug build and launches the simulator. |
-| `pnpm run dev:release` | Launches the simulator with a release build (optimized). |
-| `pnpm run test` | Builds unit tests and executes them on the simulator. |
-| `pnpm run fmt` | Formats the code using Prettier (monkeyc plugin). |
-| `pnpm run export` | Exports the `.iq` file for submission to the Connect IQ Store. |
-
----
-
-## Creating the Store Release File
-
-Follow these steps to generate the `.iq` file required for submitting the app to the Connect IQ Store.
-Run the following command:
-
-```sh
-pnpm run export
-
-```
-
-Once the process is complete, a file named `yamakage.iq` will be generated inside the project's `bin` directory.
-
-Uploading this file via the [Garmin Developer Dashboard](https://www.google.com/search?q=https://developer.garmin.com/connect-iq/overview/) will complete your application for store release.
-
----
-
-## License
-
-This project is licensed under the [MIT License](https://www.google.com/search?q=./LICENSE).
+## リポジトリルートコマンド
+- `pnpm install`: リポジトリ全体のnode系プロジェクトの依存関係をインストールします。
+- `pnpm clean`: リポジトリ全体の自動生成フォルダなど(node_modulesなど)を削除します。

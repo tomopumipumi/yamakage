@@ -2,6 +2,7 @@
 name = "icon_generater"
 version = "0.1.0"
 description = "フォントリソース作成ツール"
+license = "MIT"
 authors = [
     {name = "tomopumipumi",email = "tomo.pumi.pumi@gmail.com"},
 ]

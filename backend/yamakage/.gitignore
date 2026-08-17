@@ -1,6 +1,0 @@
-node_modules/
-.wrangler
-repomix-output.xml
-repomix.config.json
-.dev.vars
-**/backup.sql

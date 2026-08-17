@@ -1,4 +1,5 @@
 packages:
+  - "yamakage-datafield"
   - "web-site"
   - "backend/yamakage"
 
