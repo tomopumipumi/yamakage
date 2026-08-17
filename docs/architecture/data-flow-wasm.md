@@ -125,7 +125,7 @@ For each of the (M) solar trajectory points, **3 elements** are stored sequentia
 
 ### 1. **Updating both sides is mandatory when modifying data structures**
 
-- If you add or remove even a single returned element on the Wasm side (`pack_into_buffer` in `yamakage-wasm/src/types.rs`), **you must also update the offset calculation formulas on the TypeScript side (the unpacking loop in `CalculateShadowUseCase.ts`) accordingly.** Failing to do so will shift the data, resulting in completely unrelated numbers being parsed.
+- If you add or remove even a single returned element on the Wasm side (`pack_into_buffer` in `yamakage-wasm/src/schemas/ShadowResultWasm`), **you must also update the offset calculation formulas on the TypeScript side (the unpacking loop in `CalculateShadowUseCase.ts`) accordingly.** Failing to do so will shift the data, resulting in completely unrelated numbers being parsed.
 
 ### 2. **Error handling and representation of Nullable via `NaN**`
 

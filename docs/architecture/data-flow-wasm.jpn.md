@@ -124,7 +124,7 @@ TS側はこの配列のフォーマットを知っている前提で、ポイン
 ## 4. 開発・メンテナンス時の注意点 (Gotchas)
 
 ### 1. **データ構造の変更時は両方の更新が必須**
-* Wasm側（`yamakage-wasm/src/types.rs` の `pack_into_buffer`）で返す要素を1つでも追加・削除した場合、**必ず TypeScript側（`CalculateShadowUseCase.ts` のアンパッキングループ）のオフセット計算式も合わせて修正** してください。これを怠ると、データがずれて全く無関係の数値がパースされます。
+* Wasm側（`yamakage-wasm/src/schemas/ShadowResultWasm.rs` の `pack_into_buffer`）で返す要素を1つでも追加・削除した場合、**必ず TypeScript側（`CalculateShadowUseCase.ts` のアンパッキングループ）のオフセット計算式も合わせて修正** してください。これを怠ると、データがずれて全く無関係の数値がパースされます。
 
 
 ### 2. **`NaN` によるエラー判定と Nullable の表現**
