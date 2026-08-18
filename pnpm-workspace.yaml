@@ -2,6 +2,7 @@ packages:
   - "yamakage-datafield"
   - "web-site"
   - "backend/yamakage"
+  - "yamakage-watch-app"
 
 allowBuilds:
   esbuild: true

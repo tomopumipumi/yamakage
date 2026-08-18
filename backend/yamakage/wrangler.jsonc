@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "yamakage-api",
+	"name": "yamakage-api-watchapp",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-07-17",
 	"limits": {

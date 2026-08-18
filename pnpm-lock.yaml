@@ -175,6 +175,21 @@ importers:
         specifier: ^3.9.5
         version: 3.9.6
 
+  yamakage-watch-app:
+    devDependencies:
+      '@markw65/prettier-plugin-monkeyc':
+        specifier: ^1.0.69
+        version: 1.0.69(prettier@3.9.6)
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
+      dotenv-cli:
+        specifier: ^11.0.0
+        version: 11.0.0
+      prettier:
+        specifier: ^3.9.5
+        version: 3.9.6
+
 packages:
 
   '@asamuzakjp/css-color@6.0.7':

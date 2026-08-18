@@ -1,0 +1,45 @@
+[project]
+name = "icon_generater"
+version = "0.1.0"
+description = "フォントリソース作成ツール"
+license = "MIT"
+authors = [
+    {name = "tomopumipumi",email = "tomo.pumi.pumi@gmail.com"},
+]
+dependencies = [
+    "pillow==12.3.0",
+    "result>=0.17.0",
+    "resvg>=0.2.0",
+]
+requires-python = ">=3.14"
+readme = "README.md"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.1",
+]
+
+[tool.pdm.scripts]
+build-icon = "py src/main.py"
+lint = "ruff check ."
+fix = "ruff check --fix ."
+fmt = "ruff format ."
+
+
+[tool.ruff]
+line-length = 60
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = [
+    "BLE001",
+    "E501"
+]

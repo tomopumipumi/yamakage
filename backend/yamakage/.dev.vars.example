@@ -2,7 +2,7 @@
 # YAMAKAGE Local Environment Variables (.dev.vars.example)
 # ========================================
 
-# Authentication key for the YAMAKAGE API (if applicable)
+# Authentication key for the YAMAKAGE API (DataField)
 YAMAKAGE_API_KEY=
 
 # Secret key for Cloudflare Turnstile (server-side verification for bot protection)

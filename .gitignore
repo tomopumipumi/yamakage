@@ -18,6 +18,7 @@
 **/.pdm-build/
 **/.ruff_cache/
 **/.pdm-python
+**/build_fonts/
 
 # rust
 **/target/

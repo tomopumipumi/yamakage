@@ -4,6 +4,7 @@ import { cors } from 'hono/cors';
 import { ConsoleLogger } from './infrastructure/logging/ConsoleLogger';
 import { requestLogger } from './presentation/middlewares/requestLogger';
 import { createShadowRouter } from './presentation/routes/shadow';
+import { createWatchAppShadowRouter } from './presentation/routes/watchAppShadow';
 import { createWebShadowRouter } from './presentation/routes/webShadow';
 import type { Bindings } from './types/env';
 
@@ -22,7 +23,14 @@ app.use(
 
 app.use('*', requestLogger(logger));
 
-// For Garmin
+// For Garmin (DataField)
+app.openAPIRegistry.registerComponent('securitySchemes', 'BearerAuth', {
+  type: 'http',
+  scheme: 'bearer',
+  description: 'Please enter your API key',
+});
+
+// For Garmin (WatchApp)
 app.openAPIRegistry.registerComponent('securitySchemes', 'BearerAuth', {
   type: 'http',
   scheme: 'bearer',
@@ -49,8 +57,10 @@ app.doc('/doc', {
 app.get('/ui', swaggerUI({ url: '/doc' }));
 app.get('/', (c) => c.text('YAMAKAGE API is running.'));
 
-// For Garmin
+// For Garmin (DataField)
 app.route('/api/v1/shadow', createShadowRouter(logger));
+// For Garmin (WatchApp)
+app.route('/api/v1/watchapp/shadow', createWatchAppShadowRouter(logger));
 // For Web
 app.route('/api/v1/web/shadow', createWebShadowRouter(logger));
 
