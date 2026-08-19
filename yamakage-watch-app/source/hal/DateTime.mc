@@ -1,4 +1,5 @@
 import Toybox.Lang;
+import Toybox.Time;
 import Toybox.Time.Gregorian;
 
 module Hal {
