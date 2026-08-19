@@ -20,7 +20,7 @@
     "build:test": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -d \\$GARMIN_DEVICE -y \\$GARMIN_KEY_PATH -f monkey.jungle -o bin/Yamakage-test.prg -t\"",
     "test": "pnpm build:test && dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeydo bin/Yamakage-test.prg \\$GARMIN_DEVICE -t\"",
 
-    "export": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -e -r -y \\$GARMIN_KEY_PATH -f monkey.jungle -o bin/yamakage.iq\""
+    "export": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -e -r -y \\$GARMIN_KEY_PATH -f monkey.jungle -o bin/yamakage-watch-app.iq\""
   },
   "keywords": [],
   "author": "",
