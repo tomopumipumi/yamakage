@@ -35,7 +35,10 @@ module Core {
             }
         }
 
-        typedef AzimuthProfilesArray as Array<Number or Float>;
+        typedef RadarProfileTuple as Array<Number or Float>;
+        typedef RadarProfilesArray as Array<RadarProfileTuple>;
+
+        typedef AzimuthProfilesArray as Array<Array<Number or Float> >;
 
         typedef SunPathPointTuple as Array<Number or Float>;
         typedef SunPathArray as Array<SunPathPointTuple>;

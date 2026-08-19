@@ -5,6 +5,7 @@ import Core.Arena.LoadingUiArena;
 import Core.Arena.SkyPlotUiArena;
 import Core.Arena.DetailsUiArena;
 import Core.Arena.PanoramaUiArena;
+import Core.Arena.RadarUiArena;
 
 module Core {
     module ArenaConfig {
@@ -14,7 +15,8 @@ module Core {
                 LoadingUiArena.DataType.DataTypeDef or
                 SkyPlotUiArena.DataType.DataTypeDef or
                 DetailsUiArena.DataType.DataTypeDef or
-                PanoramaUiArena.DataType.DataTypeDef;
+                PanoramaUiArena.DataType.DataTypeDef or
+                RadarUiArena.DataType.DataTypeDef;
 
         module ArenaType {
             typedef ArenaTypeDef as Number;
@@ -24,7 +26,8 @@ module Core {
                 LOADING_UI,
                 SKYPLOT_UI,
                 DETAILS_UI,
-                PANORAMA_UI
+                PANORAMA_UI,
+                RADAR_UI
             }
         }
 
@@ -36,11 +39,9 @@ module Core {
                 _getter = getter;
                 _setter = setter;
             }
-
             public function get() {
                 return _getter.invoke();
             }
-
             public function set(arg) as Void {
                 _setter.invoke(arg);
                 WatchUi.requestUpdate();
@@ -64,6 +65,8 @@ module Core {
                     return DetailsUiArena.useArena(dataType);
                 case ArenaType.PANORAMA_UI:
                     return PanoramaUiArena.useArena(dataType);
+                case ArenaType.RADAR_UI:
+                    return RadarUiArena.useArena(dataType);
             }
             return null;
         }

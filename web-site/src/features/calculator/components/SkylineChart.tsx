@@ -126,10 +126,17 @@ export const SkylineChart: React.FC<Props> = ({ azimuthProfiles, sunPath }) => {
               backdropFilter: 'blur(4px)',
             }}
             labelFormatter={(label) => `${t('azimuth')}: ${Number(label).toFixed(0)}°`}
-            formatter={(value, name) => [
-              value !== undefined && value !== null ? `${Number(value).toFixed(1)}°` : '',
-              name === 'terrain' ? t('skyline_terrain') : t('sun_path'),
-            ]}
+            formatter={(value, name, props) => {
+              const dist = props.payload.distance;
+              const distStr = dist ? ` (${(dist / 1000).toFixed(1)}km)` : '';
+
+              return [
+                value !== undefined && value !== null
+                  ? `${Number(value).toFixed(1)}°${name === 'terrain' ? distStr : ''}`
+                  : '',
+                name === 'terrain' ? t('skyline_terrain') : t('sun_path'),
+              ];
+            }}
             cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '5 5' }}
           />
 

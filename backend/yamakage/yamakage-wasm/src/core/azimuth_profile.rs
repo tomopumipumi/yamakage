@@ -38,6 +38,10 @@ pub struct TerrainAzimuthProfileWasm {
     /// The actual altitude of the highest obstacle point in meters.
     /// 最大仰角を形成する障害物の実際の標高（メートル）。
     pub highest_altitude: f64,
+
+    /// The distance from the origin to the highest obstacle point in meters.
+    /// 起点から最大仰角を形成する障害物までの距離（メートル）。
+    pub distance: f64,
 }
 
 /// Calculates the apparent elevation angle of a target point, accounting for Earth's curvature and atmospheric refraction.
@@ -95,12 +99,12 @@ pub fn calculate_azimuth_profiles(
                     let dist = arena.distances[i];
                     let angle_deg =
                         calc_apparent_elevation_angle_deg(dist, alt, eye_level_altitude);
-                    (angle_deg, arena.lats[i], arena.lngs[i], alt)
+                    (angle_deg, arena.lats[i], arena.lngs[i], alt, dist)
                 })
                 .max_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
 
-            let (max_angle, max_lat, max_lng, max_alt) =
-                max_point.unwrap_or((SUN_STANDARD_HORIZON_ELEVATION_DEG, 0.0, 0.0, 0.0));
+            let (max_angle, max_lat, max_lng, max_alt, max_dist) =
+                max_point.unwrap_or((SUN_STANDARD_HORIZON_ELEVATION_DEG, 0.0, 0.0, 0.0, 0.0));
 
             // Ensure the angle does not fall below the standard mathematical horizon
             // 仰角が標準的な地平線・水平線を下回らないように調整
@@ -119,6 +123,11 @@ pub fn calculate_azimuth_profiles(
                 },
                 highest_altitude: if angle > SUN_STANDARD_HORIZON_ELEVATION_DEG {
                     max_alt
+                } else {
+                    0.0
+                },
+                distance: if angle > SUN_STANDARD_HORIZON_ELEVATION_DEG {
+                    max_dist
                 } else {
                     0.0
                 },

@@ -4,19 +4,21 @@ import Features.Panorama;
 import Features.SkyPlot;
 import Features.Details;
 import Features.Error;
+import Features.Radar;
 
 module Shared {
     module Core {
         module Router {
-            // Do not include error pages.
-            const TOTAL_PAGES = 3;
+            // Panorama -> SkyPlot -> Radar -> Details
+            const TOTAL_PAGES = 4;
 
             module Page {
                 enum {
                     PANORAMA = 0,
                     SKYPLOT = 1,
-                    DETAILS = 2,
-                    ERROR = 3
+                    RADAR = 2,
+                    DETAILS = 3,
+                    ERROR = 4
                 }
             }
 
@@ -47,6 +49,8 @@ module Shared {
                     return new Panorama.PanoramaView();
                 } else if (pageId == Page.SKYPLOT) {
                     return new SkyPlot.SkyPlotView();
+                } else if (pageId == Page.RADAR) {
+                    return new Radar.RadarView();
                 } else if (pageId == Page.DETAILS) {
                     return new Details.DetailsView();
                 } else if (pageId == Page.ERROR) {
@@ -62,6 +66,8 @@ module Shared {
                     return new Panorama.PanoramaDelegate();
                 } else if (pageId == Page.SKYPLOT) {
                     return new SkyPlot.SkyPlotDelegate();
+                } else if (pageId == Page.RADAR) {
+                    return new Radar.RadarDelegate();
                 } else if (pageId == Page.DETAILS) {
                     return new Details.DetailsDelegate();
                 } else if (pageId == Page.ERROR) {

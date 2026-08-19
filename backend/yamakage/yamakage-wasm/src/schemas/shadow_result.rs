@@ -31,9 +31,11 @@ impl ShadowResultWasm {
                 buffer.push(pt.lat);
                 buffer.push(pt.lng);
                 buffer.push(p.highest_altitude);
+                buffer.push(p.distance);
             } else {
                 buffer.push(f64::NAN);
                 buffer.push(f64::NAN);
+                buffer.push(0.0);
                 buffer.push(0.0);
             }
         }
@@ -69,6 +71,7 @@ mod tests {
                     lng: 135.1,
                 }),
                 highest_altitude: 100.0,
+                distance: 1000.0,
             }],
             sun_path: vec![SunPathPointWasm {
                 time: 1500.0,
@@ -79,7 +82,7 @@ mod tests {
 
         result.pack_into_buffer(&mut buffer);
 
-        assert_eq!(buffer.len(), 16);
+        assert_eq!(buffer.len(), 17);
 
         // Header
         assert_eq!(buffer[0], 0.0); // is_polar
@@ -93,10 +96,11 @@ mod tests {
         assert_eq!(buffer[10], 35.1); // lat
         assert_eq!(buffer[11], 135.1); // lng
         assert_eq!(buffer[12], 100.0); // highest_altitude
+        assert_eq!(buffer[13], 1000.0); // distance (追加)
 
-        // Sun path
-        assert_eq!(buffer[13], 1500.0); // time
-        assert_eq!(buffer[14], 180.0); // azimuth
-        assert_eq!(buffer[15], 45.0); // altitude
+        // Sun path (インデックスが1つずつ後ろにずれる)
+        assert_eq!(buffer[14], 1500.0); // time
+        assert_eq!(buffer[15], 180.0); // azimuth
+        assert_eq!(buffer[16], 45.0); // altitude
     }
 }

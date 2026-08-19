@@ -143,16 +143,17 @@ export const calculateShadow = ({ lat, lng, targetTime, stepDeg, quality = 1 }: 
             const profilesArray = new Float64Array(
               currentWasm.memory.buffer,
               profilesOffset,
-              numProfiles * 5,
+              numProfiles * 6,
             );
             const azimuthProfiles: TerrainAzimuthProfile[] = [];
 
             for (let i = 0; i < numProfiles; i++) {
-              const azimuthDeg = profilesArray[i * 5];
-              const maxObstacleAngleDeg = profilesArray[i * 5 + 1];
-              const hLat = profilesArray[i * 5 + 2];
-              const hLng = profilesArray[i * 5 + 3];
-              const highestAltitude = profilesArray[i * 5 + 4];
+              const azimuthDeg = profilesArray[i * 6];
+              const maxObstacleAngleDeg = profilesArray[i * 6 + 1];
+              const hLat = profilesArray[i * 6 + 2];
+              const hLng = profilesArray[i * 6 + 3];
+              const highestAltitude = profilesArray[i * 6 + 4];
+              const distance = profilesArray[i * 6 + 5];
 
               let highestPoint: Coordinate | undefined;
 
@@ -165,10 +166,11 @@ export const calculateShadow = ({ lat, lng, targetTime, stepDeg, quality = 1 }: 
                 maxObstacleAngleDeg,
                 highestPoint,
                 highestAltitude,
+                distance,
               });
             }
 
-            const sunPathOffset = profilesOffset + numProfiles * 5 * 8;
+            const sunPathOffset = profilesOffset + numProfiles * 6 * 8;
             const sunPathArray = new Float64Array(
               currentWasm.memory.buffer,
               sunPathOffset,

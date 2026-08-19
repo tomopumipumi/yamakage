@@ -3,6 +3,7 @@ export interface TerrainAzimuthProfile {
   maxObstacleAngleDeg: number;
   highestPoint?: { lat: number; lng: number };
   highestAltitude?: number;
+  distance?: number;
 }
 
 export interface SunPathPoint {

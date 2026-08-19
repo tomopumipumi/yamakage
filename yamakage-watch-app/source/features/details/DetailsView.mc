@@ -180,7 +180,7 @@ module Features {
                     var index = (heading / stepDeg).toNumber();
                     if (index >= 0 && index < profiles.size()) {
                         elevStr =
-                            profiles[index].toFloat().format("%.1f") + "°";
+                            profiles[index][0].toFloat().format("%.1f") + "°";
                     }
                 }
 

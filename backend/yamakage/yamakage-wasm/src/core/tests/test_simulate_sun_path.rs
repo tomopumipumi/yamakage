@@ -19,6 +19,7 @@ pub(crate) mod tests {
             max_obstacle_angle_deg: angle,
             highest_point: None,
             highest_altitude: 0.0,
+            distance: 0.0,
         }
     }
 

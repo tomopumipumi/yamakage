@@ -13,6 +13,7 @@ Launch the app and press the "START" button to execute calculations. You can the
 
 ・ Panorama View: Displays the elevation profile of the terrain (mountains) in the direction you are currently facing, overlaid with the sun's trajectory and your current solar position.
 ・ SkyPlot: Provides a 360-degree top-down view of the terrain elevations and the sun’s path across the sky.
+・ Radar View: Intuitively visualizes surrounding obstacles and open areas from a top-down, radar-like perspective. It also displays the real-time distance (in km) to the obstacle in the direction your watch is facing.
 ・ Details View: Shows precise sunrise and sunset times adjusted for terrain, along with the elevation angle of the terrain in your current direction.
 
 ■ How it works

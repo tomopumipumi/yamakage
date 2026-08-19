@@ -3,8 +3,8 @@ import Toybox.WatchUi;
 import Shared.Core.Router;
 
 module Features {
-    module SkyPlot {
-        class SkyPlotDelegate extends WatchUi.BehaviorDelegate {
+    module Radar {
+        class RadarDelegate extends WatchUi.BehaviorDelegate {
             function initialize() {
                 BehaviorDelegate.initialize();
             }
@@ -17,7 +17,7 @@ module Features {
                 return true;
             }
             function onNextPage() as Boolean {
-                Router.navigateTo(Router.Page.RADAR, WatchUi.SLIDE_UP);
+                Router.navigateTo(Router.Page.DETAILS, WatchUi.SLIDE_UP);
                 return true;
             }
         }

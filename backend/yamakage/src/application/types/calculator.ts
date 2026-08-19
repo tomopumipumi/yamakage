@@ -34,4 +34,5 @@ export interface TerrainAzimuthProfile {
   maxObstacleAngleDeg: number;
   highestPoint?: Coordinate;
   highestAltitude?: number;
+  distance?: number;
 }

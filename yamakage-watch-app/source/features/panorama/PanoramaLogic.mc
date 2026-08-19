@@ -16,8 +16,20 @@ module Features {
                 var fov = 90.0;
 
                 for (var i = 0; i < profiles.size(); i++) {
+                    var item = profiles[i];
+                    if (!(item instanceof Array) || item.size() < 1) {
+                        continue;
+                    }
+
                     var az = (i * stepDeg).toFloat();
-                    var el = profiles[i].toFloat();
+                    // [0]の仰角のみを使用
+                    var el =
+                        item[0] instanceof Number || item[0] instanceof Float
+                            ? item[0].toFloat()
+                            : 0.0;
+                    if (el > 90.0 || el < -90.0) {
+                        el = 0.0;
+                    }
 
                     var diff = az - heading;
                     while (diff > 180) {

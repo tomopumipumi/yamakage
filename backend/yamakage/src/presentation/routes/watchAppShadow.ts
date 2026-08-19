@@ -58,7 +58,10 @@ export const createWatchAppShadowRouter = (logger: Logger) => {
     if (Exit.isSuccess(exit)) {
       const result = exit.value;
 
-      const azimuthProfilesFlat = result.azimuthProfiles.map((p) => p.maxObstacleAngleDeg);
+      const azimuthProfilesFlat = result.azimuthProfiles.map((p) => [
+        p.maxObstacleAngleDeg ?? 0,
+        p.distance ?? 0,
+      ]);
 
       const sunPathsFlat = result.sunPath.map((sp) => [sp.time, sp.azimuth, sp.altitude]);
 

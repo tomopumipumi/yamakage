@@ -25,20 +25,27 @@ module Features {
 
                     var index = (headingDeg / stepDeg).toNumber();
                     if (index >= 0 && index < profiles.size()) {
-                        var elF = profiles[index].toFloat();
-                        var r = radius * (1.0 - elF / 90.0);
-                        if (r < 0) {
-                            r = 0.0;
+                        var item = profiles[index];
+                        if (item instanceof Array && item.size() > 0) {
+                            var elF =
+                                item[0] instanceof Number ||
+                                item[0] instanceof Float
+                                    ? item[0].toFloat()
+                                    : 0.0;
+                            var r = radius * (1.0 - elF / 90.0);
+                            if (r < 0) {
+                                r = 0.0;
+                            }
+
+                            var mx = cx + (r * Math.cos(rad)).toNumber();
+                            var my = cy + (r * Math.sin(rad)).toNumber();
+
+                            dc.setColor(
+                                Graphics.COLOR_BLUE,
+                                Graphics.COLOR_TRANSPARENT
+                            );
+                            dc.fillCircle(mx, my, 4);
                         }
-
-                        var mx = cx + (r * Math.cos(rad)).toNumber();
-                        var my = cy + (r * Math.sin(rad)).toNumber();
-
-                        dc.setColor(
-                            Graphics.COLOR_BLUE,
-                            Graphics.COLOR_TRANSPARENT
-                        );
-                        dc.fillCircle(mx, my, 4);
                     }
                 }
             }
