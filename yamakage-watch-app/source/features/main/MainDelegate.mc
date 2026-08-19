@@ -56,7 +56,7 @@ module Features {
                 ApiClient.fetchShadowData(
                     pos[0],
                     pos[1],
-                    method(:onApiCallback)
+                    method(:onApiCallback) as ApiClient.CallbackMethod
                 );
             }
 
@@ -81,10 +81,23 @@ module Features {
                 } else {
                     var userMessage = "API Error: " + responseCode;
 
-                    if (responseCode == -104) {
+                    if (
+                        responseCode ==
+                            Communications.BLE_CONNECTION_UNAVAILABLE ||
+                        responseCode == Communications.BLE_HOST_TIMEOUT
+                    ) {
                         userMessage = "Bluetooth Offline";
-                    } else if (responseCode == -300) {
+                    } else if (
+                        responseCode == Communications.NETWORK_REQUEST_TIMED_OUT
+                    ) {
                         userMessage = "Network Timeout";
+                    } else if (
+                        responseCode ==
+                        Communications.INVALID_HTTP_BODY_IN_NETWORK_RESPONSE
+                    ) {
+                        userMessage = "Invalid Response";
+                    } else if (responseCode == 401 || responseCode == 403) {
+                        userMessage = "Auth Error";
                     } else if (responseCode == 404) {
                         userMessage = "Server Not Found";
                     } else if (responseCode >= 500) {
