@@ -1,41 +1,46 @@
-YAMAKAGE - 地形を考慮した日没・日の出予測
+YAMAKAGE - Terrain-Aware Sunrise & Sunset Predictor
 
-■概要
-山間部の暗闇は、一般的な日没時間よりも早く訪れます。
+■ Overview
+Darkness falls much faster in the mountains than in flat areas due to terrain obstructions.
+YAMAKAGE is a watch application that analyzes surrounding terrain (elevation data) to calculate and visualize "true" sunrise and sunset times, accounting for the actual mountains and shadows around you.
 
-YAMAKAGEは、周囲の地形（標高データ）を読み込み、実際の山や影を考慮した「本当の日の出・日の入り時刻」を算出・可視化するウォッチアプリです。
+■ Key Features
+YAMAKAGE scans terrain data within a 30km radius of your current location and cross-references it with the sun's trajectory to predict exactly when the sun will disappear behind or emerge from the terrain.
+Evolving from our popular data field version, this standalone app offers enhanced visual insights, allowing you to grasp your surroundings at a glance. It is perfect for trail running, mountaineering, and cycling when accurate light management is crucial.
 
-■主な特徴
-現在地から周囲最大20kmの地形データをスキャンし、太陽の軌道と山の高さを照らし合わせることで、実際にいつ太陽が隠れるか（現れるか）を予測します。
+■ Data & Features
+Launch the app and press the "START" button to execute calculations. You can then navigate through three distinct views:
 
-データフィールド版から表現力が大幅に進化し、直感的なグラフィックで周囲の状況を把握できるようになりました。
+・ Panorama View: Displays the elevation profile of the terrain (mountains) in the direction you are currently facing, overlaid with the sun's trajectory and your current solar position.
+・ SkyPlot: Provides a 360-degree top-down view of the terrain elevations and the sun’s path across the sky.
+・ Details View: Shows precise sunrise and sunset times adjusted for terrain, along with the elevation angle of the terrain in your current direction.
 
-■表示されるデータ・機能
-アプリを起動し「START」ボタンを押して計算を実行すると、以下の3つの画面（スワイプ等で切り替え）で結果を確認できます。
+■ How it works
+To minimize battery consumption and processing load on your device, YAMAKAGE performs complex terrain analysis on a dedicated cloud server.
 
-・パノラマビュー: スマートウォッチが向いている方向の障害物(山など)の仰角と、太陽の軌道や現在位置を重ね合わせて表示します。
-・天空図: 360度全方位の仰角地形と、空を横切る太陽の動きを円形グラフで俯瞰できます。
-・詳細データ: 地形を考慮した正確な「日の出時刻」「日の入り時刻」、および現在向いている方角の障害物の仰角を確認できます。
+1. The app sends your current GPS coordinates to our secure server.
+2. The server instantly analyzes global elevation data within a 30km radius of your location.
+3. The results—the terrain profile combined with solar trajectory data—are sent back to your device, where the app renders the graphs.
 
-■仕組み
-デバイスのバッテリー消費と処理負荷を最小限に抑えるため、YAMAKAGEは複雑な地形計算を専用のクラウドサーバーで行っています。
+Privacy Note: While this app transmits your location to our server for calculation, we do not collect or store any personal information, including account details or device identifiers. To maintain anonymity, we use a randomly generated temporary hash for communication. Transmitted location data is never permanently stored and is discarded immediately after the calculation is complete.
 
-1. アプリから現在地のGPS座標を専用サーバーへ送信します。
-2. サーバーが、公開されている世界中の地形データを読み込み、現在地を中心とした30km圏内の標高を瞬時に解析します。
-3. その地形の断面図と太陽の軌道計算を掛け合わせ、デバイスへ結果を送り返してグラフを描画します。
+■ Important Notes
 
-※プライバシーに関する注釈
-本アプリは日没計算のために位置情報を外部サーバーへ送信しますが、アカウント情報やデバイス識別子など、個人を特定できる情報は一切取得・送信していません。通信には匿名性を保つため、完全にランダムに生成された一時的なハッシュ値のみを使用しています。
-送信された位置情報についてもサーバー側に保存（永続化）されることはなく、計算完了後に即座に破棄されます（動作ログとして一時的に残るのみで、計算以外の目的には一切使用されません）。安心してお使いください。
+・ Smartphone Connection Required: As the app fetches terrain data from the cloud, your device must be connected to your smartphone (via Garmin Connect Mobile) during the calculation process.
+GPS Acquisition: The app uses your current GPS location. Please execute the calculation outdoors where a strong GPS signal is available.
+Communication Failures: If the app fails to connect to the server or your smartphone, an error screen will appear. Please ensure your connection and try again.
+Exceptions: In regions like Northern Europe during polar day/night, where sunrise/sunset concepts do not apply, times will be displayed as "--:--" and sunrise/sunset icons will not appear.
 
-■ご利用上の注意（必ずお読みください）
+■ Disclaimer & Accuracy
+The times and graphs provided are predictions based on elevation data (approx. 38m resolution) and solar trajectory calculations. They do not account for atmospheric conditions, surrounding vegetation, buildings, or weather (clouds), and may differ from your actual experience by several to over ten minutes.
+Do not rely solely on this data for safety. Always maintain a flexible schedule and prioritize your safety in the mountains.
 
-・スマートフォンとの通信が必須です: 地形データを外部から取得するため、計算実行時はスマートフォン（Garmin Connect Mobileアプリ）と接続されている必要があります。
-・GPSの取得: 計算には現在地のGPSデータを使用します。GPS信号を捕捉しやすい屋外で実行してください。
-・通信の失敗: 外部サーバーとの通信に失敗した場合やスマートフォンと繋がっていない場合は、エラー画面が表示されます。通信環境の良い場所で再度実行してください。
-・例外時の表示: 夏の北欧など、白夜・極夜の地域で「日の出・日没」の概念が存在しない日は、時刻が --:-- と表示され、日の出・日の入りアイコンは表示されません。
 
-■ご免責事項・誤差について
-本アプリが算出する時刻やグラフは、地形データ（約38mメッシュ）と太陽軌道から計算された予測値です。
-大気の状態、周囲の樹木や建物の高さ、天候（雲）などは考慮されないため、実際の体感とは数分〜十数分程度の誤差が生じる場合があります。
-「予測時刻までは絶対に明るい」と過信せず、常に余裕を持ったスケジュールでの行動を心がけてください。
+■DataField
+https://apps.garmin.com/apps/cbe81d8e-661d-49b0-bc4c-a1fc8ab10d53
+
+■SourceCode
+https://github.com/tomopumipumi/yamakage
+
+■Try it right in your browser!
+https://yamakage-site.pages.dev/
