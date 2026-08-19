@@ -5,6 +5,7 @@ import Toybox.Time;
 import Core.ApiSchema;
 import Features.Panorama.PanoramaLogic;
 import Shared.Ui.SunIcon;
+import Hal.DateTime;
 
 module Features {
     module Panorama {
@@ -51,7 +52,7 @@ module Features {
                         return;
                     }
 
-                    var now = Time.now().value();
+                    var now = DateTime.createTargetUnixTime();
                     var minTimeDiff = 99999999;
                     var currentSunSp = null;
 

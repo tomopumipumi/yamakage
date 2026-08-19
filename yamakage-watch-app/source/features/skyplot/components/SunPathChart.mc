@@ -5,6 +5,7 @@ import Toybox.Time;
 import Core.ApiSchema;
 import Core.ApiSchema.SunPathIndex;
 import Shared.Ui.SunIcon;
+import Hal.DateTime;
 
 module Features {
     module SkyPlot {
@@ -30,7 +31,7 @@ module Features {
                     var lastX = -1;
                     var lastY = -1;
 
-                    var now = Time.now().value();
+                    var now = DateTime.createTargetUnixTime();
                     var minTimeDiff = 99999999;
                     var currentSunPx = -1;
                     var currentSunPy = -1;

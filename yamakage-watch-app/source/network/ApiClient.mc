@@ -6,6 +6,7 @@ import Core.ArenaConfig;
 import Core.Config;
 import Core.ArenaConfig.ArenaType;
 import Core.Arena.CoreArena;
+import Hal.DateTime;
 
 module Network {
     module ApiClient {
@@ -26,7 +27,7 @@ module Network {
             var params = {
                 "lat" => lat,
                 "lng" => lng,
-                "time" => Time.now().value() * 1000l
+                "time" => DateTime.createTargetUnixTime() * 1000l
             };
 
             var options = {
