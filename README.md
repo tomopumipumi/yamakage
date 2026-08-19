@@ -1,65 +1,80 @@
 # YAMAKAGE (山影)
 
-YAMAKAGE は、ユーザーの現在地周辺または指定された地点の地形データと太陽の軌道を掛け合わせ、山や周囲の障害物の影に隠れる **「真の日の入り・日の出時刻」** を計算・シミュレーションするアプリケーションシステムです。
+YAMAKAGE is an application system that combines topographical data around a user's current or specified location with the sun's trajectory to calculate and simulate the **"true sunset and sunrise times"** hidden behind mountains or surrounding obstacles.
 
-登山中やアウトドアアクティビティにおいて、標準的な日没時刻よりも早く訪れる「実際の暗闇」を正確に予測し、安全な行動計画をサポートします。
+During mountain climbing and outdoor activities, it accurately predicts the "actual darkness" that arrives earlier than the standard sunset time, supporting safer activity planning.
 
-## 📦 リポジトリ構成 (モノレポ)
+## 📦 Repository Structure (Monorepo)
 
-本リポジトリは、バックエンドAPI、Webアプリフロントエンド、Garminスマートウォッチ向けアプリを内包するモノレポ構成となっています。
+This repository is structured as a monorepo containing the backend API, the Web app frontend, and Garmin smartwatch apps (Data Field version and Standalone Watch App version).
 
 ```text
 .
-├── backend/                # バックエンドAPI (BFF) & コア計算エンジン
+├── backend/                # Backend API (BFF) & Core Calculation Engine
 │   ├── yamakage/           # 🌐 Cloudflare Workers API (TypeScript / Hono)
-│   └── yamakage-wasm/      # ⚙️ コア計算エンジン (Rust / WebAssembly)
-├── web-site/               # 💻 Webフロントエンド (React / TypeScript / Vite)
-├── yamakage-datafield/     # ⌚️ Garmin Connect IQ アプリ のデータフィールド版(Monkey C)
+│   └── yamakage-wasm/      # ⚙️ Core Calculation Engine (Rust / WebAssembly)
+├── web-site/               # 💻 Web Frontend (React / TypeScript / Vite)
+├── yamakage-datafield/     # ⌚️ Garmin Connect IQ App (Data Field version / Monkey C)
+├── yamakage-watch-app/     # ⌚️ Garmin Connect IQ App (Standalone Watch App version / Monkey C)
 ├── yamakage-datafield/devtools/icon_generater/
-│                           # 🔧 アイコン(svg)をGarminデバイスで使えるフォントファイルに変換するツール
-└── docs/                   # 📄 アーキテクチャドキュメント・ADR
+│                           # 🔧 Tool to convert SVG icons into font files usable on Garmin devices
+└── docs/                   # 📄 Architecture Documents and ADRs
 
 ```
 
-## 🚀 プロジェクトごとの役割
+## 🚀 Roles by Project
 
 ### 1. Backend API (`backend/`)
 
-Cloudflare Workers 上で動作する BFF (Backend For Frontends) です。
-エッジ環境でのCPU・メモリ制約をクリアするため、**TypeScriptとRust(Wasm)によるゼロコピー・ハイブリッドアーキテクチャ**を採用しています。
+A BFF (Backend For Frontends) running on Cloudflare Workers.
+To overcome CPU and memory constraints in edge environments, it adopts a **zero-copy hybrid architecture using TypeScript and Rust (Wasm)**.
 
 #### **`backend/yamakage/` (TypeScript / Hono / Effect):**
-ネットワークI/Oとルーティングを担当。GarminやWebからのリクエストを受け付け、AWS Open Dataからの地形タイル(PNG)のフェッチやCloudflare R2へのキャッシュ処理を行います。
+
+Handles network I/O and routing. It receives requests from Garmin devices and the Web, fetches terrain tiles (PNGs) from AWS Open Data, and manages cache processing with Cloudflare R2.
+
 #### **`backend/yamakage-wasm/` (Rust / WebAssembly):**
-純粋で高負荷な計算ロジック（画像デコード、標高抽出、地形プロファイル構築、太陽軌道のシミュレーション）を担当します。TS層から直接メモリに流し込まれたPNGバイナリを処理し、結果をフラットな配列としてTS層へ返却します。
+
+Handles pure, high-load calculation logic (image decoding, elevation extraction, terrain profile construction, and sun trajectory simulation). It processes PNG binaries streamed directly into memory from the TS layer and returns the results as a flat array back to the TS layer.
 
 ### 2. Web Application (`web-site/`)
 
-ブラウザ上で動作するシミュレーション用Webアプリです（Cloudflare Pagesでホスティング）。
-地図上で任意の地点を指定し、周囲の地形プロファイル（各方位の最大仰角）や太陽の軌道グラフを視覚的に確認することができます。
+A web simulation application running in the browser (hosted on Cloudflare Pages).
+Users can specify any point on a map to visually check the surrounding terrain profile (maximum elevation angle in each direction) and the sun's trajectory graph.
 
-- **スタック:** React, TypeScript, Vite
-- **機能:** 地図クリックによる任意地点のシミュレーション、結果のグラフ表示（Skyline Chart）、SNSシェア機能など。
+- **Stack:** React, TypeScript, Vite
+- **Features:** Simulation of any location by clicking on the map, graphical display of results (Skyline Chart), SNS sharing functionality, etc.
 
 ### 3. Garmin Data Field App (`yamakage-datafield/`)
 
-Garmin製スマートウォッチ向けの Connect IQ データフィールドアプリです。
-登山中やランニング中などのアクティビティ画面に組み込み、現在地の真の日没時刻をリアルタイムに表示します。
+A Connect IQ Data Field app for Garmin smartwatches.
+Integrated into activity screens during hikes or runs, it displays the true sunset time of the current location in real-time.
 
-- **スタック:** Monkey C
-- **機能:** GPSによるバックグラウンド位置情報取得、APIへの定期通信、超低メモリ環境に最適化されたUI描画とデータ処理。
-    > ※重い計算処理をすべてバックエンドAPIにオフロードすることで、デバイスのバッテリー消費を抑えています。
+- **Stack:** Monkey C
+- **Features:** Background GPS location tracking, periodic API communication, and UI rendering and data processing optimized for ultra-low memory environments.
+> *Note: By offloading all heavy calculation processes to the backend API, it minimizes device battery consumption.*
 
-### 4. Documentation (`docs/`)
 
-システムのアーキテクチャ図や、設計上の意思決定記録をまとめています。
 
-## 📖 開発環境のセットアップ
+### 4. Garmin Watch App (`yamakage-watch-app/`)
 
-各プロジェクトのディレクトリに移動し、それぞれの `README.md` を参照してください。
+A Connect IQ Watch App (standalone app) for Garmin smartwatches.
+It can be launched on-demand at any time, even outside of activities, allowing users to visually grasp the surrounding terrain and sunlight conditions with rich graphics.
+
+- **Stack:** Monkey C
+- **Features:** On-demand GPS acquisition and API communication triggered by button presses. Features advanced graphic rendering, including a "Panorama View" that draws mountain silhouettes in the direction the user is facing, and a "SkyPlot," offering a 360-degree bird's-eye view of the terrain and the sun's trajectory.
+
+### 5. Documentation (`docs/`)
+
+Contains system architecture diagrams and records of architectural design decisions.
+
+## 📖 Development Setup
+
+Navigate to each project's directory and refer to their respective `README.md` files.
 
 ---
 
-## リポジトリルートコマンド
-- `pnpm install`: リポジトリ全体のnode系プロジェクトの依存関係をインストールします。
-- `pnpm clean`: リポジトリ全体の自動生成フォルダなど(node_modulesなど)を削除します。
+## Repository Root Commands
+
+- `pnpm install`: Installs dependencies for all Node-based projects across the entire repository.
+- `pnpm clean`: Removes auto-generated folders (such as `node_modules`) across the entire repository.
