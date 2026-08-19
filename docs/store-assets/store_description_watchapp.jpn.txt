@@ -43,8 +43,8 @@ YAMAKAGEは、周囲の地形（標高データ）を読み込み、実際の山
 ■データフィールド版
 https://apps.garmin.com/ja-JP/apps/cbe81d8e-661d-49b0-bc4c-a1fc8ab10d53
 
-■SourceCode
+■ソースコード
 https://github.com/tomopumipumi/yamakage
 
-■Try it right in your browser!
+■ブラウザでも試せます！
 https://yamakage-site.pages.dev/
