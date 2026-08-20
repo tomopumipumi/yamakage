@@ -47,14 +47,14 @@ module Features {
                                 ? tVal.toNumber()
                                 : tVal as Number;
 
-                        if (elDeg < 0) {
+                        if (elDeg < 0.0) {
                             lastX = -1;
                             lastY = -1;
                             continue;
                         }
 
                         var r = radius * (1.0 - elDeg / 90.0);
-                        if (r < 0) {
+                        if (r < 0.0) {
                             r = 0.0;
                         }
 

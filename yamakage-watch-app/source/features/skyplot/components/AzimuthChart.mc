@@ -27,7 +27,9 @@ module Features {
 
                         if (
                             !(item1 instanceof Array) ||
-                            !(item2 instanceof Array)
+                            item1.size() == 0 ||
+                            !(item2 instanceof Array) ||
+                            item2.size() == 0
                         ) {
                             continue;
                         }
@@ -53,11 +55,11 @@ module Features {
                         }
 
                         var r1 = radius * (1.0 - elDeg1 / 90.0);
-                        if (r1 < 0) {
+                        if (r1 < 0.0) {
                             r1 = 0.0;
                         }
                         var r2 = radius * (1.0 - elDeg2 / 90.0);
-                        if (r2 < 0) {
+                        if (r2 < 0.0) {
                             r2 = 0.0;
                         }
 

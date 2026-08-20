@@ -1,6 +1,5 @@
 import Toybox.Lang;
 import Toybox.Graphics;
-import Hal.Sensor.LocationSensor;
 
 module Features {
     module Main {
@@ -9,11 +8,10 @@ module Features {
                 function render(
                     dc as Graphics.Dc,
                     cx as Number,
-                    y as Number
+                    y as Number,
+                    gpsText as String,
+                    gpsColor as Graphics.ColorType
                 ) as Void {
-                    var gpsText = LocationSensor.getGpsStatusString();
-                    var gpsColor = LocationSensor.getGpsStatusColor();
-
                     dc.setColor(gpsColor, Graphics.COLOR_TRANSPARENT);
                     dc.drawText(
                         cx,

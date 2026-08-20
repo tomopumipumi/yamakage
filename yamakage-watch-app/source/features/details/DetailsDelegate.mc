@@ -1,5 +1,7 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
+import Shared.Core.Page;
+using MonkeyHooks as MH;
 
 module Features {
     module Details {
@@ -9,12 +11,12 @@ module Features {
             }
 
             function onPreviousPage() as Boolean {
-                WatchUi.popView(WatchUi.SLIDE_DOWN);
+                MH.Router.pop(WatchUi.SLIDE_DOWN);
                 return true;
             }
 
             function onBack() as Boolean {
-                WatchUi.popView(WatchUi.SLIDE_RIGHT);
+                MH.Router.switchTo(Page.MAIN, WatchUi.SLIDE_RIGHT);
                 return true;
             }
         }

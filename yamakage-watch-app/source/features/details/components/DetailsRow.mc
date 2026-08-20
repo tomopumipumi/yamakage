@@ -1,9 +1,9 @@
 import Toybox.Lang;
 import Toybox.Graphics;
-import Core.ArenaConfig;
-import Core.ArenaConfig.ArenaType;
-import Core.Arena.CoreArena;
-import Core.Arena.DetailsUiArena;
+
+using MonkeyHooks as MH;
+using Core.AppArena.CoreArena as coreA;
+using Core.AppArena.DetailsUiArena as detailA;
 
 module Features {
     module Details {
@@ -17,27 +17,17 @@ module Features {
                     accentColor as Graphics.ColorType,
                     iconText as String
                 ) as Void {
-                    var w =
-                        ArenaConfig.useArena(
-                            ArenaType.CORE,
-                            CoreArena.DataType.DISPLAY_WIDTH
-                        ).get() as Number;
+                    var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
 
-                    var labelFont =
-                        ArenaConfig.useArena(
-                            ArenaType.DETAILS_UI,
-                            DetailsUiArena.DataType.LABEL_FONT
-                        ).get() as Graphics.FontType;
-                    var valueFont =
-                        ArenaConfig.useArena(
-                            ArenaType.DETAILS_UI,
-                            DetailsUiArena.DataType.VALUE_FONT
-                        ).get() as Graphics.FontType;
-                    var iconFont =
-                        ArenaConfig.useArena(
-                            ArenaType.DETAILS_UI,
-                            DetailsUiArena.DataType.ICON_FONT
-                        ).get() as Graphics.FontType;
+                    var labelFont = MH.useFont(detailA.LABEL_FONT)
+                        .init(Graphics.FONT_XTINY)
+                        .req();
+                    var valueFont = MH.useFont(detailA.VALUE_FONT)
+                        .init(Graphics.FONT_XTINY)
+                        .req();
+                    var iconFont = MH.useFont(detailA.ICON_FONT)
+                        .init(Graphics.FONT_XTINY)
+                        .req();
 
                     var iconX = (w * 0.32).toNumber();
                     var textX = (w * 0.45).toNumber();

@@ -33,7 +33,7 @@ module Features {
                                     ? item[0].toFloat()
                                     : 0.0;
                             var r = radius * (1.0 - elF / 90.0);
-                            if (r < 0) {
+                            if (r < 0.0) {
                                 r = 0.0;
                             }
 

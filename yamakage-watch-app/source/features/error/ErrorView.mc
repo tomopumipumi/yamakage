@@ -3,36 +3,31 @@ import Toybox.Graphics;
 import Toybox.WatchUi;
 import Toybox.Timer;
 import Toybox.Math;
-import Core.ArenaConfig;
-import Core.ArenaConfig.ArenaType;
-import Core.Arena.CoreArena;
 import Shared.Logic.PositionConfigure;
-
 import Features.Error.Components.ErrorMountains;
 import Features.Error.Components.ErrorIcon;
 import Features.Error.Components.ErrorMessage;
 
+using MonkeyHooks as MH;
+using Core.AppArena.CoreArena as coreA;
+
 module Features {
     module Error {
         class ErrorView extends WatchUi.View {
-            private var _timer as Timer.Timer;
             private var _pulse as Float = 0.0;
+            private var _onTimerTick as Lang.Method;
 
             function initialize() {
                 View.initialize();
-                _timer = new Timer.Timer();
-            }
-
-            function onLayout(dc as Graphics.Dc) as Void {
-                PositionConfigure.initializeGlobalLayout(dc);
+                _onTimerTick = method(:onTimerTick);
             }
 
             function onShow() as Void {
-                _timer.start(method(:onTimerTick), 100, true);
+                MH.SharedTimer.subscribe(_onTimerTick);
             }
 
             function onHide() as Void {
-                _timer.stop();
+                MH.SharedTimer.unsubscribe(_onTimerTick);
             }
 
             function onTimerTick() as Void {
@@ -43,28 +38,16 @@ module Features {
                 WatchUi.requestUpdate();
             }
 
-            function onUpdate(dc as Graphics.Dc) as Void {
-                var w =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_WIDTH
-                    ).get() as Number;
-                var h =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_HEIGHT
-                    ).get() as Number;
-                var cx =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.CENTER_X
-                    ).get() as Number;
+            function onLayout(dc as Graphics.Dc) as Void {
+                PositionConfigure.initializeGlobalLayout(dc);
+            }
 
-                var errMsg =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.LAST_ERROR
-                    ).get() as String?;
+            function onUpdate(dc as Graphics.Dc) as Void {
+                var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
+                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
+                var cx = MH.useNumber(coreA.CENTER_X).init(0).req();
+
+                var errMsg = MH.useString(coreA.LAST_ERROR).get();
                 if (errMsg == null) {
                     errMsg = "Unknown Error";
                 }

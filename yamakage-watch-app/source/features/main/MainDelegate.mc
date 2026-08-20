@@ -5,11 +5,13 @@ import Hal.Sensor.LocationSensor;
 import Hal.Sensor.LocationSensor.LatLon;
 import Network.ApiClient;
 import Core.ApiSchema;
-import Core.ArenaConfig;
-import Core.Arena.CoreArena;
-import Core.ArenaConfig.ArenaType;
 import Features.Loading;
-import Shared.Core.Router;
+import Shared.Core.Page;
+
+using MonkeyHooks as MH;
+using Core.AppArena.CoreArena as coreA;
+using Core.AppArena.LoadingUiArena as loadA;
+using Core.CustomContext as mycx;
 
 module Features {
     module Main {
@@ -29,14 +31,11 @@ module Features {
             }
 
             private function startCalculation() as Void {
-                var errCx = ArenaConfig.useArena(
-                    ArenaType.CORE,
-                    CoreArena.DataType.LAST_ERROR
-                );
+                var errCx = MH.useString(coreA.LAST_ERROR);
 
                 if (!System.getDeviceSettings().phoneConnected) {
                     errCx.set("Phone Disconnected");
-                    Router.navigateTo(Router.Page.ERROR, WatchUi.SLIDE_LEFT);
+                    MH.Router.push(Page.ERROR, WatchUi.SLIDE_LEFT);
                     return;
                 }
 
@@ -46,11 +45,9 @@ module Features {
                 }
 
                 errCx.set(null);
-                WatchUi.pushView(
-                    new Features.Loading.LoadingView("Calculating..."),
-                    null,
-                    WatchUi.SLIDE_LEFT
-                );
+
+                MH.useString(loadA.MSG_TEXT).set("Calculation...");
+                MH.Router.push(Page.LOADING, WatchUi.SLIDE_LEFT);
 
                 ApiClient.fetchShadowData(
                     pos[LatLon.LATITUDE],
@@ -63,48 +60,42 @@ module Features {
                 responseCode as Number,
                 data as Dictionary?
             ) as Void {
-                var shadowCx = ArenaConfig.useArena(
-                    ArenaType.CORE,
-                    CoreArena.DataType.CURRENT_SHADOW_DATA
-                );
-                var errorCx = ArenaConfig.useArena(
-                    ArenaType.CORE,
-                    CoreArena.DataType.LAST_ERROR
-                );
+                var shadowCx = mycx.usePayload(coreA.CURRENT_SHADOW_DATA);
+                var errCx = MH.useString(coreA.LAST_ERROR);
 
                 if (responseCode == 200 && data != null && data["d"] != null) {
-                    var payload = data["d"] as ApiSchema.ShadowDataPayload;
-                    shadowCx.set(payload);
-
-                    Router.switchTo(Router.Page.PANORAMA, WatchUi.SLIDE_LEFT);
+                    errCx.set(null);
+                    shadowCx.set(data["d"]);
+                    MH.Router.switchTo(Page.PANORAMA, WatchUi.SLIDE_LEFT);
                 } else {
-                    var userMessage = "API Error: " + responseCode;
-
+                    var userMsg = "API Error: " + responseCode;
                     if (
                         responseCode ==
                             Communications.BLE_CONNECTION_UNAVAILABLE ||
                         responseCode == Communications.BLE_HOST_TIMEOUT
                     ) {
-                        userMessage = "Bluetooth Offline";
+                        userMsg = "Bluetooth Offline";
                     } else if (
                         responseCode == Communications.NETWORK_REQUEST_TIMED_OUT
                     ) {
-                        userMessage = "Network Timeout";
+                        userMsg = "Network Timeout";
                     } else if (
                         responseCode ==
                         Communications.INVALID_HTTP_BODY_IN_NETWORK_RESPONSE
                     ) {
-                        userMessage = "Invalid Response";
+                        userMsg = "Invalid Response";
                     } else if (responseCode == 401 || responseCode == 403) {
-                        userMessage = "Auth Error";
+                        userMsg = "Auth Error";
                     } else if (responseCode == 404) {
-                        userMessage = "Server Not Found";
+                        userMsg = "Server Not Found";
                     } else if (responseCode >= 500) {
-                        userMessage = "Server Error";
+                        userMsg = "Server Error";
                     }
 
-                    errorCx.set(userMessage);
-                    Router.switchTo(Router.Page.ERROR, WatchUi.SLIDE_LEFT);
+                    shadowCx.set(null);
+                    errCx.set(userMsg);
+
+                    MH.Router.switchTo(Page.ERROR, WatchUi.SLIDE_LEFT);
                 }
             }
         }

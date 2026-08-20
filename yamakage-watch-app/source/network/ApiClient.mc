@@ -2,11 +2,12 @@ import Toybox.Communications;
 import Toybox.Lang;
 import Toybox.System;
 import Toybox.Time;
-import Core.ArenaConfig;
 import Core.Config;
-import Core.ArenaConfig.ArenaType;
-import Core.Arena.CoreArena;
 import Hal.DateTime;
+import Systems.Crypt;
+
+using MonkeyHooks as MH;
+using Core.AppArena.CoreArena as coreA;
 
 module Network {
     module ApiClient {
@@ -35,11 +36,11 @@ module Network {
             function execute() as Void {
                 var url = Config.API_BASE_URL + Config.SHADOW_ENDPOINT;
 
-                var sessCx = ArenaConfig.useArena(
-                    ArenaType.CORE,
-                    CoreArena.DataType.SESSION_ID
-                );
-                var sessionId = sessCx.get() as String;
+                var sessionId = MH.useStorageString(SESSION_ID_KEY).get();
+
+                if (sessionId == null) {
+                    sessionId = Crypt.generateRandomSessionId();
+                }
 
                 var params = {
                     "lat" => _lat,

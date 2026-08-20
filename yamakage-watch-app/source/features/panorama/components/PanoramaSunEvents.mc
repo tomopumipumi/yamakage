@@ -22,7 +22,7 @@ module Features {
                     for (var i = 0; i < sunPaths.size(); i++) {
                         var sp = sunPaths[i] as ApiSchema.SunPathPointTuple;
                         var el = sp[ApiSchema.SunPathIndex.ALTITUDE].toFloat();
-                        if (el >= 0) {
+                        if (el >= 0.0) {
                             if (sunrisePoint == null) {
                                 sunrisePoint = sp;
                             }

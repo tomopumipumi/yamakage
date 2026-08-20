@@ -1,5 +1,6 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
+using MonkeyHooks as MH;
 
 module Features {
     module Error {
@@ -9,7 +10,7 @@ module Features {
             }
 
             function onBack() as Boolean {
-                WatchUi.popView(WatchUi.SLIDE_RIGHT);
+                MH.Router.pop(WatchUi.SLIDE_RIGHT);
                 return true;
             }
         }

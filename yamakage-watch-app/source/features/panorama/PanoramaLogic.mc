@@ -1,3 +1,4 @@
+import Toybox.System;
 import Toybox.Lang;
 import Toybox.Graphics;
 import Core.ApiSchema;
@@ -22,7 +23,6 @@ module Features {
                     }
 
                     var az = (i * stepDeg).toFloat();
-                    // [0]の仰角のみを使用
                     var el =
                         item[0] instanceof Number || item[0] instanceof Float
                             ? item[0].toFloat()
@@ -32,10 +32,10 @@ module Features {
                     }
 
                     var diff = az - heading;
-                    while (diff > 180) {
+                    while (diff > 180.0) {
                         diff -= 360;
                     }
-                    while (diff < -180) {
+                    while (diff < -180.0) {
                         diff += 360;
                     }
 
@@ -84,10 +84,10 @@ module Features {
                     }
 
                     var diff = az - heading;
-                    while (diff > 180) {
+                    while (diff > 180.0) {
                         diff -= 360;
                     }
-                    while (diff < -180) {
+                    while (diff < -180.0) {
                         diff += 360;
                     }
 
