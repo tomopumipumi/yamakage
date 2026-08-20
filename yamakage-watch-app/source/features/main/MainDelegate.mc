@@ -2,6 +2,7 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 import Toybox.System;
 import Hal.Sensor.LocationSensor;
+import Hal.Sensor.LocationSensor.LatLon;
 import Network.ApiClient;
 import Core.ApiSchema;
 import Core.ArenaConfig;
@@ -41,8 +42,6 @@ module Features {
 
                 var pos = LocationSensor.getPosition();
                 if (pos == null) {
-                    errCx.set("No GPS Signal");
-                    Router.navigateTo(Router.Page.ERROR, WatchUi.SLIDE_LEFT);
                     return;
                 }
 
@@ -54,8 +53,8 @@ module Features {
                 );
 
                 ApiClient.fetchShadowData(
-                    pos[0],
-                    pos[1],
+                    pos[LatLon.LATITUDE],
+                    pos[LatLon.LONGITUDE],
                     method(:onApiCallback) as ApiClient.CallbackMethod
                 );
             }

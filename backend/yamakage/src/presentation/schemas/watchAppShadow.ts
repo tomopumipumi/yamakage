@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 
 export const WatchAppShadowRequestSchema = z.object({
-  lat: z.coerce.number().min(-90).max(90).openapi({ example: 34.81 }),
+  lat: z.coerce.number().min(-89.999).max(89.999).openapi({ example: 34.81 }),
   lng: z.coerce.number().min(-180).max(180).openapi({ example: 135.534 }),
   time: z.coerce.number().optional().openapi({ example: 1718000000000 }),
 });

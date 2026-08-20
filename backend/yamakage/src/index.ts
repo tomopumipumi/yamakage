@@ -8,9 +8,28 @@ import { createWatchAppShadowRouter } from './presentation/routes/watchAppShadow
 import { createWebShadowRouter } from './presentation/routes/webShadow';
 import type { Bindings } from './types/env';
 
-const app = new OpenAPIHono<{ Bindings: Bindings }>();
-
 const logger = new ConsoleLogger();
+
+const app = new OpenAPIHono<{ Bindings: Bindings }>({
+  defaultHook: (result, c) => {
+    if (!result.success) {
+      const formattedErrors = result.error.issues.map((issue) => ({
+        field: issue.path.join('.'),
+        message: issue.message,
+      }));
+
+      logger.warn('Validation Error', {
+        method: c.req.method,
+        url: c.req.url,
+        sessionId: c.req.header('X-Session-Id') || 'unknown',
+        target: result.target,
+        errors: formattedErrors,
+      });
+
+      return c.json({ error: 'Invalid parameters', details: formattedErrors }, 400);
+    }
+  },
+});
 
 app.use(
   '/api/v1/web/shadow/*',

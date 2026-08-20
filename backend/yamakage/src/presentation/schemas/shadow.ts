@@ -3,8 +3,8 @@ import { z } from '@hono/zod-openapi';
 export const ShadowQuerySchema = z.object({
   lat: z.coerce
     .number()
-    .min(-90)
-    .max(90)
+    .min(-89.999)
+    .max(89.999)
     .openapi({ param: { name: 'lat', in: 'query' }, example: 34.81 }),
   lng: z.coerce
     .number()
