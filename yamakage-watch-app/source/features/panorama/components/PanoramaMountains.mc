@@ -9,20 +9,9 @@ module Features {
             module PanoramaMountains {
                 function render(
                     dc as Graphics.Dc,
-                    profiles as ApiSchema.AzimuthProfilesArray,
-                    stepDeg as Number,
-                    heading as Float,
-                    width as Number,
+                    points as Array<Array<Number> >,
                     height as Number
                 ) as Void {
-                    var points = PanoramaLogic.getPanoramaPoints(
-                        profiles,
-                        stepDeg,
-                        heading,
-                        width,
-                        height
-                    );
-
                     if (points.size() > 1) {
                         dc.setColor(
                             Graphics.COLOR_DK_GREEN,

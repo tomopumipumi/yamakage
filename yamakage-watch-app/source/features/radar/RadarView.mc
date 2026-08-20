@@ -2,58 +2,62 @@ import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
 import Toybox.Timer;
-import Core.ArenaConfig;
-import Core.ArenaConfig.ArenaType;
-import Core.Arena.CoreArena;
-import Core.Arena.RadarUiArena;
 import Core.ApiSchema;
 import Core.ApiSchema.DataIndex;
 import Hal.Sensor.CompassSensor;
 import Shared.Logic.PositionConfigure;
 import Shared.Logic.FontManager;
 import Shared.Ui.PageIndicator;
-import Shared.Core.Router;
-
+import Shared.Core.Page;
 import Features.Radar.Components.RadarGrid;
 import Features.Radar.Components.RadarArea;
 import Features.Radar.Components.RadarSun;
 import Features.Radar.Components.RadarBeam;
 
+using MonkeyHooks as MH;
+using Core.AppArena.CoreArena as coreA;
+using Core.AppArena.RadarUiArena as radarA;
+using Core.CustomContext as mycx;
+
 module Features {
     module Radar {
         class RadarView extends WatchUi.View {
-            private var _timer as Timer.Timer;
-            private var _shadowCx as ArenaConfig.Context;
+            private var _shadowCx as mycx.PayloadContext;
             private var _radius as Float = 0.0;
+            private var _tickCount as Number = 0;
+
+            private var _onTimerTick as Lang.Method;
 
             function initialize() {
                 View.initialize();
-                _timer = new Timer.Timer();
-                _shadowCx = ArenaConfig.useArena(
-                    ArenaType.CORE,
-                    CoreArena.DataType.CURRENT_SHADOW_DATA
-                );
+                _shadowCx = mycx.usePayload(coreA.CURRENT_SHADOW_DATA);
+                _onTimerTick = method(:onTimerTick);
+            }
+
+            function onShow() as Void {
+                MH.SharedTimer.subscribe(_onTimerTick);
+            }
+            function onHide() as Void {
+                MH.SharedTimer.unsubscribe(_onTimerTick);
+            }
+            function onTimerTick() as Void {
+                _tickCount++;
+                if (_tickCount % 2 == 0) {
+                    WatchUi.requestUpdate();
+                }
+            }
+            function requestUpdate() as Void {
+                WatchUi.requestUpdate();
             }
 
             function onLayout(dc as Graphics.Dc) as Void {
                 PositionConfigure.initializeGlobalLayout(dc);
-                var w =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_WIDTH
-                    ).get() as Number;
-                var h =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_HEIGHT
-                    ).get() as Number;
+                var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
+                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
 
                 _radius = ((w < h ? w : h) / 2.0) * 0.75;
 
-                var fontCx = ArenaConfig.useArena(
-                    ArenaType.RADAR_UI,
-                    RadarUiArena.DataType.N_FONT
-                );
+                var fontCx = MH.useFont(radarA.N_FONT);
                 if (fontCx.get() == null) {
                     fontCx.set(
                         FontManager.findBestFont(
@@ -66,48 +70,20 @@ module Features {
                 }
             }
 
-            function onShow() as Void {
-                _timer.start(method(:requestUpdate), 200, true);
-            }
-            function onHide() as Void {
-                _timer.stop();
-            }
-            function requestUpdate() as Void {
-                WatchUi.requestUpdate();
-            }
-
             function onUpdate(dc as Graphics.Dc) as Void {
                 dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
                 dc.clear();
 
-                var w =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_WIDTH
-                    ).get() as Number;
-                var h =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_HEIGHT
-                    ).get() as Number;
-                var cx =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.CENTER_X
-                    ).get() as Number;
-                var cy =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.CENTER_Y
-                    ).get() as Number;
+                var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
+                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
+                var cx = MH.useNumber(coreA.CENTER_X).init(0).req();
+                var cy = MH.useNumber(coreA.CENTER_Y).init(0).req();
 
-                var nFont =
-                    ArenaConfig.useArena(
-                        ArenaType.RADAR_UI,
-                        RadarUiArena.DataType.N_FONT
-                    ).get() as Graphics.FontType;
+                var nFont = MH.useFont(radarA.N_FONT)
+                    .init(Graphics.FONT_XTINY)
+                    .req();
 
-                var rawData = _shadowCx.get() as ApiSchema.ShadowDataPayload?;
+                var rawData = _shadowCx.get();
                 if (rawData == null) {
                     return;
                 }
@@ -138,8 +114,8 @@ module Features {
 
                 PageIndicator.render(
                     dc,
-                    Router.TOTAL_PAGES,
-                    Router.Page.RADAR,
+                    Shared.Core.TOTAL_PAGES,
+                    Page.RADAR,
                     w,
                     h
                 );

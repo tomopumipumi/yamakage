@@ -80,7 +80,7 @@ module Features {
                             currentSunSp[
                                 Core.ApiSchema.SunPathIndex.ALTITUDE
                             ].toFloat();
-                        if (el >= 0) {
+                        if (el >= 0.0) {
                             var az =
                                 currentSunSp[
                                     Core.ApiSchema.SunPathIndex.AZIMUTH

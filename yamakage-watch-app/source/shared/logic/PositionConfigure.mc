@@ -1,33 +1,21 @@
 import Toybox.Graphics;
-import Core.ArenaConfig;
-import Core.ArenaConfig.ArenaType;
-import Core.Arena.CoreArena;
+
+using MonkeyHooks as MH;
+using Core.AppArena.CoreArena as coreA;
 
 module Shared {
     module Logic {
         module PositionConfigure {
             function initializeGlobalLayout(dc as Graphics.Dc) as Void {
-                var wCx = ArenaConfig.useArena(
-                    ArenaType.CORE,
-                    CoreArena.DataType.DISPLAY_WIDTH
-                );
+                var wCx = MH.useNumber(coreA.DISPLAY_WIDTH);
 
-                if (wCx != null && wCx.get() == 0) {
+                if (wCx.get() == null) {
                     var w = dc.getWidth();
                     var h = dc.getHeight();
                     wCx.set(w);
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_HEIGHT
-                    ).set(h);
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.CENTER_X
-                    ).set(w / 2);
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.CENTER_Y
-                    ).set(h / 2);
+                    MH.useNumber(coreA.DISPLAY_HEIGHT).set(h);
+                    MH.useNumber(coreA.CENTER_X).set(w / 2);
+                    MH.useNumber(coreA.CENTER_Y).set(h / 2);
                 }
             }
         }

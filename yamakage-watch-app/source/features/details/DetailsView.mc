@@ -2,15 +2,11 @@ import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
 import Toybox.Timer;
-import Core.ArenaConfig;
-import Core.ArenaConfig.ArenaType;
-import Core.Arena.CoreArena;
-import Core.Arena.DetailsUiArena;
 import Core.ApiSchema;
 import Core.ApiSchema.DataIndex;
+import Shared.Core.Page;
 import Hal.Sensor.CompassSensor;
 import Systems.TimeSystem;
-import Shared.Core.Router;
 import Shared.Logic.FontManager;
 import Shared.Logic.PositionConfigure;
 import Shared.Ui.PageIndicator;
@@ -18,46 +14,45 @@ import Shared.Icons;
 import Features.Details.Components.DetailsRow;
 import Features.Details.Components.DetailsSeparators;
 
+using MonkeyHooks as MH;
+using Core.AppArena.CoreArena as coreA;
+using Core.AppArena.DetailsUiArena as detailA;
+using Core.CustomContext as mycx;
+
 module Features {
     module Details {
         class DetailsView extends WatchUi.View {
-            private var _timer as Timer.Timer;
-            private var _shadowCtx as Core.ArenaConfig.Context;
+            private var _tickCount as Number = 0;
+            private var _shadowCx as mycx.PayloadContext;
+            private var _requestUpdate as Lang.Method;
 
             function initialize() {
                 View.initialize();
-                _timer = new Timer.Timer();
-                _shadowCtx = ArenaConfig.useArena(
-                    ArenaType.CORE,
-                    CoreArena.DataType.CURRENT_SHADOW_DATA
-                );
+                _shadowCx = mycx.usePayload(coreA.CURRENT_SHADOW_DATA);
+                _requestUpdate = method(:requestUpdate);
+            }
+
+            function onShow() as Void {
+                MH.SharedTimer.subscribe(_requestUpdate);
+            }
+            function onHide() as Void {
+                MH.SharedTimer.unsubscribe(_requestUpdate);
+            }
+            function requestUpdate() as Void {
+                _tickCount++;
+                if (_tickCount % 2 == 0) {
+                    WatchUi.requestUpdate();
+                }
             }
 
             function onLayout(dc as Graphics.Dc) as Void {
                 PositionConfigure.initializeGlobalLayout(dc);
-                var w =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_WIDTH
-                    ).get() as Number;
-                var h =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_HEIGHT
-                    ).get() as Number;
+                var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
+                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
 
-                var labelFontCx = ArenaConfig.useArena(
-                    ArenaType.DETAILS_UI,
-                    DetailsUiArena.DataType.LABEL_FONT
-                );
-                var valueFontCx = ArenaConfig.useArena(
-                    ArenaType.DETAILS_UI,
-                    DetailsUiArena.DataType.VALUE_FONT
-                );
-                var iconFontCx = ArenaConfig.useArena(
-                    ArenaType.DETAILS_UI,
-                    DetailsUiArena.DataType.ICON_FONT
-                );
+                var labelFontCx = MH.useFont(detailA.LABEL_FONT);
+                var valueFontCx = MH.useFont(detailA.VALUE_FONT);
+                var iconFontCx = MH.useFont(detailA.ICON_FONT);
 
                 if (labelFontCx.get() == null) {
                     labelFontCx.set(
@@ -105,48 +100,20 @@ module Features {
                 }
             }
 
-            function onShow() as Void {
-                _timer.start(method(:requestUpdate), 500, true);
-            }
-            function onHide() as Void {
-                _timer.stop();
-            }
-            function requestUpdate() as Void {
-                WatchUi.requestUpdate();
-            }
-
             function onUpdate(dc as Graphics.Dc) as Void {
-                var w =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_WIDTH
-                    ).get() as Number;
-                var h =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_HEIGHT
-                    ).get() as Number;
-                var cx =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.CENTER_X
-                    ).get() as Number;
-                var cy =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.CENTER_Y
-                    ).get() as Number;
+                var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
+                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
+                var cx = MH.useNumber(coreA.CENTER_X).init(0).req();
+                var cy = MH.useNumber(coreA.CENTER_Y).init(0).req();
 
                 dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
                 dc.clear();
 
-                var rawData = _shadowCtx.get() as ApiSchema.ShadowDataPayload?;
+                var rawData = _shadowCx.get() as ApiSchema.ShadowDataPayload?;
                 if (rawData == null) {
-                    var valueFont =
-                        ArenaConfig.useArena(
-                            ArenaType.DETAILS_UI,
-                            DetailsUiArena.DataType.VALUE_FONT
-                        ).get() as Graphics.FontType;
+                    var valueFont = MH.useFont(detailA.VALUE_FONT)
+                        .init(Graphics.FONT_XTINY)
+                        .req();
 
                     dc.setColor(
                         Graphics.COLOR_WHITE,
@@ -179,8 +146,15 @@ module Features {
                         ApiSchema.AzimuthProfilesArray;
                     var index = (heading / stepDeg).toNumber();
                     if (index >= 0 && index < profiles.size()) {
-                        elevStr =
-                            profiles[index][0].toFloat().format("%.1f") + "°";
+                        var profile = profiles[index];
+                        if (profile instanceof Array && profile.size() > 0) {
+                            var el =
+                                profile[0] instanceof Number ||
+                                profile[0] instanceof Float
+                                    ? profile[0].toFloat()
+                                    : 0.0;
+                            elevStr = el.format("%.1f") + "°";
+                        }
                     }
                 }
 
@@ -217,8 +191,8 @@ module Features {
 
                 PageIndicator.render(
                     dc,
-                    Router.TOTAL_PAGES,
-                    Router.Page.DETAILS,
+                    Shared.Core.TOTAL_PAGES,
+                    Page.DETAILS,
                     w,
                     h
                 );

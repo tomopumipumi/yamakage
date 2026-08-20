@@ -1,6 +1,8 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
-import Shared.Core.Router;
+import Shared.Core.Page;
+
+using MonkeyHooks as MH;
 
 module Features {
     module Panorama {
@@ -15,7 +17,7 @@ module Features {
             }
 
             function onNextPage() as Boolean {
-                Router.navigateTo(Router.Page.SKYPLOT, WatchUi.SLIDE_UP);
+                MH.Router.push(Page.SKYPLOT, WatchUi.SLIDE_UP);
                 return true;
             }
         }

@@ -3,17 +3,13 @@ import Toybox.Graphics;
 import Toybox.WatchUi;
 import Toybox.Timer;
 import Core;
-import Core.ArenaConfig;
-import Core.ArenaConfig.ArenaType;
-import Core.Arena.CoreArena;
-import Core.Arena.SkyPlotUiArena;
 import Core.ApiSchema;
 import Core.ApiSchema.DataIndex;
 import Hal.Sensor.CompassSensor;
 import Shared.Logic.FontManager;
 import Shared.Logic.PositionConfigure;
 import Shared.Ui.PageIndicator;
-import Shared.Core.Router;
+import Shared.Core.Page;
 import Shared.Icons;
 import Features.SkyPlot.Components.AzimuthChart;
 import Features.SkyPlot.Components.HeadingMarker;
@@ -21,41 +17,48 @@ import Features.SkyPlot.Components.SkyPlotGrid;
 import Features.SkyPlot.Components.SunPathChart;
 import Features.SkyPlot.Components.SkyPlotSunEvents;
 
+using MonkeyHooks as MH;
+using Core.AppArena.CoreArena as coreA;
+using Core.AppArena.SkyPlotUiArena as skyA;
+using Core.CustomContext as mycx;
+
 module Features {
     module SkyPlot {
         class SkyPlotView extends WatchUi.View {
-            private var _timer as Timer.Timer;
-            private var _shadowCx as ArenaConfig.Context;
+            private var _shadowCx as mycx.PayloadContext;
             private var _radius as Float = 0.0;
+            private var _tickCount as Number = 0;
+            private var _requestUpdate as Lang.Method;
 
             function initialize() {
                 View.initialize();
-                _timer = new Timer.Timer();
-                _shadowCx = ArenaConfig.useArena(
-                    ArenaType.CORE,
-                    CoreArena.DataType.CURRENT_SHADOW_DATA
-                );
+                _shadowCx = mycx.usePayload(coreA.CURRENT_SHADOW_DATA);
+                _requestUpdate = method(:requestUpdate);
+            }
+
+            function onShow() as Void {
+                MH.SharedTimer.subscribe(_requestUpdate);
+            }
+
+            function onHide() as Void {
+                MH.SharedTimer.unsubscribe(_requestUpdate);
+            }
+
+            function requestUpdate() as Void {
+                _tickCount++;
+                if (_tickCount % 2 == 0) {
+                    WatchUi.requestUpdate();
+                }
             }
 
             function onLayout(dc as Graphics.Dc) as Void {
                 PositionConfigure.initializeGlobalLayout(dc);
-                var w =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_WIDTH
-                    ).get() as Number;
-                var h =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_HEIGHT
-                    ).get() as Number;
+                var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
+                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
 
                 _radius = ((w < h ? w : h) / 2.0) * 0.75;
 
-                var fontCx = ArenaConfig.useArena(
-                    ArenaType.SKYPLOT_UI,
-                    SkyPlotUiArena.DataType.N_FONT
-                );
+                var fontCx = MH.useFont(skyA.N_FONT);
                 if (fontCx.get() == null) {
                     fontCx.set(
                         FontManager.findBestFont(
@@ -67,10 +70,7 @@ module Features {
                     );
                 }
 
-                var iconFontCx = ArenaConfig.useArena(
-                    ArenaType.SKYPLOT_UI,
-                    SkyPlotUiArena.DataType.ICON_FONT
-                );
+                var iconFontCx = MH.useFont(skyA.ICON_FONT);
                 if (iconFontCx.get() == null) {
                     var iconFonts =
                         [
@@ -96,56 +96,24 @@ module Features {
                 }
             }
 
-            function onShow() as Void {
-                _timer.start(method(:requestUpdate), 200, true);
-            }
-
-            function onHide() as Void {
-                _timer.stop();
-            }
-
-            function requestUpdate() as Void {
-                WatchUi.requestUpdate();
-            }
-
             function onUpdate(dc as Graphics.Dc) as Void {
                 dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
                 dc.clear();
 
-                var w =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_WIDTH
-                    ).get() as Number;
-                var h =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.DISPLAY_HEIGHT
-                    ).get() as Number;
-                var cx =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.CENTER_X
-                    ).get() as Number;
-                var cy =
-                    ArenaConfig.useArena(
-                        ArenaType.CORE,
-                        CoreArena.DataType.CENTER_Y
-                    ).get() as Number;
+                var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
+                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
+                var cx = MH.useNumber(coreA.CENTER_X).init(0).req();
+                var cy = MH.useNumber(coreA.CENTER_Y).init(0).req();
 
-                var nFont =
-                    ArenaConfig.useArena(
-                        ArenaType.SKYPLOT_UI,
-                        SkyPlotUiArena.DataType.N_FONT
-                    ).get() as Graphics.FontType;
+                var nFont = MH.useFont(skyA.N_FONT)
+                    .init(Graphics.FONT_XTINY)
+                    .req();
 
-                var iconFont =
-                    ArenaConfig.useArena(
-                        ArenaType.SKYPLOT_UI,
-                        SkyPlotUiArena.DataType.ICON_FONT
-                    ).get() as Graphics.FontType;
+                var iconFont = MH.useFont(skyA.ICON_FONT)
+                    .init(Graphics.FONT_XTINY)
+                    .req();
 
-                var rawData = _shadowCx.get() as ApiSchema.ShadowDataPayload?;
+                var rawData = _shadowCx.get();
                 if (rawData == null) {
                     return;
                 }
@@ -187,8 +155,8 @@ module Features {
 
                 PageIndicator.render(
                     dc,
-                    Router.TOTAL_PAGES,
-                    Router.Page.SKYPLOT,
+                    Shared.Core.TOTAL_PAGES,
+                    Page.SKYPLOT,
                     w,
                     h
                 );

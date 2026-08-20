@@ -31,11 +31,11 @@ module Features {
                             var el2 =
                                 sp2[ApiSchema.SunPathIndex.ALTITUDE].toFloat();
 
-                            if (el1 < 0 && el2 >= 0) {
+                            if (el1 < 0.0 && el2 >= 0.0) {
                                 sunrisePoint = sp2;
                             }
 
-                            if (el1 >= 0 && el2 < 0) {
+                            if (el1 >= 0.0 && el2 < 0.0) {
                                 sunsetPoint = sp1;
                             }
                         }

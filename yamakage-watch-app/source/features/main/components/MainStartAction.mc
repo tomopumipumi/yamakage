@@ -2,7 +2,6 @@ import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.System;
 import Shared.Ui.Button;
-import Hal.Sensor.LocationSensor;
 
 module Features {
     module Main {
@@ -14,12 +13,10 @@ module Features {
                     y as Number,
                     btnWidth as Number,
                     btnHeight as Number,
-                    btnFont as Graphics.FontType
+                    btnFont as Graphics.FontType,
+                    isGpsReady as Boolean
                 ) as Void {
                     var isTouch = System.getDeviceSettings().isTouchScreen;
-
-                    var pos = LocationSensor.getPosition();
-                    var isGpsReady = pos != null;
 
                     var btnText = isGpsReady ? "START" : "WAIT GPS";
                     var btnColor = isGpsReady

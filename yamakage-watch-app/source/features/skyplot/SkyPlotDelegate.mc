@@ -1,6 +1,8 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
-import Shared.Core.Router;
+import Shared.Core.Page;
+
+using MonkeyHooks as MH;
 
 module Features {
     module SkyPlot {
@@ -17,7 +19,7 @@ module Features {
                 return true;
             }
             function onNextPage() as Boolean {
-                Router.navigateTo(Router.Page.RADAR, WatchUi.SLIDE_UP);
+                MH.Router.push(Page.RADAR, WatchUi.SLIDE_UP);
                 return true;
             }
         }
