@@ -1,12 +1,12 @@
 # 🐒 MonkeyHooks
 
-MonkeyHooksは、Garmin Connect IQ (MonkeyC) アプリケーション開発のための、**リアクティブな状態管理とフック（Hooks）指向のユーティリティライブラリ**です。
+MonkeyHooksは、Garmin Connect IQ (MonkeyC) アプリケーション開発のための、**リアクティブな状態管理とフック指向のユーティリティライブラリ**です。
 
-Reactの `useState` や `useMemo`、`useEffect` のような直感的なAPIを提供し、複雑になりがちなGarminアプリのUI状態管理、システムリソース（タイマーやGPS）の共有、および画面遷移（ルーティング）をシンプルかつ安全に構築できるように設計されています。
+Reactの `useState` や `useMemo`、`useEffect` のような直感的なAPIを提供し、複雑になりがちなGarminアプリのUI状態管理、システムリソース（タイマーやGPS）の共有、および画面遷移をシンプルかつ安全に構築できるように設計されています。
 
 ---
 
-## 💡 思想
+## 思想
 
 MonkeyHooksは、以下の4つのコアパラダイムに基づいて設計されています。
 
@@ -16,8 +16,8 @@ MonkeyHooksは、以下の4つのコアパラダイムに基づいて設計さ�
 状態が `set()` によって更新されると、変更を検知して自動的に `WatchUi.requestUpdate()` を呼び出し、さらにその状態に依存するリスナーや `Computed`（計算プロパティ）を再評価します。開発者が手動で描画更新をトリガーする必要はありません。
 3. **型安全性とNull安全の強化:**
 MonkeyCのダックタイピングな特性に対し、`useNumber` や `useString` といった型専用のコンテキストを提供します。また、値が必ず存在することを保証する `req()` メソッド（nullの場合は例外をスロー）により、安全なプログラミングを促進します。
-4. **システムリソースの最適化:**
-`SharedTimer` や `LocationHook` は、複数のコンポーネントからサブスクライブされても、内部で単一のシステムリソース（`Timer.Timer` や `Position` イベント）を共有します。これにより、バッテリー消費とメモリ使用量を最小限に抑えます。
+4. **システムリソースの最適化と自動メモリ管理:**
+`SharedTimer` や `LocationHook` は、複数のコンポーネントからサブスクライブされても単一のシステムリソースを共有します。また、内部で `WeakReference`（弱い参照）を用いることで、Monkey C特有の循環参照によるメモリリークを自動的に防ぎます。
 
 ---
 
@@ -75,6 +75,7 @@ graph TD
     
     Store -.->|Route_ID 検知| Router
     Router -.->|push / switchTo| Screen
+
 ```
 
 ## 🚀 インストール
@@ -159,17 +160,20 @@ class UserProfile {
 
 ### 3. 状態の監視 (useWatch)
 
-特定の実装状態が変化した際に、副作用（コールバック）を実行するためのフックです。Reactの `useEffect` に相当します。
+特定の実装状態が変化した際に、副作用を実行するためのフックです。
 
 ```monkeyc
 class Logger {
-    private var _watcher;
-
-    function initialize() {
-        _watcher = MonkeyHooks.useWatch(
-            [:counter], 
-            method(:onCounterChanged)
+    function onShow() as Void {
+        MonkeyHooks.watch(
+            self,
+            :onCounterChanged,
+            [:counter]
         );
+    }
+
+    function onHide() as Void {
+        MonkeyHooks.unwatch(self, :onCounterChanged);
     }
 
     function onCounterChanged(currentValues as Array) as Void {
@@ -196,37 +200,62 @@ userName.set("Bob");
 
 高コストなリソースを安全に共有します。最初のリスナーが登録された時点でリソースが起動し、リスナーがゼロになると自動で停止します。
 
+**メモリリークフリーな設計**
+
+Monkey C特有の循環参照（Viewがメソッドを持ち、メソッドが暗黙的にViewの強参照を持つ問題）を防ぐため、`method(:...)` ではなく、対象オブジェクト(`self`)とメソッド名（シンボル）を渡す設計になっています。
+ライブラリ内部では `WeakReference`（弱い参照）として保持されるため、Viewが破棄されると自動的にリスナーのリストからクリーンアップされます。手動での煩雑な `null` 代入などは不要です。
+
 #### SharedTimer
 
-一律100msごとにTickを発生させる共有タイマーです。アニメーションや定期処理に最適です。
+一定間隔ごとにTickを発生させる共有タイマーです。アニメーションや定期処理に最適です。
 
 ```monkeyc
-function initialize() {
-    MonkeyHooks.SharedTimer.subscribe(method(:onTick));
+function onShow() {
+    // 実行先インスタンス(self)とメソッド名のシンボルを渡すだけ
+    MonkeyHooks.SharedTimer.subscribe(self, :onTick);
 }
 
 function onTick() as Void {
-    // 100msごとに呼ばれる処理
+    // 一定間隔ごとに呼ばれる処理
 }
 
-function cleanup() {
+function onHide() {
     // 登録解除（他のリスナーがいなくなればTimerは自動停止する）
-    MonkeyHooks.SharedTimer.unsubscribe(method(:onTick));
+    MonkeyHooks.SharedTimer.unsubscribe(self, :onTick);
 }
 
 ```
+
+フレームレートはデフォルトで`100ms`です。
+この間隔を変更したい場合は、以下のようにアプリのエンドポイントなどで変更してください。
+
+```monkeyc
+class YourApp extends Application.AppBase {
+    function initialize() {
+        AppBase.initialize();
+        // アプリ全体のアニメーションベースを 200ms (5fps) に設定してバッテリーを節約
+        MonkeyHooks.SharedTimer.setInterval(200); 
+    }
+}
+```
+このタイマーはアプリ内でシングルトンなため、重複して設定した場合は後に設定した値で上書きされます。
+
 
 #### LocationHook
 
 共有のGPS（Position）イベントリスナーです。
 
 ```monkeyc
-function initialize() {
-    MonkeyHooks.LocationHook.subscribe(method(:onLocationUpdated));
+function onShow() {
+    MonkeyHooks.LocationHook.subscribe(self, :onLocationUpdated);
 }
 
 function onLocationUpdated(info as Position.Info) as Void {
     System.println("Lat: " + info.position.toDegrees()[0]);
+}
+
+function onHide() {
+    MonkeyHooks.LocationHook.unsubscribe(self, :onLocationUpdated);
 }
 
 ```
@@ -269,7 +298,7 @@ MonkeyHooks.Router.switchTo(2, WatchUi.SLIDE_IMMEDIATE);
 
 ---
 
-## 🏗 中・大規模開発におけるベストプラクティス
+## 中・大規模開発におけるベストプラクティス
 
 ### キーの集中管理 (Enumの使用)
 

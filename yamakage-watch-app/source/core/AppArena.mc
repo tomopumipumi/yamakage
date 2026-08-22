@@ -10,9 +10,12 @@ module Core {
                 DISPLAY_HEIGHT,
                 CENTER_X,
                 CENTER_Y,
-                CURRENT_SHADOW_DATA,
+                SUN_SHADOW_DATA,
+                MOON_SHADOW_DATA,
                 LAST_ERROR,
-                SESSION_ID
+                SESSION_ID,
+                TARGET_MODE,
+                FRAME_RATE
             }
         }
 
@@ -34,9 +37,9 @@ module Core {
         module MainUiArena {
             enum {
                 TITLE_FONT = 300,
-                BTN_FONT,
-                BTN_WIDTH,
-                BTN_HEIGHT,
+                START_BTN_FONT,
+                START_BTN_WIDTH,
+                START_BTN_HEIGHT,
                 GPS_TEXT,
                 GPS_COLOR,
                 IS_GPS_READY

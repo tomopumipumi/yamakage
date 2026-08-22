@@ -8,7 +8,8 @@ module Features {
                 function render(
                     dc as Graphics.Dc,
                     w as Number,
-                    h as Number
+                    h as Number,
+                    rows as Number
                 ) as Void {
                     dc.setColor(
                         Graphics.COLOR_DK_GRAY,
@@ -16,19 +17,39 @@ module Features {
                     );
                     dc.setPenWidth(1);
 
-                    dc.drawLine(
-                        (w * 0.2).toNumber(),
-                        (h * 0.37).toNumber(),
-                        (w * 0.8).toNumber(),
-                        (h * 0.37).toNumber()
-                    );
-
-                    dc.drawLine(
-                        (w * 0.2).toNumber(),
-                        (h * 0.62).toNumber(),
-                        (w * 0.8).toNumber(),
-                        (h * 0.62).toNumber()
-                    );
+                    if (rows == 4) {
+                        dc.drawLine(
+                            (w * 0.2).toNumber(),
+                            (h * 0.3).toNumber(),
+                            (w * 0.8).toNumber(),
+                            (h * 0.3).toNumber()
+                        );
+                        dc.drawLine(
+                            (w * 0.2).toNumber(),
+                            (h * 0.5).toNumber(),
+                            (w * 0.8).toNumber(),
+                            (h * 0.5).toNumber()
+                        );
+                        dc.drawLine(
+                            (w * 0.2).toNumber(),
+                            (h * 0.7).toNumber(),
+                            (w * 0.8).toNumber(),
+                            (h * 0.7).toNumber()
+                        );
+                    } else {
+                        dc.drawLine(
+                            (w * 0.2).toNumber(),
+                            (h * 0.37).toNumber(),
+                            (w * 0.8).toNumber(),
+                            (h * 0.37).toNumber()
+                        );
+                        dc.drawLine(
+                            (w * 0.2).toNumber(),
+                            (h * 0.62).toNumber(),
+                            (w * 0.8).toNumber(),
+                            (h * 0.62).toNumber()
+                        );
+                    }
                 }
             }
         }

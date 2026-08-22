@@ -2,20 +2,29 @@ import Toybox.System;
 import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
-import Toybox.Timer;
 import Core.ApiSchema;
-import Core.ApiSchema.DataIndex;
+import Core.ApiSchema.SunDataIndex;
+import Core.ApiSchema.MoonDataIndex;
 import Hal.Sensor.CompassSensor;
 import Shared.Logic.PositionConfigure;
 import Shared.Logic.FontManager;
 import Shared.Ui.PageIndicator;
+import Shared.Core.Enums.TargetMode;
+import Shared.Core.Consts.ToggleValues;
+import Shared.Core.Consts.SettingIds;
 import Shared.Core.Page;
 import Shared.Icons;
+import Shared.Ui.BackgroundAnimation;
+import Shared.Logic.BackgroundAnimationLogic;
+
 import Features.Panorama.Components.PanoramaGrid;
 import Features.Panorama.Components.PanoramaSunPath;
+import Features.Panorama.Components.PanoramaMoonPath;
 import Features.Panorama.Components.PanoramaMountains;
 import Features.Panorama.Components.PanoramaSunEvents;
+import Features.Panorama.Components.PanoramaMoonEvents;
 import Features.Panorama.Components.PanoramaLabels;
+import Features.Panorama.Components.PanoramaBackground;
 
 using MonkeyHooks as MH;
 using Core.AppArena.CoreArena as coreA;
@@ -25,65 +34,131 @@ using Core.CustomContext as mycx;
 module Features {
     module Panorama {
         class PanoramaView extends WatchUi.View {
-            private var _shadowCx as mycx.PayloadContext;
             private const HEADING_KEY = :panorama_current_heading;
             private const MOUNTAIN_POINTS_KEY = :panorama_mountains_cache;
             private var _tickCount as Number = 0;
+            private var _pulsePhase as Float = 0.0;
 
-            private var _onTimerTickMethod as Lang.Method;
-            private var _computeMountainPointsMethod as Lang.Method;
+            private var _mountainPointsCx as MH.ComputedContext?;
 
             function initialize() {
                 View.initialize();
-                _shadowCx = mycx.usePayload(coreA.CURRENT_SHADOW_DATA);
-                _onTimerTickMethod = method(:onTimerTick);
-                _computeMountainPointsMethod = method(:computeMountainPoints);
             }
 
             function onShow() {
-                MH.SharedTimer.subscribe(_onTimerTickMethod);
+                MH.SharedTimer.subscribe(self, :onTimerTick);
+
+                var targetDataKey =
+                    MH.useNumber(coreA.TARGET_MODE).init(0).req() ==
+                    TargetMode.SUN
+                        ? coreA.SUN_SHADOW_DATA
+                        : coreA.MOON_SHADOW_DATA;
+
+                _mountainPointsCx = MH.useComputed(
+                    MOUNTAIN_POINTS_KEY,
+                    [
+                        targetDataKey,
+                        HEADING_KEY,
+                        coreA.DISPLAY_WIDTH,
+                        coreA.DISPLAY_HEIGHT,
+                        coreA.TARGET_MODE
+                    ],
+                    method(:computeMountainPoints)
+                );
             }
 
             function onHide() as Void {
-                MH.SharedTimer.unsubscribe(_onTimerTickMethod);
+                MH.SharedTimer.unsubscribe(self, :onTimerTick);
+                _mountainPointsCx = null;
                 MH.destroy(HEADING_KEY);
-                MH.destroy(:panorama_mountains_cache);
+                MH.destroy(MOUNTAIN_POINTS_KEY);
+                MH.destroy(:panorama_stars);
+                MH.destroy(:panorama_clouds);
             }
 
             function onTimerTick() as Void {
+                var animState = MH.useStorageString(SettingIds.ANIM_ENABLED)
+                    .init(ToggleValues.ON)
+                    .req();
+                var isAnimOn = animState.equals(ToggleValues.ON);
+                if (isAnimOn) {
+                    _pulsePhase += 0.2;
+                    if (_pulsePhase > Math.PI * 2) {
+                        _pulsePhase -= Math.PI * 2;
+                    }
+                } else {
+                    _pulsePhase = 0.0;
+                }
+
                 _tickCount = (_tickCount + 1) % 2;
                 if (_tickCount == 0) {
                     var heading = CompassSensor.getHeadingDegrees();
-                    if (heading == null) {
-                        heading = 0.0;
-                    }
+                    MH.useFloat(HEADING_KEY).setSilent(
+                        heading != null ? heading : 0.0
+                    );
+                }
 
-                    MH.useFloat(HEADING_KEY).setSilent(heading);
+                var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
+                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
+                var mode = MH.useNumber(coreA.TARGET_MODE).init(0).req();
+                if (w > 0 && h > 0) {
+                    if (mode == 0) {
+                        var cloudBuffer = MH.useArrayBuffer(
+                            :panorama_clouds,
+                            20
+                        ).req();
+                        BackgroundAnimationLogic.updateClouds(
+                            cloudBuffer,
+                            w,
+                            h,
+                            isAnimOn
+                        );
+                    } else {
+                        var starBuffer = MH.useArrayBuffer(
+                            :panorama_stars,
+                            60
+                        ).req();
+                        BackgroundAnimationLogic.updateStars(
+                            starBuffer,
+                            w,
+                            h,
+                            isAnimOn
+                        );
+                    }
+                }
+
+                if (isAnimOn || _tickCount == 0) {
                     WatchUi.requestUpdate();
                 }
-            }
-
-            function requestUpdate() as Void {
-                var heading = CompassSensor.getHeadingDegrees();
-                if (heading == null) {
-                    heading = 0.0;
-                }
-                MH.useFloat(HEADING_KEY).set(heading);
             }
 
             function computeMountainPoints(
                 deps as Array
             ) as Array<Array<Number> > {
-                var data = deps[0] as ApiSchema.ShadowDataPayload;
-                var headingRaw = deps[1];
-                var heading = headingRaw != null ? headingRaw.toFloat() : 0.0;
+                var data = deps[0] as Array?;
+                var heading = deps[1] != null ? deps[1].toFloat() : 0.0;
                 var w = deps[2] as Number;
                 var h = deps[3] as Number;
+                var mode = deps[4] as Number;
 
-                var profiles =
-                    data[DataIndex.AZIMUTH_PROFILES] as
-                    ApiSchema.AzimuthProfilesArray;
-                var step = data[DataIndex.AZIMUTH_STEP] as Number;
+                if (data == null) {
+                    return [] as Array<Array<Number> >;
+                }
+
+                var profiles;
+                var step;
+
+                if (mode == TargetMode.SUN) {
+                    profiles =
+                        data[SunDataIndex.PROFILES] as
+                        ApiSchema.AzimuthProfilesArray;
+                    step = data[SunDataIndex.AZIMUTH_STEP] as Number;
+                } else {
+                    profiles =
+                        data[MoonDataIndex.PROFILES] as
+                        ApiSchema.AzimuthProfilesArray;
+                    step = data[MoonDataIndex.AZIMUTH_STEP] as Number;
+                }
 
                 return PanoramaLogic.getPanoramaPoints(
                     profiles,
@@ -96,7 +171,6 @@ module Features {
 
             function onLayout(dc as Graphics.Dc) as Void {
                 PositionConfigure.initializeGlobalLayout(dc);
-
                 var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
                 var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
 
@@ -127,47 +201,101 @@ module Features {
             }
 
             function onUpdate(dc as Graphics.Dc) as Void {
+                dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+                dc.clear();
+
                 var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
                 var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
                 var cx = MH.useNumber(coreA.CENTER_X).init(0).req();
+                var mode = MH.useNumber(coreA.TARGET_MODE)
+                    .init(TargetMode.SUN)
+                    .req();
+
                 var iconFont = MH.useFont(panoramaA.ICON_FONT)
                     .init(Graphics.FONT_XTINY)
                     .req();
 
-                dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-                dc.clear();
+                var animBuffer =
+                    mode == TargetMode.SUN
+                        ? MH.useArrayBuffer(:panorama_clouds, 20).req()
+                        : MH.useArrayBuffer(:panorama_stars, 60).req();
+                BackgroundAnimation.render(dc, mode, animBuffer);
 
-                Components.PanoramaGrid.render(dc, w, h);
+                var paths = null;
+                var fraction = 1.0;
+                var phase = 0.5;
 
-                var data = _shadowCx.get();
-                if (data == null) {
-                    return;
+                if (mode == TargetMode.SUN) {
+                    var data = mycx.useSunPayload(coreA.SUN_SHADOW_DATA).get();
+                    if (data == null) {
+                        return;
+                    }
+                    paths = data[SunDataIndex.PATHS] as ApiSchema.PathArray;
+                } else {
+                    var data = mycx
+                        .useMoonPayload(coreA.MOON_SHADOW_DATA)
+                        .get();
+                    if (data == null) {
+                        return;
+                    }
+                    paths = data[MoonDataIndex.PATHS] as ApiSchema.PathArray;
+                    fraction = data[MoonDataIndex.FRACTION] as Float;
+                    phase = data[MoonDataIndex.PHASE] as Float;
                 }
 
-                var sunPaths =
-                    data[DataIndex.SUN_PATHS] as ApiSchema.SunPathArray;
                 var heading = MH.useFloat(HEADING_KEY).init(0.0).req();
 
-                PanoramaSunPath.render(dc, sunPaths, heading, w, h);
+                PanoramaGrid.render(dc, w, h);
 
-                var mountainPoints =
-                    MH.useComputed(
-                        MOUNTAIN_POINTS_KEY,
-                        [
-                            coreA.CURRENT_SHADOW_DATA,
-                            HEADING_KEY,
-                            coreA.DISPLAY_WIDTH,
-                            coreA.DISPLAY_HEIGHT
-                        ],
-                        _computeMountainPointsMethod
-                    ).req() as Array<Array<Number> >;
+                if (mode == TargetMode.SUN) {
+                    PanoramaSunPath.render(
+                        dc,
+                        paths,
+                        heading,
+                        w,
+                        h,
+                        _pulsePhase
+                    );
+                } else {
+                    PanoramaMoonPath.render(
+                        dc,
+                        paths,
+                        heading,
+                        w,
+                        h,
+                        fraction,
+                        phase,
+                        _pulsePhase
+                    );
+                }
 
-                PanoramaMountains.render(dc, mountainPoints, h);
+                if (_mountainPointsCx != null) {
+                    var mountainPoints =
+                        _mountainPointsCx.req() as Array<Array<Number> >;
+                    PanoramaMountains.render(dc, mountainPoints, h);
+                }
 
-                PanoramaSunEvents.render(dc, sunPaths, heading, w, h, iconFont);
+                if (mode == TargetMode.SUN) {
+                    PanoramaSunEvents.render(
+                        dc,
+                        paths,
+                        heading,
+                        w,
+                        h,
+                        iconFont
+                    );
+                } else {
+                    PanoramaMoonEvents.render(
+                        dc,
+                        paths,
+                        heading,
+                        w,
+                        h,
+                        iconFont
+                    );
+                }
 
                 PanoramaLabels.render(dc, heading, w, h, cx);
-
                 PageIndicator.render(
                     dc,
                     Shared.Core.TOTAL_PAGES,

@@ -2,8 +2,9 @@ import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
 import Toybox.Position;
-import Toybox.Timer;
-
+import Shared.Core.Enums.TargetMode;
+import Shared.Core.Consts.ToggleValues;
+import Shared.Core.Consts.SettingIds;
 import Shared.Logic.FontManager;
 import Shared.Logic.PositionConfigure;
 import Hal.Sensor.LocationSensor;
@@ -11,6 +12,9 @@ import Features.Main.Components.MainBackground;
 import Features.Main.Components.MainGpsStatus;
 import Features.Main.Components.MainTitle;
 import Features.Main.Components.MainStartAction;
+import Features.Main.Components.MainSunAnimation;
+import Features.Main.Components.MainTargetSelector;
+import Features.Main.Components.MainSettingsButton;
 
 using MonkeyHooks as MH;
 using Core.AppArena.CoreArena as coreA;
@@ -20,30 +24,46 @@ module Features {
     module Main {
         class MainView extends WatchUi.View {
             private var _tickCount as Number = 0;
-            private var _onPositionUpdate as Lang.Method;
-            private var _onTimerTick as Lang.Method;
 
             function initialize() {
                 View.initialize();
-                _onPositionUpdate = method(:onPositionUpdate);
-                _onTimerTick = method(:onTimerTick);
             }
 
             function onShow() as Void {
-                MH.SharedTimer.subscribe(_onTimerTick);
-                MH.LocationHook.subscribe(_onPositionUpdate);
+                MH.SharedTimer.subscribe(self, :onTimerTick);
+                MH.LocationHook.subscribe(self, :onPositionUpdate);
                 updateGpsState();
             }
 
             function onHide() as Void {
-                MH.SharedTimer.unsubscribe(_onTimerTick);
-                MH.LocationHook.unsubscribe(_onPositionUpdate);
+                MH.SharedTimer.unsubscribe(self, :onTimerTick);
+                MH.LocationHook.unsubscribe(self, :onPositionUpdate);
+                MH.destroy(:main_sun_progress);
             }
 
             function onTimerTick() as Void {
                 _tickCount++;
                 if (_tickCount % 10 == 0) {
                     updateGpsState();
+                }
+
+                var animState = MH.useStorageString(SettingIds.ANIM_ENABLED)
+                    .init(ToggleValues.ON)
+                    .req();
+                var isAnimOn = animState.equals(ToggleValues.ON);
+
+                if (isAnimOn) {
+                    var progress = MH.useFloat(:main_sun_progress)
+                        .init(0.0)
+                        .req();
+                    progress += 0.005;
+                    if (progress > 1.0) {
+                        progress -= 1.0;
+                    }
+
+                    MH.useFloat(:main_sun_progress).set(progress);
+                } else {
+                    MH.useFloat(:main_sun_progress).set(0.5);
                 }
             }
 
@@ -68,15 +88,22 @@ module Features {
                 var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
                 var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
                 var titleFontCx = MH.useFont(mainA.TITLE_FONT);
-                var btnFontCx = MH.useFont(mainA.BTN_FONT);
-                var btnWidthCx = MH.useNumber(mainA.BTN_WIDTH).init(0);
-                var btnHeightCx = MH.useNumber(mainA.BTN_HEIGHT).init(0);
 
-                if (titleFontCx.get() == null) {
-                    var btnWidth = (w * 0.5).toNumber();
-                    var btnHeight = (h * 0.2).toNumber();
-                    btnWidthCx.set(btnWidth);
-                    btnHeightCx.set(btnHeight);
+                var startBtnFontCx = MH.useFont(mainA.START_BTN_FONT);
+                var startBtnWidthCx = MH.useNumber(mainA.START_BTN_WIDTH).init(
+                    0
+                );
+                var startBtnHeightCx = MH.useNumber(
+                    mainA.START_BTN_HEIGHT
+                ).init(0);
+
+                if (titleFontCx.get() == null or startBtnFontCx.get() == null) {
+                    var startBtnWidth = (w * 0.5).toNumber();
+                    var startBtnHeight = (h * 0.2).toNumber();
+
+                    startBtnWidthCx.set(startBtnWidth);
+                    startBtnHeightCx.set(startBtnHeight);
+
                     titleFontCx.set(
                         FontManager.findBestFont(
                             dc,
@@ -85,12 +112,12 @@ module Features {
                             (h * 0.2).toNumber()
                         )
                     );
-                    btnFontCx.set(
+                    startBtnFontCx.set(
                         FontManager.findBestFont(
                             dc,
                             "START",
-                            btnWidth,
-                            btnHeight
+                            startBtnWidth,
+                            startBtnHeight
                         )
                     );
                 }
@@ -104,11 +131,15 @@ module Features {
                 var titleFont = MH.useFont(mainA.TITLE_FONT)
                     .init(Graphics.FONT_XTINY)
                     .req();
-                var btnFont = MH.useFont(mainA.BTN_FONT)
+                var startBtnFont = MH.useFont(mainA.START_BTN_FONT)
                     .init(Graphics.FONT_XTINY)
                     .req();
-                var btnWidth = MH.useNumber(mainA.BTN_WIDTH).init(0).req();
-                var btnHeight = MH.useNumber(mainA.BTN_HEIGHT).init(0).req();
+                var startBtnWidth = MH.useNumber(mainA.START_BTN_WIDTH)
+                    .init(0)
+                    .req();
+                var startBtnHeight = MH.useNumber(mainA.START_BTN_HEIGHT)
+                    .init(0)
+                    .req();
 
                 dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
                 dc.clear();
@@ -116,16 +147,26 @@ module Features {
                 var gpsText = MH.useString(mainA.GPS_TEXT)
                     .init("GPS: Searching...")
                     .req();
-
                 var gpsColor = MH.useColor(mainA.GPS_COLOR)
                     .init(Graphics.COLOR_DK_GRAY)
                     .req();
-
                 var isGpsReady = MH.useBoolean(mainA.IS_GPS_READY)
                     .init(false)
                     .req();
+                var progress = MH.useFloat(:main_sun_progress)
+                    .init(0.0)
+                    .req();
+                var mode = MH.useNumber(coreA.TARGET_MODE)
+                    .init(TargetMode.SUN)
+                    .req();
 
+                MainSunAnimation.render(dc, progress, w, h, cx, mode);
                 MainBackground.render(dc, w, h);
+
+                var selectorX = (w * 0.85).toNumber();
+                var selectorY = (h * 0.35).toNumber();
+                MainTargetSelector.render(dc, selectorX, selectorY, mode);
+
                 var gpsY = (h * 0.1).toNumber();
                 MainGpsStatus.render(dc, cx, gpsY, gpsText, gpsColor);
                 var titleY = (h * 0.25).toNumber();
@@ -135,10 +176,11 @@ module Features {
                     dc,
                     cx,
                     btnY,
-                    btnWidth,
-                    btnHeight,
-                    btnFont,
-                    isGpsReady
+                    startBtnWidth,
+                    startBtnHeight,
+                    startBtnFont,
+                    isGpsReady,
+                    mode
                 );
             }
         }

@@ -34,6 +34,10 @@ module MonkeyHooks {
                         listener.invoke(value);
                     }
                 }
+
+                if (MonkeyHooks has :_triggerWatchers) {
+                    MonkeyHooks._triggerWatchers();
+                }
             }
         }
 

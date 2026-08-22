@@ -11,50 +11,42 @@ module Features {
             module RadarSun {
                 function render(
                     dc as Graphics.Dc,
-                    sunPaths as ApiSchema.SunPathArray,
+                    paths as ApiSchema.PathArray,
                     cx as Number,
                     cy as Number,
                     radius as Float
                 ) as Void {
-                    if (sunPaths.size() == 0) {
+                    if (paths.size() == 0) {
                         return;
                     }
 
                     var now = DateTime.createTargetUnixTime();
                     var minTimeDiff = 99999999;
-                    var currentSunSp = null;
+                    var currentSp = null;
 
-                    for (var i = 0; i < sunPaths.size(); i++) {
-                        var sp = sunPaths[i] as ApiSchema.SunPathPointTuple;
-                        var tVal = sp[ApiSchema.SunPathIndex.TIME];
+                    for (var i = 0; i < paths.size(); i++) {
+                        var sp = paths[i] as ApiSchema.PathPointTuple;
+                        var tVal = sp[ApiSchema.PathIndex.TIME];
                         var t =
                             tVal instanceof Long
                                 ? tVal.toNumber()
                                 : tVal as Number;
-
-                        var diff = now - t;
-                        if (diff < 0) {
-                            diff = -diff;
-                        }
-
+                        var diff = (now - t).abs();
                         if (diff < minTimeDiff) {
                             minTimeDiff = diff;
-                            currentSunSp = sp;
+                            currentSp = sp;
                         }
                     }
 
-                    if (currentSunSp != null) {
+                    if (currentSp != null) {
                         var el =
-                            currentSunSp[
-                                ApiSchema.SunPathIndex.ALTITUDE
-                            ].toFloat();
+                            currentSp[ApiSchema.PathIndex.ALTITUDE].toFloat();
                         if (el >= 0.0) {
                             var az =
-                                currentSunSp[
-                                    ApiSchema.SunPathIndex.AZIMUTH
+                                currentSp[
+                                    ApiSchema.PathIndex.AZIMUTH
                                 ].toFloat();
                             var rad = ((az - 90.0) * Math.PI) / 180.0;
-
                             var r = radius + 15;
                             var px = cx + (r * Math.cos(rad)).toNumber();
                             var py = cy + (r * Math.sin(rad)).toNumber();

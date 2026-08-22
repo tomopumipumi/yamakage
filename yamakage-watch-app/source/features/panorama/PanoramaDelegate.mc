@@ -17,12 +17,12 @@ module Features {
             }
 
             function onPreviousPage() as Boolean {
-                MH.Router.switchTo(Page.MAIN, WatchUi.SLIDE_DOWN);
+                MH.Router.switchTo(Page.DETAILS, WatchUi.SLIDE_DOWN);
                 return true;
             }
 
             function onNextPage() as Boolean {
-                MH.Router.push(Page.SKYPLOT, WatchUi.SLIDE_UP);
+                MH.Router.switchTo(Page.SKYPLOT, WatchUi.SLIDE_UP);
                 return true;
             }
         }

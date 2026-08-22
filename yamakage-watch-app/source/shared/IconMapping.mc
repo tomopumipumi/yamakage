@@ -2,7 +2,9 @@
 module Shared {
     module Icons {
         const ICON_ELEVATION_ANGLE = "A";
-        const ICON_SUNRISE = "B";
-        const ICON_SUNSET = "C";
+        const ICON_MOONRISE = "B";
+        const ICON_MOONSET = "C";
+        const ICON_SUNRISE = "D";
+        const ICON_SUNSET = "E";
     }
 }

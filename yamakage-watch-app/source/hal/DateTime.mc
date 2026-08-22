@@ -8,14 +8,17 @@ module Hal {
         function createTargetUnixTime() as Number {
             var dummyDateOptions = {
                 :year => 2026,
-                :month => 7,
-                :day => 1,
-                :hour => 15,
+                :month => 8,
+                :day => 23,
+                :hour => 0,
                 :minute => 0,
                 :second => 0
             };
-            dummyDateOptions[:hour] -= 9; // UTC adjustment
-            var dummyUnixTime = Gregorian.moment(dummyDateOptions).value();
+            var moment = Gregorian.moment(dummyDateOptions);
+            
+            var offset = new Time.Duration(9 * 3600); // 9 = UTC adjustment
+            var dummyUnixTime = moment.subtract(offset).value();
+            
             return dummyUnixTime;
         }
 

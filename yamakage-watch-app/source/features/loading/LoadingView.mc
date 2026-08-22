@@ -3,9 +3,12 @@ import Toybox.Graphics;
 import Toybox.WatchUi;
 import Toybox.Math;
 import Shared.Core.Page;
+import Shared.Core.Consts.ToggleValues;
+import Shared.Core.Consts.SettingIds;
 import Shared.Logic.FontManager;
 import Shared.Logic.PositionConfigure;
 import Features.Loading.Components.LoadingSun;
+import Features.Loading.Components.LoadingMoon;
 import Features.Loading.Components.LoadingMountains;
 
 using MonkeyHooks as MH;
@@ -15,31 +18,26 @@ using Core.AppArena.LoadingUiArena as loadA;
 module Features {
     module Loading {
         class LoadingView extends WatchUi.View {
-            private var _onTimerTickMethod as Lang.Method;
-            private var _watcher as MH.WatchContext?;
-
             function initialize() {
                 View.initialize();
-                _onTimerTickMethod = method(:onTimerTick);
             }
 
             function onShow() as Void {
-                MH.SharedTimer.subscribe(_onTimerTickMethod);
+                MH.SharedTimer.subscribe(self, :onTimerTick);
 
-                _watcher = MH.useWatch(
-                    [coreA.CURRENT_SHADOW_DATA, coreA.LAST_ERROR],
-                    method(:onStateChanged)
-                );
+                var mode = MH.useNumber(coreA.TARGET_MODE).init(0).req();
+                var targetDataKey =
+                    mode == 0 ? coreA.SUN_SHADOW_DATA : coreA.MOON_SHADOW_DATA;
+
+                MH.watch(self, :onStateChanged, [
+                    targetDataKey,
+                    coreA.LAST_ERROR
+                ]);
             }
 
             function onHide() as Void {
-                MH.SharedTimer.unsubscribe(_onTimerTickMethod);
-
-                if (_watcher != null) {
-                    _watcher.destroy();
-                    _watcher = null;
-                }
-
+                MH.SharedTimer.unsubscribe(self, :onTimerTick);
+                MH.unwatch(self, :onStateChanged);
                 MH.destroy(:loading_angle);
             }
 
@@ -53,28 +51,33 @@ module Features {
                         : err != null
                           ? Page.ERROR
                           : null;
-
                 if (pageNum != null) {
                     MH.Router.switchTo(pageNum, WatchUi.SLIDE_LEFT);
                 }
             }
 
             function onTimerTick() as Void {
-                var angle = MH.useFloat(:loading_angle)
-                    .init(0.0)
+                var animState = MH.useStorageString(SettingIds.ANIM_ENABLED)
+                    .init(ToggleValues.ON)
                     .req();
-                angle += 0.1;
-                if (angle > Math.PI * 2) {
-                    angle -= Math.PI * 2;
+
+                if (animState.equals(ToggleValues.ON)) {
+                    var angle = MH.useFloat(:loading_angle)
+                        .init(0.0)
+                        .req();
+                    angle += 0.1;
+                    if (angle > Math.PI * 2) {
+                        angle -= Math.PI * 2;
+                    }
+                    MH.useFloat(:loading_angle).set(angle);
+                    WatchUi.requestUpdate();
                 }
-                MH.useFloat(:loading_angle).set(angle);
             }
 
             function onLayout(dc as Graphics.Dc) as Void {
                 PositionConfigure.initializeGlobalLayout(dc);
                 var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
                 var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
-
                 var fontCx = MH.useFont(loadA.MSG_FONT);
                 if (fontCx.get() == null) {
                     fontCx.set(
@@ -92,6 +95,7 @@ module Features {
                 var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
                 var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
                 var cx = MH.useNumber(coreA.CENTER_X).init(0).req();
+                var mode = MH.useNumber(coreA.TARGET_MODE).init(0).req();
 
                 var font = MH.useFont(loadA.MSG_FONT)
                     .init(Graphics.FONT_XTINY)
@@ -104,8 +108,13 @@ module Features {
                 dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
                 dc.clear();
 
-                var sunY = (h * 0.35).toNumber();
-                LoadingSun.render(dc, cx, sunY, angle);
+                var objY = (h * 0.35).toNumber();
+                if (mode == 0) {
+                    LoadingSun.render(dc, cx, objY, angle);
+                } else {
+                    LoadingMoon.render(dc, cx, objY, angle);
+                }
+
                 LoadingMountains.render(dc, w, h);
 
                 dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);

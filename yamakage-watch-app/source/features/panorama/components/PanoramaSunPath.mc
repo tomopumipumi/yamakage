@@ -1,10 +1,10 @@
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
-import Toybox.Time;
 import Core.ApiSchema;
 import Features.Panorama.PanoramaLogic;
 import Shared.Ui.SunIcon;
+import Shared.Ui.SonarPulse;
 import Hal.DateTime;
 
 module Features {
@@ -13,13 +13,14 @@ module Features {
             module PanoramaSunPath {
                 function render(
                     dc as Graphics.Dc,
-                    sunPaths as ApiSchema.SunPathArray,
+                    paths as ApiSchema.PathArray,
                     heading as Float,
                     width as Number,
-                    height as Number
+                    height as Number,
+                    pulsePhase as Float
                 ) as Void {
-                    var sunPoints = PanoramaLogic.getSunPathPoints(
-                        sunPaths,
+                    var points = PanoramaLogic.getPathPoints(
+                        paths,
                         heading,
                         width,
                         height
@@ -31,74 +32,72 @@ module Features {
                     );
                     dc.setPenWidth(2);
 
-                    if (sunPoints.size() > 1) {
-                        for (var i = 0; i < sunPoints.size() - 1; i++) {
+                    if (points.size() > 1) {
+                        for (var i = 0; i < points.size() - 1; i++) {
                             if (
-                                (sunPoints[i][0] - sunPoints[i + 1][0]).abs() <
+                                (points[i][0] - points[i + 1][0]).abs() <
                                 width / 2
                             ) {
                                 dc.drawLine(
-                                    sunPoints[i][0],
-                                    sunPoints[i][1],
-                                    sunPoints[i + 1][0],
-                                    sunPoints[i + 1][1]
+                                    points[i][0],
+                                    points[i][1],
+                                    points[i + 1][0],
+                                    points[i + 1][1]
                                 );
                             }
                         }
                     }
                     dc.setPenWidth(1);
 
-                    if (sunPaths.size() == 0) {
-                        return;
-                    }
-
                     var now = DateTime.createTargetUnixTime();
                     var minTimeDiff = 99999999;
-                    var currentSunSp = null;
+                    var currentPx = null;
+                    var currentPy = null;
 
-                    for (var i = 0; i < sunPaths.size(); i++) {
-                        var sp = sunPaths[i] as ApiSchema.SunPathPointTuple;
-                        var tVal = sp[Core.ApiSchema.SunPathIndex.TIME];
+                    for (var i = 0; i < paths.size(); i++) {
+                        var sp = paths[i] as ApiSchema.PathPointTuple;
+                        var tVal = sp[Core.ApiSchema.PathIndex.TIME];
                         var t =
                             tVal instanceof Long
                                 ? tVal.toNumber()
                                 : tVal as Number;
-
-                        var diff = now - t;
-                        if (diff < 0) {
-                            diff = -diff;
-                        }
+                        var diff = (now - t).abs();
 
                         if (diff < minTimeDiff) {
                             minTimeDiff = diff;
-                            currentSunSp = sp;
+                            var el =
+                                sp[Core.ApiSchema.PathIndex.ALTITUDE].toFloat();
+                            if (el >= 0.0) {
+                                var az =
+                                    sp[
+                                        Core.ApiSchema.PathIndex.AZIMUTH
+                                    ].toFloat();
+                                currentPx = PanoramaLogic.getLabelXPos(
+                                    az,
+                                    heading,
+                                    width
+                                );
+                                if (currentPx != null) {
+                                    currentPy = PanoramaLogic.getYFromElevation(
+                                        el,
+                                        height
+                                    );
+                                }
+                            } else {
+                                currentPx = null;
+                            }
                         }
                     }
 
-                    if (currentSunSp != null) {
-                        var el =
-                            currentSunSp[
-                                Core.ApiSchema.SunPathIndex.ALTITUDE
-                            ].toFloat();
-                        if (el >= 0.0) {
-                            var az =
-                                currentSunSp[
-                                    Core.ApiSchema.SunPathIndex.AZIMUTH
-                                ].toFloat();
-                            var px = PanoramaLogic.getLabelXPos(
-                                az,
-                                heading,
-                                width
-                            );
-
-                            if (px != null) {
-                                var py = PanoramaLogic.getYFromElevation(
-                                    el,
-                                    height
-                                );
-                                SunIcon.render(dc, px, py);
-                            }
-                        }
+                    if (currentPx != null && currentPy != null) {
+                        SonarPulse.render(
+                            dc,
+                            currentPx,
+                            currentPy,
+                            pulsePhase,
+                            Graphics.COLOR_YELLOW
+                        );
+                        SunIcon.render(dc, currentPx, currentPy);
                     }
                 }
             }

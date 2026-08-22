@@ -56,8 +56,9 @@ module MonkeyHooks {
 
     module SharedTimer {
         var _timer as Timer.Timer? = null;
-        var _listeners as Array<Lang.Method>? = null;
+        var _listeners as Array<Dictionary>? = null;
         var _isRunning as Boolean = false;
+        var _intervalMs as Number = 100;
 
         class _TimerDelegate {
             function onTick() as Void {
@@ -66,13 +67,37 @@ module MonkeyHooks {
         }
         var _delegate = new _TimerDelegate();
 
-        function subscribe(listener as Lang.Method) as Void {
+        function setInterval(ms as Number) as Void {
+            _intervalMs = ms;
+            if (_isRunning && _timer != null) {
+                (_timer as Timer.Timer).stop();
+                (_timer as Timer.Timer).start(
+                    _delegate.method(:onTick),
+                    _intervalMs,
+                    true
+                );
+            }
+        }
+
+        function subscribe(target as Object, methodSymbol as Symbol) as Void {
             if (_listeners == null) {
-                _listeners = [] as Array<Lang.Method>;
+                _listeners = [] as Array<Dictionary>;
             }
 
-            if (_listeners.indexOf(listener) == -1) {
-                _listeners.add(listener);
+            var found = false;
+            for (var i = 0; i < _listeners.size(); i++) {
+                var l = _listeners[i] as Dictionary;
+                if (l[:weakRef].get() == target && l[:symbol] == methodSymbol) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                _listeners.add({
+                    :weakRef => target.weak(),
+                    :symbol => methodSymbol
+                });
             }
 
             if (!_isRunning && _listeners.size() > 0) {
@@ -81,18 +106,28 @@ module MonkeyHooks {
                 }
                 (_timer as Timer.Timer).start(
                     _delegate.method(:onTick),
-                    100,
+                    _intervalMs,
                     true
                 );
                 _isRunning = true;
             }
         }
 
-        function unsubscribe(listener as Lang.Method) as Void {
+        function unsubscribe(target as Object, methodSymbol as Symbol) as Void {
             if (_listeners != null) {
-                _listeners.remove(listener);
+                for (var i = _listeners.size() - 1; i >= 0; i--) {
+                    var l = _listeners[i] as Dictionary;
+                    var obj = l[:weakRef].get();
+
+                    if (
+                        obj == null ||
+                        (obj == target && l[:symbol] == methodSymbol)
+                    ) {
+                        _listeners.remove(l);
+                    }
+                }
                 if (_listeners.size() == 0 && _isRunning) {
-                    _timer.stop();
+                    (_timer as Timer.Timer).stop();
                     _isRunning = false;
                 }
             }
@@ -100,16 +135,28 @@ module MonkeyHooks {
 
         function _triggerTick() as Void {
             if (_listeners != null) {
-                for (var i = 0; i < _listeners.size(); i++) {
-                    var listener = _listeners[i] as Lang.Method;
-                    listener.invoke();
+                for (var i = _listeners.size() - 1; i >= 0; i--) {
+                    var l = _listeners[i] as Dictionary;
+                    var obj = l[:weakRef].get();
+
+                    if (obj != null) {
+                        if (obj has l[:symbol]) {
+                            obj.method(l[:symbol]).invoke();
+                        }
+                    } else {
+                        _listeners.remove(l);
+                    }
+                }
+                if (_listeners.size() == 0 && _isRunning) {
+                    (_timer as Timer.Timer).stop();
+                    _isRunning = false;
                 }
             }
         }
     }
 
     module LocationHook {
-        var _listeners as Array<Lang.Method>? = null;
+        var _listeners as Array<Dictionary>? = null;
         var _isRunning as Boolean = false;
 
         class _LocationDelegate {
@@ -119,13 +166,25 @@ module MonkeyHooks {
         }
         var _delegate = new _LocationDelegate();
 
-        function subscribe(listener as Lang.Method) as Void {
+        function subscribe(target as Object, methodSymbol as Symbol) as Void {
             if (_listeners == null) {
-                _listeners = [] as Array<Lang.Method>;
+                _listeners = [] as Array<Dictionary>;
             }
 
-            if (_listeners.indexOf(listener) == -1) {
-                _listeners.add(listener);
+            var found = false;
+            for (var i = 0; i < _listeners.size(); i++) {
+                var l = _listeners[i] as Dictionary;
+                if (l[:weakRef].get() == target && l[:symbol] == methodSymbol) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                _listeners.add({
+                    :weakRef => target.weak(),
+                    :symbol => methodSymbol
+                });
             }
 
             if (!_isRunning && _listeners.size() > 0) {
@@ -137,9 +196,19 @@ module MonkeyHooks {
             }
         }
 
-        function unsubscribe(listener as Lang.Method) as Void {
+        function unsubscribe(target as Object, methodSymbol as Symbol) as Void {
             if (_listeners != null) {
-                _listeners.remove(listener);
+                for (var i = _listeners.size() - 1; i >= 0; i--) {
+                    var l = _listeners[i] as Dictionary;
+                    var obj = l[:weakRef].get();
+
+                    if (
+                        obj == null ||
+                        (obj == target && l[:symbol] == methodSymbol)
+                    ) {
+                        _listeners.remove(l);
+                    }
+                }
                 if (_listeners.size() == 0 && _isRunning) {
                     Position.enableLocationEvents(
                         Position.LOCATION_DISABLE,
@@ -152,9 +221,24 @@ module MonkeyHooks {
 
         function _triggerLocation(info as Position.Info) as Void {
             if (_listeners != null) {
-                for (var i = 0; i < _listeners.size(); i++) {
-                    var listener = _listeners[i] as Lang.Method;
-                    listener.invoke(info);
+                for (var i = _listeners.size() - 1; i >= 0; i--) {
+                    var l = _listeners[i] as Dictionary;
+                    var obj = l[:weakRef].get();
+
+                    if (obj != null) {
+                        if (obj has l[:symbol]) {
+                            obj.method(l[:symbol]).invoke(info);
+                        }
+                    } else {
+                        _listeners.remove(l);
+                    }
+                }
+                if (_listeners.size() == 0 && _isRunning) {
+                    Position.enableLocationEvents(
+                        Position.LOCATION_DISABLE,
+                        _delegate.method(:onLocation)
+                    );
+                    _isRunning = false;
                 }
             }
         }

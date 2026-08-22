@@ -36,3 +36,13 @@ export interface TerrainAzimuthProfile {
   highestAltitude?: number;
   distance?: number;
 }
+
+export interface MoonShadowCalculationResult {
+  minutesToMoonset: number;
+  moonsetTimeUnix: number;
+}
+
+export interface MoonriseCalculationResult {
+  minutesToMoonrise: number;
+  moonriseTimeUnix: number;
+}

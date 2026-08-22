@@ -1,7 +1,7 @@
 import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.System;
-import Shared.Ui.Button;
+import Shared.Core.Enums.TargetMode;
 
 module Features {
     module Main {
@@ -14,44 +14,58 @@ module Features {
                     btnWidth as Number,
                     btnHeight as Number,
                     btnFont as Graphics.FontType,
-                    isGpsReady as Boolean
+                    isGpsReady as Boolean,
+                    mode as Number
                 ) as Void {
                     var isTouch = System.getDeviceSettings().isTouchScreen;
 
-                    var btnText = isGpsReady ? "START" : "WAIT GPS";
-                    var btnColor = isGpsReady
-                        ? Graphics.COLOR_DK_BLUE
-                        : Graphics.COLOR_DK_GRAY;
-                    var textColor = isGpsReady
-                        ? Graphics.COLOR_WHITE
-                        : Graphics.COLOR_LT_GRAY;
+                    var btnText = isGpsReady
+                        ? isTouch
+                            ? "START"
+                            : "PRESS START"
+                        : "NO GPS";
 
-                    if (isTouch) {
-                        Button.render(
-                            dc,
-                            btnText,
-                            cx,
-                            y,
-                            btnWidth,
-                            btnHeight,
-                            btnFont,
-                            btnColor,
-                            textColor
-                        );
+                    var displayFont =
+                        isGpsReady && isTouch ? btnFont : Graphics.FONT_XTINY;
+
+                    var borderColor;
+                    var textColor;
+
+                    if (isGpsReady) {
+                        borderColor =
+                            mode == TargetMode.SUN
+                                ? Graphics.COLOR_ORANGE
+                                : Graphics.COLOR_BLUE;
+                        textColor = Graphics.COLOR_WHITE;
                     } else {
-                        var hintText = isGpsReady
-                            ? "Press START"
-                            : "Wait for GPS";
-                        dc.setColor(textColor, Graphics.COLOR_TRANSPARENT);
-                        dc.drawText(
-                            cx,
-                            y,
-                            Graphics.FONT_SMALL,
-                            hintText,
-                            Graphics.TEXT_JUSTIFY_CENTER |
-                                Graphics.TEXT_JUSTIFY_VCENTER
-                        );
+                        borderColor = Graphics.COLOR_DK_GRAY;
+                        textColor = Graphics.COLOR_LT_GRAY;
                     }
+
+                    var radius = btnHeight / 2;
+                    var startX = cx - btnWidth / 2;
+                    var startY = y - btnHeight / 2;
+
+                    dc.setPenWidth(2);
+                    dc.setColor(borderColor, Graphics.COLOR_TRANSPARENT);
+                    dc.drawRoundedRectangle(
+                        startX,
+                        startY,
+                        btnWidth,
+                        btnHeight,
+                        radius
+                    );
+                    dc.setPenWidth(1);
+
+                    dc.setColor(textColor, Graphics.COLOR_TRANSPARENT);
+                    dc.drawText(
+                        cx,
+                        y,
+                        displayFont,
+                        btnText,
+                        Graphics.TEXT_JUSTIFY_CENTER |
+                            Graphics.TEXT_JUSTIFY_VCENTER
+                    );
                 }
             }
         }

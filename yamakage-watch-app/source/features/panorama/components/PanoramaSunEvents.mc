@@ -10,7 +10,7 @@ module Features {
             module PanoramaSunEvents {
                 function render(
                     dc as Graphics.Dc,
-                    sunPaths as ApiSchema.SunPathArray,
+                    paths as ApiSchema.PathArray,
                     heading as Float,
                     width as Number,
                     height as Number,
@@ -19,9 +19,9 @@ module Features {
                     var sunrisePoint = null;
                     var sunsetPoint = null;
 
-                    for (var i = 0; i < sunPaths.size(); i++) {
-                        var sp = sunPaths[i] as ApiSchema.SunPathPointTuple;
-                        var el = sp[ApiSchema.SunPathIndex.ALTITUDE].toFloat();
+                    for (var i = 0; i < paths.size(); i++) {
+                        var sp = paths[i] as ApiSchema.PathPointTuple;
+                        var el = sp[ApiSchema.PathIndex.ALTITUDE].toFloat();
                         if (el >= 0.0) {
                             if (sunrisePoint == null) {
                                 sunrisePoint = sp;
@@ -30,17 +30,11 @@ module Features {
                         }
                     }
 
-                    dc.setColor(
-                        Graphics.COLOR_ORANGE,
-                        Graphics.COLOR_TRANSPARENT
-                    );
                     var horizonY = PanoramaLogic.getYFromElevation(0.0, height);
 
                     if (sunrisePoint != null) {
                         var az =
-                            sunrisePoint[
-                                ApiSchema.SunPathIndex.AZIMUTH
-                            ].toFloat();
+                            sunrisePoint[ApiSchema.PathIndex.AZIMUTH].toFloat();
                         var px = PanoramaLogic.getLabelXPos(az, heading, width);
                         if (px != null) {
                             dc.setColor(
@@ -60,9 +54,7 @@ module Features {
 
                     if (sunsetPoint != null) {
                         var az =
-                            sunsetPoint[
-                                ApiSchema.SunPathIndex.AZIMUTH
-                            ].toFloat();
+                            sunsetPoint[ApiSchema.PathIndex.AZIMUTH].toFloat();
                         var px = PanoramaLogic.getLabelXPos(az, heading, width);
                         if (px != null) {
                             dc.setColor(

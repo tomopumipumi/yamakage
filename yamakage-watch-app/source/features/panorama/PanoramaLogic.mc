@@ -1,6 +1,7 @@
 import Toybox.System;
 import Toybox.Lang;
 import Toybox.Graphics;
+import Toybox.Math;
 import Core.ApiSchema;
 
 module Features {
@@ -15,13 +16,11 @@ module Features {
             ) as Array<Array<Number> > {
                 var points = [] as Array<Array<Number> >;
                 var fov = 90.0;
-
                 for (var i = 0; i < profiles.size(); i++) {
                     var item = profiles[i];
                     if (!(item instanceof Array) || item.size() < 1) {
                         continue;
                     }
-
                     var az = (i * stepDeg).toFloat();
                     var el =
                         item[0] instanceof Number || item[0] instanceof Float
@@ -30,7 +29,6 @@ module Features {
                     if (el > 90.0 || el < -90.0) {
                         el = 0.0;
                     }
-
                     var diff = az - heading;
                     while (diff > 180.0) {
                         diff -= 360;
@@ -41,16 +39,10 @@ module Features {
 
                     if (diff >= -fov / 2 && diff <= fov / 2) {
                         var px = (((diff + fov / 2) * width) / fov).toNumber();
-                        var padding = (height * 0.2).toNumber();
-                        var py =
-                            height -
-                            padding -
-                            ((el / 90.0) * (height - padding * 2)).toNumber();
-
+                        var py = getYFromElevation(el, height);
                         points.add([px, py]);
                     }
                 }
-
                 var size = points.size();
                 for (var i = 0; i < size; i++) {
                     for (var j = i + 1; j < size; j++) {
@@ -61,28 +53,24 @@ module Features {
                         }
                     }
                 }
-
                 return points;
             }
 
-            function getSunPathPoints(
-                sunPaths as ApiSchema.SunPathArray,
+            function getPathPoints(
+                paths as ApiSchema.PathArray,
                 heading as Float,
                 width as Number,
                 height as Number
             ) as Array<Array<Number> > {
                 var points = [] as Array<Array<Number> >;
                 var fov = 90.0;
-
-                for (var i = 0; i < sunPaths.size(); i++) {
-                    var sp = sunPaths[i] as ApiSchema.SunPathPointTuple;
-                    var az = sp[ApiSchema.SunPathIndex.AZIMUTH].toFloat();
-                    var el = sp[ApiSchema.SunPathIndex.ALTITUDE].toFloat();
-
+                for (var i = 0; i < paths.size(); i++) {
+                    var sp = paths[i] as ApiSchema.PathPointTuple;
+                    var az = sp[ApiSchema.PathIndex.AZIMUTH].toFloat();
+                    var el = sp[ApiSchema.PathIndex.ALTITUDE].toFloat();
                     if (el < 0) {
                         continue;
                     }
-
                     var diff = az - heading;
                     while (diff > 180.0) {
                         diff -= 360;
@@ -113,7 +101,6 @@ module Features {
                 while (diff < -180) {
                     diff += 360;
                 }
-
                 if (diff >= -fov / 2 && diff <= fov / 2) {
                     return (((diff + fov / 2) * width) / fov).toNumber();
                 }

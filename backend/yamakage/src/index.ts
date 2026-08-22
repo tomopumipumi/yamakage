@@ -4,7 +4,9 @@ import { cors } from 'hono/cors';
 import { ConsoleLogger } from './infrastructure/logging/ConsoleLogger';
 import { requestLogger } from './presentation/middlewares/requestLogger';
 import { createShadowRouter } from './presentation/routes/shadow';
+import { createWatchAppMoonShadowRouter } from './presentation/routes/watchAppMoonShadow';
 import { createWatchAppShadowRouter } from './presentation/routes/watchAppShadow';
+import { createWebMoonShadowRouter } from './presentation/routes/webMoonShadow';
 import { createWebShadowRouter } from './presentation/routes/webShadow';
 import type { Bindings } from './types/env';
 
@@ -80,7 +82,9 @@ app.get('/', (c) => c.text('YAMAKAGE API is running.'));
 app.route('/api/v1/shadow', createShadowRouter(logger));
 // For Garmin (WatchApp)
 app.route('/api/v1/watchapp/shadow', createWatchAppShadowRouter(logger));
+app.route('/api/v1/watchapp/moon-shadow', createWatchAppMoonShadowRouter(logger));
 // For Web
 app.route('/api/v1/web/shadow', createWebShadowRouter(logger));
+app.route('/api/v1/web/moon-shadow', createWebMoonShadowRouter(logger));
 
 export default app;

@@ -4,6 +4,8 @@ import Toybox.WatchUi;
 import Toybox.Timer;
 import Toybox.Math;
 import Shared.Logic.PositionConfigure;
+import Shared.Core.Consts.SettingIds;
+import Shared.Core.Consts.ToggleValues;
 import Features.Error.Components.ErrorMountains;
 import Features.Error.Components.ErrorIcon;
 import Features.Error.Components.ErrorMessage;
@@ -15,27 +17,32 @@ module Features {
     module Error {
         class ErrorView extends WatchUi.View {
             private var _pulse as Float = 0.0;
-            private var _onTimerTick as Lang.Method;
 
             function initialize() {
                 View.initialize();
-                _onTimerTick = method(:onTimerTick);
             }
 
             function onShow() as Void {
-                MH.SharedTimer.subscribe(_onTimerTick);
+                MH.SharedTimer.subscribe(self, :onTimerTick);
             }
 
             function onHide() as Void {
-                MH.SharedTimer.unsubscribe(_onTimerTick);
+                MH.SharedTimer.unsubscribe(self, :onTimerTick);
             }
 
             function onTimerTick() as Void {
-                _pulse += 0.2;
-                if (_pulse > Math.PI * 2) {
-                    _pulse -= Math.PI * 2;
+                var animState = MH.useStorageString(SettingIds.ANIM_ENABLED)
+                    .init(ToggleValues.ON)
+                    .req();
+                var isAnimOn = animState.equals(ToggleValues.ON);
+
+                if (isAnimOn) {
+                    _pulse += 0.2;
+                    if (_pulse > Math.PI * 2) {
+                        _pulse -= Math.PI * 2;
+                    }
+                    WatchUi.requestUpdate();
                 }
-                WatchUi.requestUpdate();
             }
 
             function onLayout(dc as Graphics.Dc) as Void {

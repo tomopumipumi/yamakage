@@ -1,10 +1,9 @@
 import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.Math;
-import Toybox.Time;
 import Core.ApiSchema;
-import Core.ApiSchema.SunPathIndex;
 import Shared.Ui.SunIcon;
+import Shared.Ui.SonarPulse;
 import Hal.DateTime;
 
 module Features {
@@ -13,12 +12,13 @@ module Features {
             module SunPathChart {
                 function render(
                     dc as Graphics.Dc,
-                    sunPaths as ApiSchema.SunPathArray,
+                    paths as ApiSchema.PathArray,
                     cx as Number,
                     cy as Number,
-                    radius as Float
+                    radius as Float,
+                    pulsePhase as Float
                 ) as Void {
-                    if (sunPaths.size() == 0) {
+                    if (paths.size() == 0) {
                         return;
                     }
 
@@ -33,15 +33,15 @@ module Features {
 
                     var now = DateTime.createTargetUnixTime();
                     var minTimeDiff = 99999999;
-                    var currentSunPx = -1;
-                    var currentSunPy = -1;
+                    var currentPx = -1;
+                    var currentPy = -1;
 
-                    for (var i = 0; i < sunPaths.size(); i++) {
-                        var sp = sunPaths[i] as ApiSchema.SunPathPointTuple;
-                        var azDeg = sp[SunPathIndex.AZIMUTH].toFloat();
-                        var elDeg = sp[SunPathIndex.ALTITUDE].toFloat();
+                    for (var i = 0; i < paths.size(); i++) {
+                        var sp = paths[i] as ApiSchema.PathPointTuple;
+                        var azDeg = sp[ApiSchema.PathIndex.AZIMUTH].toFloat();
+                        var elDeg = sp[ApiSchema.PathIndex.ALTITUDE].toFloat();
 
-                        var tVal = sp[SunPathIndex.TIME];
+                        var tVal = sp[ApiSchema.PathIndex.TIME];
                         var t =
                             tVal instanceof Long
                                 ? tVal.toNumber()
@@ -68,22 +68,25 @@ module Features {
                         lastX = px;
                         lastY = py;
 
-                        var diff = now - t;
-                        if (diff < 0) {
-                            diff = -diff;
-                        }
-
+                        var diff = (now - t).abs();
                         if (diff < minTimeDiff) {
                             minTimeDiff = diff;
-                            currentSunPx = px;
-                            currentSunPy = py;
+                            currentPx = px;
+                            currentPy = py;
                         }
                     }
 
                     dc.setPenWidth(1);
 
-                    if (currentSunPx != -1 && currentSunPy != -1) {
-                        SunIcon.render(dc, currentSunPx, currentSunPy);
+                    if (currentPx != -1 && currentPy != -1) {
+                        SonarPulse.render(
+                            dc,
+                            currentPx,
+                            currentPy,
+                            pulsePhase,
+                            Graphics.COLOR_YELLOW
+                        );
+                        SunIcon.render(dc, currentPx, currentPy);
                     }
                 }
             }

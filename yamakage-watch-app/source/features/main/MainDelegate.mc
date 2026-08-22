@@ -4,8 +4,7 @@ import Toybox.System;
 import Hal.Sensor.LocationSensor;
 import Hal.Sensor.LocationSensor.LatLon;
 import Network.ApiClient;
-import Core.ApiSchema;
-import Features.Loading;
+import Shared.Core.Enums.TargetMode;
 import Shared.Core.Page;
 
 using MonkeyHooks as MH;
@@ -26,13 +25,61 @@ module Features {
             }
 
             function onMenu() as Boolean {
-                startCalculation();
+                MH.Router.switchTo(Page.SETTINGS, WatchUi.SLIDE_UP);
+                return true;
+            }
+
+            function onNextPage() as Boolean {
+                var modeCx = MH.useNumber(coreA.TARGET_MODE);
+                var current = modeCx.init(TargetMode.SUN).req();
+
+                if (current == TargetMode.SUN) {
+                    modeCx.set(TargetMode.MOON);
+                } else if (current == TargetMode.MOON) {
+                    modeCx.set(TargetMode.NONE);
+                    MH.Router.switchTo(Page.SETTINGS, WatchUi.SLIDE_UP);
+                }
+                return true;
+            }
+
+            function onPreviousPage() as Boolean {
+                var modeCx = MH.useNumber(coreA.TARGET_MODE);
+                var current = modeCx.init(TargetMode.SUN).req();
+
+                if (current == TargetMode.SUN) {
+                    modeCx.set(TargetMode.NONE);
+                    MH.Router.switchTo(Page.SETTINGS, WatchUi.SLIDE_DOWN);
+                } else if (current == TargetMode.MOON) {
+                    modeCx.set(TargetMode.SUN);
+                }
+                return true;
+            }
+
+            function onTap(clickEvent as WatchUi.ClickEvent) as Boolean {
+                var isTouch = System.getDeviceSettings().isTouchScreen;
+                if (!isTouch) {
+                    return false;
+                }
+
+                var coords = clickEvent.getCoordinates();
+                var y = coords[1];
+                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).req();
+
+                if (y > h * 0.2 && y < h * 0.6) {
+                    onNextPage();
+                    return true;
+                }
+
+                if (y >= h * 0.6) {
+                    startCalculation();
+                    return true;
+                }
+
                 return true;
             }
 
             private function startCalculation() as Void {
                 var errCx = MH.useString(coreA.LAST_ERROR);
-
                 if (!System.getDeviceSettings().phoneConnected) {
                     errCx.set("Phone Disconnected");
                     MH.Router.push(Page.ERROR, WatchUi.SLIDE_LEFT);
@@ -45,24 +92,50 @@ module Features {
                 }
 
                 errCx.set(null);
-
                 MH.useString(loadA.MSG_TEXT).set("Calculation...");
                 MH.Router.push(Page.LOADING, WatchUi.SLIDE_LEFT);
 
-                ApiClient.fetchShadowData(
-                    pos[LatLon.LATITUDE],
-                    pos[LatLon.LONGITUDE],
-                    method(:onApiCallback) as ApiClient.CallbackMethod
-                );
+                var mode = MH.useNumber(coreA.TARGET_MODE)
+                    .init(TargetMode.SUN)
+                    .req();
+
+                if (mode == TargetMode.SUN) {
+                    ApiClient.fetchSunShadowData(
+                        pos[LatLon.LATITUDE],
+                        pos[LatLon.LONGITUDE],
+                        method(:onSunApiCallback)
+                    );
+                } else {
+                    ApiClient.fetchMoonShadowData(
+                        pos[LatLon.LATITUDE],
+                        pos[LatLon.LONGITUDE],
+                        method(:onMoonApiCallback)
+                    );
+                }
             }
 
-            function onApiCallback(
+            function onSunApiCallback(
                 responseCode as Number,
                 data as Dictionary?
             ) as Void {
-                var shadowCx = mycx.usePayload(coreA.CURRENT_SHADOW_DATA);
-                var errCx = MH.useString(coreA.LAST_ERROR);
+                var shadowCx = mycx.useSunPayload(coreA.SUN_SHADOW_DATA);
+                handleApiResponse(responseCode, data, shadowCx);
+            }
 
+            function onMoonApiCallback(
+                responseCode as Number,
+                data as Dictionary?
+            ) as Void {
+                var shadowCx = mycx.useMoonPayload(coreA.MOON_SHADOW_DATA);
+                handleApiResponse(responseCode, data, shadowCx);
+            }
+
+            private function handleApiResponse(
+                responseCode as Number,
+                data as Dictionary?,
+                shadowCx
+            ) as Void {
+                var errCx = MH.useString(coreA.LAST_ERROR);
                 if (responseCode == 200 && data != null && data["d"] != null) {
                     errCx.set(null);
                     shadowCx.set(data["d"]);
@@ -75,26 +148,11 @@ module Features {
                         responseCode == Communications.BLE_HOST_TIMEOUT
                     ) {
                         userMsg = "Bluetooth Offline";
-                    } else if (
-                        responseCode == Communications.NETWORK_REQUEST_TIMED_OUT
-                    ) {
-                        userMsg = "Network Timeout";
-                    } else if (
-                        responseCode ==
-                        Communications.INVALID_HTTP_BODY_IN_NETWORK_RESPONSE
-                    ) {
-                        userMsg = "Invalid Response";
-                    } else if (responseCode == 401 || responseCode == 403) {
-                        userMsg = "Auth Error";
-                    } else if (responseCode == 404) {
-                        userMsg = "Server Not Found";
                     } else if (responseCode >= 500) {
                         userMsg = "Server Error";
                     }
-
                     shadowCx.set(null);
                     errCx.set(userMsg);
-
                     MH.Router.switchTo(Page.ERROR, WatchUi.SLIDE_LEFT);
                 }
             }

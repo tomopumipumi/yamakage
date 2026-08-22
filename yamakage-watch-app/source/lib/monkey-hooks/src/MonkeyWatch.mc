@@ -1,47 +1,88 @@
 import Toybox.Lang;
 
 module MonkeyHooks {
-    class WatchContext {
-        private var _store as Store;
-        private var _deps as Array<Object>;
-        private var _callback as Lang.Method;
-        private var _boundMethod as Lang.Method;
+    var _watchers as Array<Dictionary>? = null;
 
-        function initialize(
-            store as Store,
-            deps as Array<Object>,
-            callback as Lang.Method
-        ) {
-            _store = store;
-            _deps = deps;
-            _callback = callback;
-            _boundMethod = method(:_onStateChanged);
+    function watch(
+        target as Object,
+        methodSymbol as Symbol,
+        deps as Array<Object>
+    ) as Void {
+        if (_watchers == null) {
+            _watchers = [] as Array<Dictionary>;
+        }
 
-            for (var i = 0; i < deps.size(); i++) {
-                _store.subscribe(deps[i], _boundMethod);
+        var store = getStore();
+        var initialVals = new [deps.size()];
+        for (var i = 0; i < deps.size(); i++) {
+            initialVals[i] = store.get(deps[i]);
+        }
+
+        var found = false;
+        for (var i = 0; i < _watchers.size(); i++) {
+            var w = _watchers[i] as Dictionary;
+            if (w[:weakRef].get() == target && w[:symbol] == methodSymbol) {
+                w[:deps] = deps;
+                w[:lastVals] = initialVals;
+                found = true;
+                break;
             }
         }
 
-        function destroy() as Void {
-            for (var i = 0; i < _deps.size(); i++) {
-                _store.unsubscribe(_deps[i], _boundMethod);
-            }
-        }
-
-        function _onStateChanged(changedValue) as Void {
-            var size = _deps.size();
-            var currentValues = new [size];
-            for (var i = 0; i < size; i++) {
-                currentValues[i] = _store.get(_deps[i]);
-            }
-            _callback.invoke(currentValues);
+        if (!found) {
+            _watchers.add({
+                :weakRef => target.weak(),
+                :symbol => methodSymbol,
+                :deps => deps,
+                :lastVals => initialVals
+            });
         }
     }
 
-    function useWatch(
-        deps as Array<Object>,
-        callback as Lang.Method
-    ) as WatchContext {
-        return new WatchContext(getStore(), deps, callback);
+    function unwatch(target as Object, methodSymbol as Symbol) as Void {
+        if (_watchers != null) {
+            for (var i = _watchers.size() - 1; i >= 0; i--) {
+                var w = _watchers[i] as Dictionary;
+                var obj = w[:weakRef].get();
+                if (
+                    obj == null ||
+                    (obj == target && w[:symbol] == methodSymbol)
+                ) {
+                    _watchers.remove(w);
+                }
+            }
+        }
+    }
+
+    function _triggerWatchers() as Void {
+        if (_watchers != null) {
+            var store = getStore();
+            for (var i = _watchers.size() - 1; i >= 0; i--) {
+                var w = _watchers[i] as Dictionary;
+                var obj = w[:weakRef].get();
+                if (obj != null) {
+                    if (obj has w[:symbol]) {
+                        var deps = w[:deps] as Array<Object>;
+                        var lastVals = w[:lastVals] as Array;
+                        var currentVals = new [deps.size()];
+                        var changed = false;
+
+                        for (var j = 0; j < deps.size(); j++) {
+                            currentVals[j] = store.get(deps[j]);
+                            if (currentVals[j] != lastVals[j]) {
+                                changed = true;
+                            }
+                        }
+
+                        if (changed) {
+                            w[:lastVals] = currentVals;
+                            obj.method(w[:symbol]).invoke(currentVals);
+                        }
+                    }
+                } else {
+                    _watchers.remove(w);
+                }
+            }
+        }
     }
 }

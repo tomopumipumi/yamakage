@@ -3,6 +3,8 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 import Systems.Crypt;
 import Shared.Core.Page;
+import Shared.Core.Consts;
+import Shared.Core.Consts.SettingIds;
 import Features.Main;
 import Features.Panorama;
 import Features.SkyPlot;
@@ -10,19 +12,29 @@ import Features.Radar;
 import Features.Details;
 import Features.Error;
 import Features.Loading;
+import Features.Settings;
 
 using MonkeyHooks as MH;
-
-const SESSION_ID_KEY = "session_id";
+using Core.AppArena.CoreArena as coreA;
 
 class YamakageWatchApp extends Application.AppBase {
     function initialize() {
         AppBase.initialize();
         MH.Router.initialize(method(:viewFactory));
+
+        var frStr = MH.useStorageString(SettingIds.FRAME_RATE).init("0").req();
+        var frIdx = frStr.toNumber();
+
+        if (frIdx == null || frIdx < 0 || frIdx >= Consts.FRAME_RATES.size()) {
+            frIdx = 0;
+        }
+
+        var intervalMs = Consts.FRAME_RATES[frIdx][:val] as Number;
+        MH.SharedTimer.setInterval(intervalMs);
     }
 
     function onStart(state as Dictionary?) as Void {
-        MH.useStorageString(SESSION_ID_KEY).init(
+        MH.useStorageString(Consts.SESSION_ID_KEY).init(
             Crypt.generateRandomSessionId()
         );
     }
@@ -45,6 +57,11 @@ class YamakageWatchApp extends Application.AppBase {
             return [new Error.ErrorView(), new Error.ErrorDelegate()];
         } else if (pageId == Page.LOADING) {
             return [new Loading.LoadingView(), null];
+        } else if (pageId == Page.SETTINGS) {
+            return [
+                new Settings.SettingsView(),
+                new Settings.SettingsDelegate()
+            ];
         }
         return null;
     }

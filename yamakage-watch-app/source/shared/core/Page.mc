@@ -19,7 +19,8 @@ module Shared {
 
                 MAIN = 100,
                 LOADING,
-                ERROR
+                ERROR,
+                SETTINGS
             }
         }
     }

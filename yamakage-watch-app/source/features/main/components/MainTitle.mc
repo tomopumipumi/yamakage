@@ -1,5 +1,6 @@
 import Toybox.Lang;
 import Toybox.Graphics;
+import Shared.Core.Consts;
 
 module Features {
     module Main {
@@ -19,7 +20,7 @@ module Features {
                         cx,
                         y,
                         font,
-                        "YAMAKAGE",
+                        Consts.APP_TITLE,
                         Graphics.TEXT_JUSTIFY_CENTER |
                             Graphics.TEXT_JUSTIFY_VCENTER
                     );
