@@ -3,18 +3,20 @@ import Toybox.Math;
 import Toybox.Lang;
 import Core.ApiSchema;
 import Hal.DateTime;
-import Shared.Ui.SunIcon;
+import Shared.Ui.MoonIcon;
 
 module Features {
     module Radar {
         module Components {
-            module RadarSun {
+            module RadarMoon {
                 function render(
                     dc as Graphics.Dc,
                     paths as ApiSchema.PathArray,
                     cx as Number,
                     cy as Number,
-                    radius as Float
+                    radius as Float,
+                    fraction as Float,
+                    phase as Float
                 ) as Void {
                     if (paths.size() == 0) {
                         return;
@@ -51,10 +53,10 @@ module Features {
                             var px = cx + (r * Math.cos(rad)).toNumber();
                             var py = cy + (r * Math.sin(rad)).toNumber();
 
-                            SunIcon.render(dc, px, py);
+                            MoonIcon.render(dc, px, py, fraction, phase);
 
                             dc.setColor(
-                                Graphics.COLOR_YELLOW,
+                                Graphics.COLOR_LT_GRAY,
                                 Graphics.COLOR_TRANSPARENT
                             );
                             dc.setPenWidth(1);

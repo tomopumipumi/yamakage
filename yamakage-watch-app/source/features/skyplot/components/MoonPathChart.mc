@@ -2,26 +2,28 @@ import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.Math;
 import Core.ApiSchema;
-import Shared.Ui.SunIcon;
+import Shared.Ui.MoonIcon;
 import Hal.DateTime;
 
 module Features {
     module SkyPlot {
         module Components {
-            module SunPathChart {
+            module MoonPathChart {
                 function render(
                     dc as Graphics.Dc,
                     paths as ApiSchema.PathArray,
                     cx as Number,
                     cy as Number,
-                    radius as Float
+                    radius as Float,
+                    fraction as Float,
+                    phase as Float
                 ) as Void {
                     if (paths.size() == 0) {
                         return;
                     }
 
                     dc.setColor(
-                        Graphics.COLOR_YELLOW,
+                        Graphics.COLOR_LT_GRAY,
                         Graphics.COLOR_TRANSPARENT
                     );
                     dc.setPenWidth(2);
@@ -77,7 +79,13 @@ module Features {
                     dc.setPenWidth(1);
 
                     if (currentPx != -1 && currentPy != -1) {
-                        SunIcon.render(dc, currentPx, currentPy);
+                        MoonIcon.render(
+                            dc,
+                            currentPx,
+                            currentPy,
+                            fraction,
+                            phase
+                        );
                     }
                 }
             }

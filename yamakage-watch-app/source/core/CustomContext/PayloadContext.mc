@@ -1,49 +1,77 @@
 import Toybox.Lang;
-import Toybox.Graphics;
 import Core.ApiSchema;
 
 using MonkeyHooks as MH;
 
 module Core {
     module CustomContext {
-        class PayloadContext {
+        class SunPayloadContext {
             private var _cx as MH.Context;
             function initialize(cx as MH.Context) {
                 _cx = cx;
             }
-            function get() as ApiSchema.ShadowDataPayload? {
-                return _cx.get() as ApiSchema.ShadowDataPayload?;
+            function get() as ApiSchema.SunShadowPayload? {
+                return _cx.get() as ApiSchema.SunShadowPayload?;
             }
-            function req() as ApiSchema.ShadowDataPayload {
+            function req() as ApiSchema.SunShadowPayload {
                 var val = _cx.get();
                 if (val == null) {
                     throw new Lang.InvalidValueException(
-                        "MonkeyHooks: req() called but value is null!"
+                        "MonkeyHooks: Sun Payload req() called but value is null!"
                     );
                 }
-                return val as ApiSchema.ShadowDataPayload;
+                return val as ApiSchema.SunShadowPayload;
             }
-            function set(val as ApiSchema.ShadowDataPayload?) as Void {
+            function set(val as ApiSchema.SunShadowPayload?) as Void {
                 _cx.set(val);
             }
-            function setSilent(val as ApiSchema.ShadowDataPayload?) as Void {
+            function setSilent(val as ApiSchema.SunShadowPayload?) as Void {
                 _cx.setSilent(val);
             }
             function init(
-                val as ApiSchema.ShadowDataPayload
-            ) as PayloadContext {
+                val as ApiSchema.SunShadowPayload
+            ) as SunPayloadContext {
                 _cx.init(val);
                 return self;
             }
-            function subscribe(listener as Lang.Method) as Void {
-                _cx.subscribe(listener);
+        }
+
+        class MoonPayloadContext {
+            private var _cx as MH.Context;
+            function initialize(cx as MH.Context) {
+                _cx = cx;
             }
-            function unsubscribe(listener as Lang.Method) as Void {
-                _cx.unsubscribe(listener);
+            function get() as ApiSchema.MoonShadowPayload? {
+                return _cx.get() as ApiSchema.MoonShadowPayload?;
+            }
+            function req() as ApiSchema.MoonShadowPayload {
+                var val = _cx.get();
+                if (val == null) {
+                    throw new Lang.InvalidValueException(
+                        "MonkeyHooks: Moon Payload req() called but value is null!"
+                    );
+                }
+                return val as ApiSchema.MoonShadowPayload;
+            }
+            function set(val as ApiSchema.MoonShadowPayload?) as Void {
+                _cx.set(val);
+            }
+            function setSilent(val as ApiSchema.MoonShadowPayload?) as Void {
+                _cx.setSilent(val);
+            }
+            function init(
+                val as ApiSchema.MoonShadowPayload
+            ) as MoonPayloadContext {
+                _cx.init(val);
+                return self;
             }
         }
-        function usePayload(key as Object) as PayloadContext {
-            return new PayloadContext(MH.useArena(key));
+
+        function useSunPayload(key as Object) as SunPayloadContext {
+            return new SunPayloadContext(MH.useArena(key));
+        }
+        function useMoonPayload(key as Object) as MoonPayloadContext {
+            return new MoonPayloadContext(MH.useArena(key));
         }
     }
 }

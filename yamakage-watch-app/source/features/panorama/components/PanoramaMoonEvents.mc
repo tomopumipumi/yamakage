@@ -7,7 +7,7 @@ import Shared.Icons;
 module Features {
     module Panorama {
         module Components {
-            module PanoramaSunEvents {
+            module PanoramaMoonEvents {
                 function render(
                     dc as Graphics.Dc,
                     paths as ApiSchema.PathArray,
@@ -16,29 +16,31 @@ module Features {
                     height as Number,
                     iconFont as Graphics.FontType
                 ) as Void {
-                    var sunrisePoint = null;
-                    var sunsetPoint = null;
+                    var moonrisePoint = null;
+                    var moonsetPoint = null;
 
                     for (var i = 0; i < paths.size(); i++) {
                         var sp = paths[i] as ApiSchema.PathPointTuple;
                         var el = sp[ApiSchema.PathIndex.ALTITUDE].toFloat();
                         if (el >= 0.0) {
-                            if (sunrisePoint == null) {
-                                sunrisePoint = sp;
+                            if (moonrisePoint == null) {
+                                moonrisePoint = sp;
                             }
-                            sunsetPoint = sp;
+                            moonsetPoint = sp;
                         }
                     }
 
                     var horizonY = PanoramaLogic.getYFromElevation(0.0, height);
 
-                    if (sunrisePoint != null) {
+                    if (moonrisePoint != null) {
                         var az =
-                            sunrisePoint[ApiSchema.PathIndex.AZIMUTH].toFloat();
+                            moonrisePoint[
+                                ApiSchema.PathIndex.AZIMUTH
+                            ].toFloat();
                         var px = PanoramaLogic.getLabelXPos(az, heading, width);
                         if (px != null) {
                             dc.setColor(
-                                Graphics.COLOR_YELLOW,
+                                Graphics.COLOR_WHITE,
                                 Graphics.COLOR_TRANSPARENT
                             );
                             dc.drawText(
@@ -52,13 +54,13 @@ module Features {
                         }
                     }
 
-                    if (sunsetPoint != null) {
+                    if (moonsetPoint != null) {
                         var az =
-                            sunsetPoint[ApiSchema.PathIndex.AZIMUTH].toFloat();
+                            moonsetPoint[ApiSchema.PathIndex.AZIMUTH].toFloat();
                         var px = PanoramaLogic.getLabelXPos(az, heading, width);
                         if (px != null) {
                             dc.setColor(
-                                Graphics.COLOR_PURPLE,
+                                Graphics.COLOR_LT_GRAY,
                                 Graphics.COLOR_TRANSPARENT
                             );
                             dc.drawText(

@@ -22,7 +22,7 @@ module Features {
             }
 
             function onNextPage() as Boolean {
-                MH.Router.push(Page.SKYPLOT, WatchUi.SLIDE_UP);
+                MH.Router.switchTo(Page.SKYPLOT, WatchUi.SLIDE_UP);
                 return true;
             }
         }

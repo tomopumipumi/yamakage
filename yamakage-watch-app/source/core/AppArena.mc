@@ -10,9 +10,11 @@ module Core {
                 DISPLAY_HEIGHT,
                 CENTER_X,
                 CENTER_Y,
-                CURRENT_SHADOW_DATA,
+                SUN_SHADOW_DATA,
+                MOON_SHADOW_DATA,
                 LAST_ERROR,
-                SESSION_ID
+                SESSION_ID,
+                TARGET_MODE
             }
         }
 

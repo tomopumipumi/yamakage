@@ -1,21 +1,22 @@
 import Toybox.Graphics;
 import Toybox.Lang;
-import Toybox.Math;
 import Core.ApiSchema;
 import Features.Panorama.PanoramaLogic;
-import Shared.Ui.SunIcon;
+import Shared.Ui.MoonIcon;
 import Hal.DateTime;
 
 module Features {
     module Panorama {
         module Components {
-            module PanoramaSunPath {
+            module PanoramaMoonPath {
                 function render(
                     dc as Graphics.Dc,
                     paths as ApiSchema.PathArray,
                     heading as Float,
                     width as Number,
-                    height as Number
+                    height as Number,
+                    fraction as Float,
+                    phase as Float
                 ) as Void {
                     var points = PanoramaLogic.getPathPoints(
                         paths,
@@ -25,7 +26,7 @@ module Features {
                     );
 
                     dc.setColor(
-                        Graphics.COLOR_YELLOW,
+                        Graphics.COLOR_LT_GRAY,
                         Graphics.COLOR_TRANSPARENT
                     );
                     dc.setPenWidth(2);
@@ -88,7 +89,13 @@ module Features {
                     }
 
                     if (currentPx != null && currentPy != null) {
-                        SunIcon.render(dc, currentPx, currentPy);
+                        MoonIcon.render(
+                            dc,
+                            currentPx,
+                            currentPy,
+                            fraction,
+                            phase
+                        );
                     }
                 }
             }

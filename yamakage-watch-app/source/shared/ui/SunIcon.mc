@@ -18,11 +18,12 @@ module Shared {
                     var angle = (j * Math.PI) / 4.0;
                     var r1 = 7.0;
                     var r2 = 12.0;
-                    var x1 = x + (Math.cos(angle) * r1).toNumber();
-                    var y1 = y + (Math.sin(angle) * r1).toNumber();
-                    var x2 = x + (Math.cos(angle) * r2).toNumber();
-                    var y2 = y + (Math.sin(angle) * r2).toNumber();
-                    dc.drawLine(x1, y1, x2, y2);
+                    dc.drawLine(
+                        x + (Math.cos(angle) * r1).toNumber(),
+                        y + (Math.sin(angle) * r1).toNumber(),
+                        x + (Math.cos(angle) * r2).toNumber(),
+                        y + (Math.sin(angle) * r2).toNumber()
+                    );
                 }
             }
         }

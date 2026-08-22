@@ -11,6 +11,7 @@
 export class ShadowEngine {
     free(): void;
     [Symbol.dispose](): void;
+    calculate_moon_shadow(lat: number, lng: number, target_time_ms: number, current_altitude: number): number;
     /**
      * Executes the core shadow and sun path calculations based on the decoded terrain data.
      * デコードされた地形データに基づき、影と太陽軌道のコア計算を実行します。
@@ -107,6 +108,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_shadowengine_free: (a: number, b: number) => void;
+    readonly shadowengine_calculate_moon_shadow: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly shadowengine_calculate_shadow: (a: number, b: number, c: number, d: number, e: number) => number;
     readonly shadowengine_decode_tile_elevations: (a: number, b: number, c: number) => number;
     readonly shadowengine_generate_sampling_points: (a: number, b: number, c: number, d: number, e: number) => number;

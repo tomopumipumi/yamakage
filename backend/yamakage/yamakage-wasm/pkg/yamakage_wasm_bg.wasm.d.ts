@@ -2,6 +2,7 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export const __wbg_shadowengine_free: (a: number, b: number) => void;
+export const shadowengine_calculate_moon_shadow: (a: number, b: number, c: number, d: number, e: number) => number;
 export const shadowengine_calculate_shadow: (a: number, b: number, c: number, d: number, e: number) => number;
 export const shadowengine_decode_tile_elevations: (a: number, b: number, c: number) => number;
 export const shadowengine_generate_sampling_points: (a: number, b: number, c: number, d: number, e: number) => number;

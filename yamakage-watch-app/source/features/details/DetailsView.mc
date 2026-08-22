@@ -1,13 +1,13 @@
 import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
-import Toybox.Timer;
 import Core.ApiSchema;
-import Core.ApiSchema.DataIndex;
+import Core.ApiSchema.SunDataIndex;
+import Core.ApiSchema.MoonDataIndex;
+import Shared.Logic.FontManager;
 import Shared.Core.Page;
 import Hal.Sensor.CompassSensor;
 import Systems.TimeSystem;
-import Shared.Logic.FontManager;
 import Shared.Logic.PositionConfigure;
 import Shared.Ui.PageIndicator;
 import Shared.Icons;
@@ -23,12 +23,10 @@ module Features {
     module Details {
         class DetailsView extends WatchUi.View {
             private var _tickCount as Number = 0;
-            private var _shadowCx as mycx.PayloadContext;
             private var _requestUpdate as Lang.Method;
 
             function initialize() {
                 View.initialize();
-                _shadowCx = mycx.usePayload(coreA.CURRENT_SHADOW_DATA);
                 _requestUpdate = method(:requestUpdate);
             }
 
@@ -103,91 +101,142 @@ module Features {
             function onUpdate(dc as Graphics.Dc) as Void {
                 var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
                 var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
-                var cx = MH.useNumber(coreA.CENTER_X).init(0).req();
-                var cy = MH.useNumber(coreA.CENTER_Y).init(0).req();
 
                 dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
                 dc.clear();
 
-                var rawData = _shadowCx.get() as ApiSchema.ShadowDataPayload?;
-                if (rawData == null) {
-                    var valueFont = MH.useFont(detailA.VALUE_FONT)
-                        .init(Graphics.FONT_XTINY)
-                        .req();
+                var mode = MH.useNumber(coreA.TARGET_MODE).init(0).req();
 
-                    dc.setColor(
-                        Graphics.COLOR_WHITE,
-                        Graphics.COLOR_TRANSPARENT
-                    );
-                    dc.drawText(
-                        cx,
-                        cy,
-                        valueFont,
-                        "No Data",
-                        Graphics.TEXT_JUSTIFY_CENTER |
-                            Graphics.TEXT_JUSTIFY_VCENTER
-                    );
+                var data = null;
+                var setUnix = 0l;
+                var riseUnix = 0l;
+                var stepDeg = 0;
+                var profiles = null;
+
+                var illumStr = "--";
+
+                if (mode == 0) {
+                    data = mycx.useSunPayload(coreA.SUN_SHADOW_DATA).get();
+                    if (data != null) {
+                        setUnix = data[SunDataIndex.SET_TIME] as Number or Long;
+                        riseUnix =
+                            data[SunDataIndex.RISE_TIME] as Number or Long;
+                        stepDeg = data[SunDataIndex.AZIMUTH_STEP] as Number;
+                        profiles =
+                            data[SunDataIndex.PROFILES] as
+                            ApiSchema.AzimuthProfilesArray;
+                    }
+                } else {
+                    data = mycx.useMoonPayload(coreA.MOON_SHADOW_DATA).get();
+                    if (data != null) {
+                        setUnix =
+                            data[MoonDataIndex.SET_TIME] as Number or Long;
+                        riseUnix =
+                            data[MoonDataIndex.RISE_TIME] as Number or Long;
+                        stepDeg = data[MoonDataIndex.AZIMUTH_STEP] as Number;
+                        profiles =
+                            data[MoonDataIndex.PROFILES] as
+                            ApiSchema.AzimuthProfilesArray;
+
+                        var fraction = data[MoonDataIndex.FRACTION] as Float;
+                        illumStr = (fraction * 100.0).format("%.1f") + "%";
+                    }
+                }
+
+                if (data == null) {
                     return;
                 }
 
-                var sunsetUnix =
-                    rawData[DataIndex.SUNSET_TIME] as Number or Long;
-                var sunriseUnix =
-                    rawData[DataIndex.SUNRISE_TIME] as Number or Long;
-                var sunsetStr = TimeSystem.formatUnixTime(sunsetUnix);
-                var sunriseStr = TimeSystem.formatUnixTime(sunriseUnix);
+                var sunsetStr = TimeSystem.formatUnixTime(setUnix);
+                var sunriseStr = TimeSystem.formatUnixTime(riseUnix);
+
+                var riseLabel = mode == 1 ? "MOONRISE" : "SUNRISE";
+                var setLabel = mode == 1 ? "MOONSET" : "SUNSET";
+                var riseColor =
+                    mode == 1 ? Graphics.COLOR_WHITE : Graphics.COLOR_YELLOW;
+                var setColor =
+                    mode == 1 ? Graphics.COLOR_LT_GRAY : Graphics.COLOR_PURPLE;
 
                 var heading = CompassSensor.getHeadingDegrees();
                 var elevStr = "--";
                 if (heading != null) {
-                    var stepDeg = rawData[DataIndex.AZIMUTH_STEP];
-                    var profiles =
-                        rawData[DataIndex.AZIMUTH_PROFILES] as
-                        ApiSchema.AzimuthProfilesArray;
                     var index = (heading / stepDeg).toNumber();
-                    if (index >= 0 && index < profiles.size()) {
-                        var profile = profiles[index];
-                        if (profile instanceof Array && profile.size() > 0) {
-                            var el =
-                                profile[0] instanceof Number ||
-                                profile[0] instanceof Float
-                                    ? profile[0].toFloat()
-                                    : 0.0;
-                            elevStr = el.format("%.1f") + "°";
-                        }
+                    if (
+                        index >= 0 &&
+                        index < profiles.size() &&
+                        profiles[index].size() > 0
+                    ) {
+                        var el =
+                            profiles[index][0] instanceof Number ||
+                            profiles[index][0] instanceof Float
+                                ? profiles[index][0].toFloat()
+                                : 0.0;
+                        elevStr = el.format("%.1f") + "°";
                     }
                 }
 
-                var row1Y = (h * 0.25).toNumber();
-                var row2Y = (h * 0.5).toNumber();
-                var row3Y = (h * 0.75).toNumber();
+                var numRows = mode == 1 ? 4 : 3;
+                DetailsSeparators.render(dc, w, h, numRows);
 
-                DetailsSeparators.render(dc, w, h);
-
-                DetailsRow.render(
-                    dc,
-                    row1Y,
-                    "SUNRISE",
-                    sunriseStr,
-                    Graphics.COLOR_YELLOW,
-                    Icons.ICON_SUNRISE
-                );
-                DetailsRow.render(
-                    dc,
-                    row2Y,
-                    "SUNSET",
-                    sunsetStr,
-                    Graphics.COLOR_PURPLE,
-                    Icons.ICON_SUNSET
-                );
-                DetailsRow.render(
-                    dc,
-                    row3Y,
-                    "HEADING",
-                    elevStr,
-                    Graphics.COLOR_GREEN,
-                    Icons.ICON_ELEVATION_ANGLE
-                );
+                if (mode == 1) {
+                    DetailsRow.render(
+                        dc,
+                        (h * 0.2).toNumber(),
+                        riseLabel,
+                        sunriseStr,
+                        riseColor,
+                        Icons.ICON_SUNRISE
+                    );
+                    DetailsRow.render(
+                        dc,
+                        (h * 0.4).toNumber(),
+                        setLabel,
+                        sunsetStr,
+                        setColor,
+                        Icons.ICON_SUNSET
+                    );
+                    DetailsRow.render(
+                        dc,
+                        (h * 0.6).toNumber(),
+                        "HEADING",
+                        elevStr,
+                        Graphics.COLOR_GREEN,
+                        Icons.ICON_ELEVATION_ANGLE
+                    );
+                    DetailsRow.render(
+                        dc,
+                        (h * 0.8).toNumber(),
+                        "ILLUM",
+                        illumStr,
+                        Graphics.COLOR_BLUE,
+                        Icons.ICON_MOON
+                    );
+                } else {
+                    DetailsRow.render(
+                        dc,
+                        (h * 0.25).toNumber(),
+                        riseLabel,
+                        sunriseStr,
+                        riseColor,
+                        Icons.ICON_SUNRISE
+                    );
+                    DetailsRow.render(
+                        dc,
+                        (h * 0.5).toNumber(),
+                        setLabel,
+                        sunsetStr,
+                        setColor,
+                        Icons.ICON_SUNSET
+                    );
+                    DetailsRow.render(
+                        dc,
+                        (h * 0.75).toNumber(),
+                        "HEADING",
+                        elevStr,
+                        Graphics.COLOR_GREEN,
+                        Icons.ICON_ELEVATION_ANGLE
+                    );
+                }
 
                 PageIndicator.render(
                     dc,

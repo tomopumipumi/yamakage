@@ -1,19 +1,17 @@
 import Toybox.Communications;
 import Toybox.Lang;
-import Toybox.System;
-import Toybox.Time;
 import Core.Config;
 import Hal.DateTime;
 import Systems.Crypt;
 
 using MonkeyHooks as MH;
-using Core.AppArena.CoreArena as coreA;
 
 module Network {
     module ApiClient {
         class ShadowDataRequest {
             private var _lat as Float;
             private var _lng as Float;
+            private var _endpoint as String;
             private var _callback as
                 (Method(responseCode as Number, data as Dictionary?) as Void);
 
@@ -23,6 +21,7 @@ module Network {
             function initialize(
                 lat as Float,
                 lng as Float,
+                endpoint as String,
                 callback as
                     (Method
                         (responseCode as Number, data as Dictionary?) as Void
@@ -30,14 +29,13 @@ module Network {
             ) {
                 _lat = lat;
                 _lng = lng;
+                _endpoint = endpoint;
                 _callback = callback;
             }
 
             function execute() as Void {
-                var url = Config.API_BASE_URL + Config.SHADOW_ENDPOINT;
-
-                var sessionId = MH.useStorageString(SESSION_ID_KEY).get();
-
+                var url = Config.API_BASE_URL + _endpoint;
+                var sessionId = MH.useStorageString("session_id").get();
                 if (sessionId == null) {
                     sessionId = Crypt.generateRandomSessionId();
                 }
@@ -95,12 +93,31 @@ module Network {
         typedef CallbackMethod as
             (Method(responseCode as Number, data as Dictionary?) as Void);
 
-        function fetchShadowData(
+        function fetchSunShadowData(
             lat as Float,
             lng as Float,
             callback as CallbackMethod
         ) as Void {
-            var request = new ShadowDataRequest(lat, lng, callback);
+            var request = new ShadowDataRequest(
+                lat,
+                lng,
+                Config.SHADOW_ENDPOINT,
+                callback
+            );
+            request.execute();
+        }
+
+        function fetchMoonShadowData(
+            lat as Float,
+            lng as Float,
+            callback as CallbackMethod
+        ) as Void {
+            var request = new ShadowDataRequest(
+                lat,
+                lng,
+                Config.MOON_SHADOW_ENDPOINT,
+                callback
+            );
             request.execute();
         }
     }

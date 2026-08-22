@@ -11,15 +11,15 @@ module Features {
                 BehaviorDelegate.initialize();
             }
             function onBack() as Boolean {
-                MH.Router.switchTo(Page.MAIN, WatchUi.SLIDE_RIGHT);
+                MH.Router.pop(WatchUi.SLIDE_RIGHT);
                 return true;
             }
             function onPreviousPage() as Boolean {
-                MH.Router.pop(WatchUi.SLIDE_DOWN);
+                MH.Router.switchTo(Page.PANORAMA, WatchUi.SLIDE_DOWN);
                 return true;
             }
             function onNextPage() as Boolean {
-                MH.Router.push(Page.RADAR, WatchUi.SLIDE_UP);
+                MH.Router.switchTo(Page.RADAR, WatchUi.SLIDE_UP);
                 return true;
             }
         }

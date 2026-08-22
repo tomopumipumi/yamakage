@@ -190,4 +190,29 @@ impl ShadowEngine {
 
         self.result_buffer.as_ptr()
     }
+
+    pub fn calculate_moon_shadow(
+        &mut self,
+        lat: f64,
+        lng: f64,
+        target_time_ms: f64,
+        current_altitude: f64,
+    ) -> *const f64 {
+        self.result_buffer.clear();
+
+        let ctx = match CalculationContext::try_new(lat, lng, target_time_ms, current_altitude) {
+            Ok(c) => c,
+            Err(_) => {
+                self.result_buffer.push(f64::NAN);
+                return self.result_buffer.as_ptr();
+            }
+        };
+
+        let profiles =
+            core::azimuth_profile::calculate_azimuth_profiles(&self.arena, ctx.eye_level_altitude);
+        let result = core::simulate_moon_path::simulate_moon_path(&ctx, &profiles);
+
+        result.pack_into_buffer(&mut self.result_buffer);
+        self.result_buffer.as_ptr()
+    }
 }

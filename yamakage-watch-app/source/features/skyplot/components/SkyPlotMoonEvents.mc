@@ -7,7 +7,7 @@ import Shared.Icons;
 module Features {
     module SkyPlot {
         module Components {
-            module SkyPlotSunEvents {
+            module SkyPlotMoonEvents {
                 function render(
                     dc as Graphics.Dc,
                     paths as ApiSchema.PathArray,
@@ -16,8 +16,8 @@ module Features {
                     radius as Float,
                     iconFont as Graphics.FontType
                 ) as Void {
-                    var sunrisePoint = null;
-                    var sunsetPoint = null;
+                    var moonrisePoint = null;
+                    var moonsetPoint = null;
 
                     if (paths.size() > 1) {
                         for (var i = 0; i < paths.size() - 1; i++) {
@@ -28,22 +28,24 @@ module Features {
                             var el2 =
                                 sp2[ApiSchema.PathIndex.ALTITUDE].toFloat();
                             if (el1 < 0.0 && el2 >= 0.0) {
-                                sunrisePoint = sp2;
+                                moonrisePoint = sp2;
                             }
                             if (el1 >= 0.0 && el2 < 0.0) {
-                                sunsetPoint = sp1;
+                                moonsetPoint = sp1;
                             }
                         }
                     }
 
-                    if (sunrisePoint != null) {
+                    if (moonrisePoint != null) {
                         var azDeg =
-                            sunrisePoint[ApiSchema.PathIndex.AZIMUTH].toFloat();
+                            moonrisePoint[
+                                ApiSchema.PathIndex.AZIMUTH
+                            ].toFloat();
                         var rad = ((azDeg - 90.0) * Math.PI) / 180.0;
                         var px = cx + (radius * Math.cos(rad)).toNumber();
                         var py = cy + (radius * Math.sin(rad)).toNumber();
                         dc.setColor(
-                            Graphics.COLOR_YELLOW,
+                            Graphics.COLOR_WHITE,
                             Graphics.COLOR_TRANSPARENT
                         );
                         dc.drawText(
@@ -56,14 +58,14 @@ module Features {
                         );
                     }
 
-                    if (sunsetPoint != null) {
+                    if (moonsetPoint != null) {
                         var azDeg =
-                            sunsetPoint[ApiSchema.PathIndex.AZIMUTH].toFloat();
+                            moonsetPoint[ApiSchema.PathIndex.AZIMUTH].toFloat();
                         var rad = ((azDeg - 90.0) * Math.PI) / 180.0;
                         var px = cx + (radius * Math.cos(rad)).toNumber();
                         var py = cy + (radius * Math.sin(rad)).toNumber();
                         dc.setColor(
-                            Graphics.COLOR_PURPLE,
+                            Graphics.COLOR_LT_GRAY,
                             Graphics.COLOR_TRANSPARENT
                         );
                         dc.drawText(

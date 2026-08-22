@@ -19,6 +19,17 @@ export class ShadowEngine {
         wasm.__wbg_shadowengine_free(ptr, 0);
     }
     /**
+     * @param {number} lat
+     * @param {number} lng
+     * @param {number} target_time_ms
+     * @param {number} current_altitude
+     * @returns {number}
+     */
+    calculate_moon_shadow(lat, lng, target_time_ms, current_altitude) {
+        const ret = wasm.shadowengine_calculate_moon_shadow(this.__wbg_ptr, lat, lng, target_time_ms, current_altitude);
+        return ret >>> 0;
+    }
+    /**
      * Executes the core shadow and sun path calculations based on the decoded terrain data.
      * デコードされた地形データに基づき、影と太陽軌道のコア計算を実行します。
      *

@@ -14,13 +14,15 @@ module Features {
                     btnWidth as Number,
                     btnHeight as Number,
                     btnFont as Graphics.FontType,
-                    isGpsReady as Boolean
+                    isGpsReady as Boolean,
+                    mode as Number
                 ) as Void {
                     var isTouch = System.getDeviceSettings().isTouchScreen;
-
-                    var btnText = isGpsReady ? "START" : "WAIT GPS";
+                    var btnText = isGpsReady ? "START" : "NO GPS";
                     var btnColor = isGpsReady
-                        ? Graphics.COLOR_DK_BLUE
+                        ? mode == 1
+                            ? Graphics.COLOR_DK_BLUE
+                            : Graphics.COLOR_DK_BLUE
                         : Graphics.COLOR_DK_GRAY;
                     var textColor = isGpsReady
                         ? Graphics.COLOR_WHITE

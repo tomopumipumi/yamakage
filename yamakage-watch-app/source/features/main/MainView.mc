@@ -1,8 +1,8 @@
+// source/features/main/MainView.mc
 import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
 import Toybox.Position;
-import Toybox.Timer;
 
 import Shared.Logic.FontManager;
 import Shared.Logic.PositionConfigure;
@@ -11,6 +11,7 @@ import Features.Main.Components.MainBackground;
 import Features.Main.Components.MainGpsStatus;
 import Features.Main.Components.MainTitle;
 import Features.Main.Components.MainStartAction;
+import Features.Main.Components.MainTargetSelector;
 
 using MonkeyHooks as MH;
 using Core.AppArena.CoreArena as coreA;
@@ -69,14 +70,10 @@ module Features {
                 var h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
                 var titleFontCx = MH.useFont(mainA.TITLE_FONT);
                 var btnFontCx = MH.useFont(mainA.BTN_FONT);
-                var btnWidthCx = MH.useNumber(mainA.BTN_WIDTH).init(0);
-                var btnHeightCx = MH.useNumber(mainA.BTN_HEIGHT).init(0);
 
                 if (titleFontCx.get() == null) {
-                    var btnWidth = (w * 0.5).toNumber();
-                    var btnHeight = (h * 0.2).toNumber();
-                    btnWidthCx.set(btnWidth);
-                    btnHeightCx.set(btnHeight);
+                    MH.useNumber(mainA.BTN_WIDTH).set((w * 0.5).toNumber());
+                    MH.useNumber(mainA.BTN_HEIGHT).set((h * 0.2).toNumber());
                     titleFontCx.set(
                         FontManager.findBestFont(
                             dc,
@@ -89,8 +86,8 @@ module Features {
                         FontManager.findBestFont(
                             dc,
                             "START",
-                            btnWidth,
-                            btnHeight
+                            (w * 0.5).toNumber(),
+                            (h * 0.2).toNumber()
                         )
                     );
                 }
@@ -116,21 +113,26 @@ module Features {
                 var gpsText = MH.useString(mainA.GPS_TEXT)
                     .init("GPS: Searching...")
                     .req();
-
                 var gpsColor = MH.useColor(mainA.GPS_COLOR)
                     .init(Graphics.COLOR_DK_GRAY)
                     .req();
-
                 var isGpsReady = MH.useBoolean(mainA.IS_GPS_READY)
                     .init(false)
                     .req();
+                var mode = MH.useNumber(coreA.TARGET_MODE).init(0).req();
 
-                MainBackground.render(dc, w, h);
-                var gpsY = (h * 0.1).toNumber();
-                MainGpsStatus.render(dc, cx, gpsY, gpsText, gpsColor);
-                var titleY = (h * 0.25).toNumber();
-                MainTitle.render(dc, cx, titleY, titleFont);
+                MainBackground.render(dc, w, h, mode);
+
+                var gpsY = (h * 0.08).toNumber();
+                var selectorY = (h * 0.2).toNumber();
+                var titleY = (h * 0.35).toNumber();
                 var btnY = (h * 0.8).toNumber();
+
+                MainGpsStatus.render(dc, cx, gpsY, gpsText, gpsColor);
+
+                MainTargetSelector.render(dc, cx, selectorY, mode);
+
+                MainTitle.render(dc, cx, titleY, titleFont);
                 MainStartAction.render(
                     dc,
                     cx,
@@ -138,7 +140,8 @@ module Features {
                     btnWidth,
                     btnHeight,
                     btnFont,
-                    isGpsReady
+                    isGpsReady,
+                    mode
                 );
             }
         }
