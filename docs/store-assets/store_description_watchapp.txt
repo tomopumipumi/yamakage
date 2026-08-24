@@ -1,61 +1,33 @@
-# YAMAKAGE - Terrain-Aware Sunset & Sunrise Prediction
+YAMAKAGE - Terrain-Aware Sunset & Sunrise Prediction
 
-## Overview
+■Overview & Key Features
+Darkness falls faster in mountains than standard sunset times suggest. YAMAKAGE is a smartwatch app that calculates and visualizes "true" sunrise, sunset, moonrise, and moonset times by analyzing surrounding terrain. By scanning elevation data up to 30 km away, it compares celestial trajectories with mountain heights to predict exactly when the sun or moon will be hidden or revealed, offering an intuitive graphical understanding of your environment.
+Displayed Data & Views
 
-Darkness falls faster in mountainous terrain than the standard sunset time.
+After pressing "START" to run the calculation, you can swipe to explore three distinct screens:
+・Panorama View: Overlays obstacles (like mountains) and their elevation angles in your watch's current heading alongside the sun/moon trajectory.
+・SkyPlot: A 360-degree overhead circular graph displaying surrounding elevation profiles and celestial paths.
+・Radar View: A top-down radar showing real-time distances (in km) to obstacles and open directions.
+・Details: Displays terrain-adjusted times and obstacle elevation angles based on your heading.
 
-YAMAKAGE is a smartwatch app that reads surrounding terrain (elevation data) to calculate and visualize the "true sunrise and sunset times" taking actual mountains and shadows into account. It also supports visualizing the times when the moon rises and sets behind ridges.
+■Mechanism & Privacy
+To minimize battery consumption and processing load, YAMAKAGE delegates complex calculations to a cloud server:
+・The app sends your current GPS coordinates to the server.
+・The server analyzes global terrain data within a 30 km radius.
+・It calculates trajectories against the terrain cross-section and returns rendering data to your device.
+・Privacy Note: Location data is transmitted solely for calculations using a random temporary hash. No personal data is collected, and locations are instantly discarded after processing.
 
-## Key Features
+■Precautions, Disclaimer & Links
+・Requirements: Requires a connected smartphone (Garmin Connect Mobile app) and a clear outdoor GPS signal.
+・Limitations: Polar regions (e.g., midnight sun) will display as --:--. Ensure good connectivity to avoid communication errors.
+・Disclaimer: Times are predictions based on ~38m mesh terrain data. Because weather, trees, and buildings are not accounted for, actual times may vary. Always plan activities with a generous time margin.
 
-By scanning terrain data up to 30 km around your current location and comparing the sun's trajectory with mountain heights, YAMAKAGE predicts when the sun (or moon) will actually be hidden or revealed.
+■Explore More:
+・Data Field Version: Garmin Store
+https://apps.garmin.com/apps/cbe81d8e-661d-49b0-bc4c-a1fc8ab10d53
 
-Evolving significantly in expressiveness from the data field version, this app allows you to grasp your surroundings intuitively through graphics.
+・Source Code: YAMAKAGE is an open-source project. Anyone can view its internals on GitHub.
+https://github.com/tomopumipumi/yamakage
 
-## Displayed Data & Features
-
-After launching the app and pressing the "START" button to run the calculation, you can check the results across three screens (swiping to switch):
-
-* **Panorama View:** Overlays obstacles (such as mountains) and their elevation angles in the direction your smartwatch is facing with the sun/moon trajectory and your current position.
-* **SkyPlot:** Provides a 360-degree overhead circular graph of surrounding elevation profiles and the path of the sun/moon across the sky.
-* **Radar View:** Visualizes surrounding obstacles and open directions from a top-down radar perspective, displaying the real-time distance (in km) to obstacles in the direction the watch is facing.
-* **Details:** Confirms terrain-adjusted true sunrise/sunset (moonrise/moonset) times and the elevation angle of obstacles in your current heading.
-
-## Mechanism
-
-To minimize device battery consumption and processing load, YAMAKAGE delegates complex terrain calculations to a dedicated cloud server.
-
-1. The app sends your current GPS coordinates to the dedicated server.
-2. The server loads publicly available global terrain data and instantly analyzes elevations within a 30 km radius of your location.
-3. It combines the terrain cross-section with solar trajectory calculations and sends the results back to the device to render the graphs.
-
-### Privacy Note
-
-This app transmits location information to an external server solely for sunset/sunrise calculations. No personally identifiable information, such as account details or device identifiers, is collected or transmitted. For anonymity, communications use a completely random temporary hash value.
-
-Transmitted location data is never persistently stored on the server side; it is immediately discarded after calculation completion (retained only temporarily as operational logs and never used for purposes other than computation). Please use with peace of mind.
-
-## Usage Precautions (Please Read)
-
-* **Smartphone Connection Required:** Because terrain data is fetched externally, your smartphone (Garmin Connect Mobile app) must be connected when executing calculations.
-* **GPS Acquisition:** Calculations use your current GPS position. Please run the app outdoors where GPS signals are easily acquired.
-* **Communication Failures:** If communication with the external server fails or your smartphone is disconnected, an error screen will appear. Please retry in a location with good connectivity.
-* **Polar Regions / Special Cases:** In regions like northern Scandinavia during summer, where the concepts of polar day (midnight sun) or polar night apply, sunrise/sunset times display as `--:--`, and icons will not appear.
-
-## Disclaimer & Margins of Error
-
-The times and graphs generated by this app are predictions calculated from terrain data (approx. 38m mesh) and solar trajectories.
-
-Because atmospheric conditions, surrounding trees, building heights, and weather (clouds) are not accounted for, actual experiences may differ by a few to over ten minutes. Do not rely blindly on predicted times; always maintain a generous schedule for your activities.
-
-## Data Field Version
-
-[https://apps.garmin.com/ja-JP/apps/cbe81d8e-661d-49b0-bc4c-a1fc8ab10d53](https://apps.garmin.com/ja-JP/apps/cbe81d8e-661d-49b0-bc4c-a1fc8ab10d53)
-
-## Source Code
-
-[https://github.com/tomopumipumi/yamakage](https://github.com/tomopumipumi/yamakage)
-
-## Try it in your Browser!
-
-[https://yamakage-site.pages.dev/](https://yamakage-site.pages.dev/)
+・Browser Demo: Try it Here
+https://yamakage-site.pages.dev/
