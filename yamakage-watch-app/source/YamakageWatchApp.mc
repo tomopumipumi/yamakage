@@ -22,10 +22,9 @@ class YamakageWatchApp extends Application.AppBase {
         AppBase.initialize();
         MH.Router.initialize(method(:viewFactory));
 
-        var frStr = MH.useStorageString(SettingIds.FRAME_RATE).init("0").req();
-        var frIdx = frStr.toNumber();
+        var frIdx = MH.useStorageNumber(SettingIds.FRAME_RATE).init(0).req();
 
-        if (frIdx == null || frIdx < 0 || frIdx >= Consts.FRAME_RATES.size()) {
+        if (frIdx < 0 || frIdx >= Consts.FRAME_RATES.size()) {
             frIdx = 0;
         }
 

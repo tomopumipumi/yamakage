@@ -1,5 +1,4 @@
 import Toybox.Lang;
-import Toybox.WatchUi;
 
 module MonkeyHooks {
     class Store {
@@ -41,6 +40,28 @@ module MonkeyHooks {
             }
         }
 
+        /**
+         * @brief Bypasses the reference equality check (`!=`) and forces a state update.
+         * Useful when mutating an existing array or dictionary where the memory address
+         * remains the same, but the internal elements have changed.
+         */
+        function forceSet(key as Object, value) as Void {
+            _state.put(key, value);
+            WatchUi.requestUpdate();
+
+            var list = _listeners.get(key) as Array<Lang.Method>?;
+            if (list != null) {
+                for (var i = 0; i < list.size(); i++) {
+                    var listener = list[i] as Lang.Method;
+                    listener.invoke(value);
+                }
+            }
+
+            if (MonkeyHooks has :_triggerWatchers) {
+                MonkeyHooks._triggerWatchers();
+            }
+        }
+
         function setSilent(key as Object, value) as Void {
             _state.put(key, value);
         }
@@ -64,36 +85,6 @@ module MonkeyHooks {
         function destroy(key as Object) as Void {
             _state.remove(key);
             _listeners.remove(key);
-        }
-    }
-
-    class Context {
-        protected var _store as Store;
-        protected var _key as Object;
-
-        function initialize(store as Store, key as Object) {
-            _store = store;
-            _key = key;
-        }
-
-        public function init(initialValue) as Context {
-            _store.init(_key, initialValue);
-            return self;
-        }
-        public function get() {
-            return _store.get(_key);
-        }
-        public function set(value) as Void {
-            _store.set(_key, value);
-        }
-        public function setSilent(value) as Void {
-            _store.setSilent(_key, value);
-        }
-        public function subscribe(listener as Lang.Method) as Void {
-            _store.subscribe(_key, listener);
-        }
-        public function unsubscribe(listener as Lang.Method) as Void {
-            _store.unsubscribe(_key, listener);
         }
     }
 }

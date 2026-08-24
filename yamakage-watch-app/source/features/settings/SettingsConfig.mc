@@ -30,7 +30,7 @@ module Features {
                     {
                         ID => SettingIds.FRAME_RATE,
                         LABEL => "Anim Speed",
-                        DEFAULT => "0",
+                        DEFAULT => 0,
                         TYPE => TYPE_SELECTOR,
                         OPTIONS => Consts.FRAME_RATES
                     }

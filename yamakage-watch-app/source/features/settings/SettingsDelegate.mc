@@ -100,25 +100,26 @@ module Features {
                 var id = setting[SettingsConfig.ID] as String;
                 var type = setting[SettingsConfig.TYPE];
 
-                var storageCx = MH.useStorageString(id);
-                var current = storageCx.req();
-
                 if (type == null || type == SettingsConfig.TYPE_TOGGLE) {
+                    var storageCx = MH.useStorageString(id);
+                    var current = storageCx
+                        .init(setting[SettingsConfig.DEFAULT])
+                        .req();
                     storageCx.set(
                         current.equals(ToggleValues.ON)
                             ? ToggleValues.OFF
                             : ToggleValues.ON
                     );
                 } else if (type == SettingsConfig.TYPE_SELECTOR) {
+                    var storageCx = MH.useStorageNumber(id);
+                    var currentIdx = storageCx
+                        .init(setting[SettingsConfig.DEFAULT])
+                        .req();
+
                     var options =
                         setting[SettingsConfig.OPTIONS] as Array<Dictionary>;
-                    var currentIdx = current.toNumber();
-                    if (currentIdx == null) {
-                        currentIdx = 0;
-                    }
-
                     var nextIdx = (currentIdx + 1) % options.size();
-                    storageCx.set(nextIdx.toString());
+                    storageCx.set(nextIdx);
 
                     if (id.equals(SettingIds.FRAME_RATE)) {
                         MH.SharedTimer.setInterval(

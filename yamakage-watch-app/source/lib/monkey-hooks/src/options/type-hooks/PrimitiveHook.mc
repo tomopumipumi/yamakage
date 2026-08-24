@@ -2,22 +2,6 @@ import Toybox.Lang;
 import Toybox.Graphics;
 
 module MonkeyHooks {
-    var _globalStore as Store? = null;
-
-    function getStore() as Store {
-        if (_globalStore == null) {
-            _globalStore = new Store();
-        }
-        return _globalStore as Store;
-    }
-
-    function useArena(key as Object) as Context {
-        return new Context(getStore(), key);
-    }
-    function destroy(key as Object) as Void {
-        getStore().destroy(key);
-    }
-
     class NumberContext {
         private var _cx as Context;
         function initialize(cx as Context) {
@@ -170,30 +154,30 @@ module MonkeyHooks {
         return new FloatContext(useArena(key));
     }
 
-    class FontContext {
+    class LongContext {
         private var _cx as Context;
         function initialize(cx as Context) {
             _cx = cx;
         }
-        function get() as Graphics.FontType? {
-            return _cx.get() as Graphics.FontType?;
+        function get() as Long? {
+            return _cx.get() as Long?;
         }
-        function req() as Graphics.FontType {
+        function req() as Long {
             var val = _cx.get();
             if (val == null) {
                 throw new Lang.InvalidValueException(
-                    "MonkeyHooks: Font req() failed."
+                    "MonkeyHooks: Long req() failed."
                 );
             }
-            return val as Graphics.FontType;
+            return val as Long;
         }
-        function set(val as Graphics.FontType?) as Void {
+        function set(val as Long?) as Void {
             _cx.set(val);
         }
-        function setSilent(val as Graphics.FontType?) as Void {
+        function setSilent(val as Long?) as Void {
             _cx.setSilent(val);
         }
-        function init(val as Graphics.FontType) as FontContext {
+        function init(val as Long) as LongContext {
             _cx.init(val);
             return self;
         }
@@ -204,34 +188,34 @@ module MonkeyHooks {
             _cx.unsubscribe(listener);
         }
     }
-    function useFont(key as Object) as FontContext {
-        return new FontContext(useArena(key));
+    function useLong(key as Object) as LongContext {
+        return new LongContext(useArena(key));
     }
 
-    class ColorContext {
+    class DoubleContext {
         private var _cx as Context;
         function initialize(cx as Context) {
             _cx = cx;
         }
-        function get() as Graphics.ColorType? {
-            return _cx.get() as Graphics.ColorType?;
+        function get() as Double? {
+            return _cx.get() as Double?;
         }
-        function req() as Graphics.ColorType {
+        function req() as Double {
             var val = _cx.get();
             if (val == null) {
                 throw new Lang.InvalidValueException(
-                    "MonkeyHooks: Color req() failed."
+                    "MonkeyHooks: Double req() failed."
                 );
             }
-            return val as Graphics.ColorType;
+            return val as Double;
         }
-        function set(val as Graphics.ColorType?) as Void {
+        function set(val as Double?) as Void {
             _cx.set(val);
         }
-        function setSilent(val as Graphics.ColorType?) as Void {
+        function setSilent(val as Double?) as Void {
             _cx.setSilent(val);
         }
-        function init(val as Graphics.ColorType) as ColorContext {
+        function init(val as Double) as DoubleContext {
             _cx.init(val);
             return self;
         }
@@ -242,64 +226,83 @@ module MonkeyHooks {
             _cx.unsubscribe(listener);
         }
     }
-    function useColor(key as Object) as ColorContext {
-        return new ColorContext(useArena(key));
+    function useDouble(key as Object) as DoubleContext {
+        return new DoubleContext(useArena(key));
     }
 
-    class ArrayBufferContext {
+    class SymbolContext {
         private var _cx as Context;
-        private var _size as Number;
-
-        function initialize(cx as Context, size as Number) {
+        function initialize(cx as Context) {
             _cx = cx;
-            _size = size;
         }
-
-        function req() as Array<Number or Float> {
+        function get() as Symbol? {
+            return _cx.get() as Symbol?;
+        }
+        function req() as Symbol {
             var val = _cx.get();
             if (val == null) {
-                val = new [_size] as Array<Number or Float>;
-                for (var i = 0; i < _size; i++) {
-                    val[i] = 0.0;
-                }
-                _cx.setSilent(val);
+                throw new Lang.InvalidValueException(
+                    "MonkeyHooks: Symbol req() failed."
+                );
             }
-            return val as Array<Number or Float>;
+            return val as Symbol;
+        }
+        function set(val as Symbol?) as Void {
+            _cx.set(val);
+        }
+        function setSilent(val as Symbol?) as Void {
+            _cx.setSilent(val);
+        }
+        function init(val as Symbol) as SymbolContext {
+            _cx.init(val);
+            return self;
+        }
+        function subscribe(listener as Lang.Method) as Void {
+            _cx.subscribe(listener);
+        }
+        function unsubscribe(listener as Lang.Method) as Void {
+            _cx.unsubscribe(listener);
         }
     }
-
-    function useArrayBuffer(
-        key as Object,
-        size as Number
-    ) as ArrayBufferContext {
-        return new ArrayBufferContext(useArena(key), size);
+    function useSymbol(key as Object) as SymbolContext {
+        return new SymbolContext(useArena(key));
     }
 
-    class PolygonBufferContext {
+    class CharContext {
         private var _cx as Context;
-        private var _size as Number;
-
-        function initialize(cx as Context, size as Number) {
+        function initialize(cx as Context) {
             _cx = cx;
-            _size = size;
         }
-
-        function req() as Array<[Lang.Numeric, Lang.Numeric]> {
+        function get() as Char? {
+            return _cx.get() as Char?;
+        }
+        function req() as Char {
             var val = _cx.get();
             if (val == null) {
-                val = new [_size] as Array<[Lang.Numeric, Lang.Numeric]>;
-                for (var i = 0; i < _size; i++) {
-                    val[i] = [0.0, 0.0] as [Lang.Numeric, Lang.Numeric];
-                }
-                _cx.setSilent(val);
+                throw new Lang.InvalidValueException(
+                    "MonkeyHooks: Char req() failed."
+                );
             }
-            return val as Array<[Lang.Numeric, Lang.Numeric]>;
+            return val as Char;
+        }
+        function set(val as Char?) as Void {
+            _cx.set(val);
+        }
+        function setSilent(val as Char?) as Void {
+            _cx.setSilent(val);
+        }
+        function init(val as Char) as CharContext {
+            _cx.init(val);
+            return self;
+        }
+        function subscribe(listener as Lang.Method) as Void {
+            _cx.subscribe(listener);
+        }
+        function unsubscribe(listener as Lang.Method) as Void {
+            _cx.unsubscribe(listener);
         }
     }
-    function usePolygonBuffer(
-        key as Object,
-        numVertices as Number
-    ) as PolygonBufferContext {
-        return new PolygonBufferContext(useArena(key), numVertices);
+    function useChar(key as Object) as CharContext {
+        return new CharContext(useArena(key));
     }
 }

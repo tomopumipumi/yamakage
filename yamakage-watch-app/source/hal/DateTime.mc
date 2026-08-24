@@ -15,10 +15,10 @@ module Hal {
                 :second => 0
             };
             var moment = Gregorian.moment(dummyDateOptions);
-            
+
             var offset = new Time.Duration(9 * 3600); // 9 = UTC adjustment
             var dummyUnixTime = moment.subtract(offset).value();
-            
+
             return dummyUnixTime;
         }
 

@@ -55,13 +55,12 @@ module Features {
                     var isSelected = i == cursor;
                     var startYRow = startY + i * (rowHeight + spacing);
 
-                    var stateStr = MH.useStorageString(
-                        setting[SettingsConfig.ID]
-                    )
-                        .init(setting[SettingsConfig.DEFAULT])
-                        .req();
-
                     if (type == SettingsConfig.TYPE_TOGGLE) {
+                        var stateStr = MH.useStorageString(
+                            setting[SettingsConfig.ID]
+                        )
+                            .init(setting[SettingsConfig.DEFAULT])
+                            .req();
                         var isOn = stateStr.equals(ToggleValues.ON);
                         Toggle.render(
                             dc,
@@ -74,11 +73,15 @@ module Features {
                             isSelected
                         );
                     } else if (type == SettingsConfig.TYPE_SELECTOR) {
+                        var idx = MH.useStorageNumber(
+                            setting[SettingsConfig.ID]
+                        )
+                            .init(setting[SettingsConfig.DEFAULT])
+                            .req();
                         var options =
                             setting[SettingsConfig.OPTIONS] as
                             Array<Dictionary>;
-                        var idx = stateStr.toNumber();
-                        if (idx == null || idx < 0 || idx >= options.size()) {
+                        if (idx < 0 || idx >= options.size()) {
                             idx = 0;
                         }
 
