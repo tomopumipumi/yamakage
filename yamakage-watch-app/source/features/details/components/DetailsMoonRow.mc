@@ -3,10 +3,6 @@ import Toybox.Graphics;
 import Toybox.Math;
 import Shared.Ui.MoonIcon;
 
-using MonkeyHooks as MH;
-using Core.AppArena.CoreArena as coreA;
-using Core.AppArena.DetailsUiArena as detailA;
-
 module Features {
     module Details {
         module Components {
@@ -18,12 +14,12 @@ module Features {
                     value as String,
                     accentColor as Graphics.ColorType,
                     fraction as Float,
-                    phase as Float
+                    phase as Float,
+                    layoutCtx as Array
                 ) as Void {
-                    var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
-
-                    var labelFont = MH.useFont(detailA.LABEL_FONT).req();
-                    var valueFont = MH.useFont(detailA.VALUE_FONT).req();
+                    var w = layoutCtx[0] as Number;
+                    var labelFont = layoutCtx[1] as Graphics.FontType;
+                    var valueFont = layoutCtx[2] as Graphics.FontType;
 
                     var iconX = (w * 0.32).toNumber();
                     var textX = (w * 0.45).toNumber();

@@ -15,19 +15,13 @@ module Features {
                     label as String,
                     value as String,
                     accentColor as Graphics.ColorType,
-                    iconText as String
+                    iconText as String,
+                    layoutCtx as Array
                 ) as Void {
-                    var w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
-
-                    var labelFont = MH.useFont(detailA.LABEL_FONT)
-                        .init(Graphics.FONT_XTINY)
-                        .req();
-                    var valueFont = MH.useFont(detailA.VALUE_FONT)
-                        .init(Graphics.FONT_XTINY)
-                        .req();
-                    var iconFont = MH.useFont(detailA.ICON_FONT)
-                        .init(Graphics.FONT_XTINY)
-                        .req();
+                    var w = layoutCtx[0] as Number;
+                    var labelFont = layoutCtx[1] as Graphics.FontType;
+                    var valueFont = layoutCtx[2] as Graphics.FontType;
+                    var iconFont = layoutCtx[3] as Graphics.FontType;
 
                     var iconX = (w * 0.32).toNumber();
                     var textX = (w * 0.45).toNumber();

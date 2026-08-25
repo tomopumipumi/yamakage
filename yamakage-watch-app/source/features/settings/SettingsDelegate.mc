@@ -13,9 +13,11 @@ using Core.AppArena.CoreArena as coreA;
 module Features {
     module Settings {
         class SettingsDelegate extends WatchUi.BehaviorDelegate {
+            var _view as SettingsView;
             var _lastTapTime as Number = 0;
 
-            function initialize() {
+            function initialize(view as SettingsView) {
+                _view = view;
                 BehaviorDelegate.initialize();
             }
 
@@ -127,6 +129,9 @@ module Features {
                         );
                     }
                 }
+
+                _view.refreshCache();
+                WatchUi.requestUpdate();
             }
         }
     }

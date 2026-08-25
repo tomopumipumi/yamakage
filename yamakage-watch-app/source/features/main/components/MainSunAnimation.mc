@@ -1,13 +1,9 @@
 import Toybox.Lang;
 import Toybox.Graphics;
-import Shared.Core.Consts.ToggleValues;
-import Shared.Core.Consts.SettingIds;
 import Shared.Core.Enums.TargetMode;
 import Shared.Ui.SunIcon;
 import Shared.Ui.MoonIcon;
 import Features.Main.MainLogic;
-
-using MonkeyHooks as MH;
 
 module Features {
     module Main {
@@ -19,7 +15,9 @@ module Features {
                     w as Number,
                     h as Number,
                     cx as Number,
-                    mode as Number
+                    mode as Number,
+                    isAnimOn as Boolean,
+                    sparkleBuffer as Array?
                 ) as Void {
                     var cy = (h * 0.65).toNumber();
                     var radius = w * 0.45;
@@ -33,15 +31,9 @@ module Features {
                     var targetX = pos[0];
                     var targetY = pos[1];
 
-                    var animState = MH.useStorageString(SettingIds.ANIM_ENABLED)
-                        .init(ToggleValues.ON)
-                        .req();
-                    if (animState.equals(ToggleValues.ON)) {
+                    if (isAnimOn && sparkleBuffer != null) {
                         var numParticles = 15;
-                        var sparkleBuffer = MH.useArrayBuffer(
-                            :main_sparkles,
-                            numParticles * 3
-                        ).req();
+
                         MainLogic.updateSparkles(
                             sparkleBuffer,
                             targetX,

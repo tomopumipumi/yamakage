@@ -2,12 +2,10 @@ import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.Math;
 
-using MonkeyHooks as MH;
-
 module Shared {
     module Ui {
         module MoonIcon {
-            class MoonCalculator {
+            class _MoonCalculator {
                 private const NUM_PTS = 21;
 
                 private var _cachedPts as Array<[Lang.Numeric, Lang.Numeric]>? =
@@ -40,8 +38,8 @@ module Shared {
                         new [NUM_PTS * 2] as
                         Array<[Lang.Numeric, Lang.Numeric]>;
 
-                    computeBrightLimb(pts, dir, radius);
-                    computeTerminatorLimb(pts, dir, radius, tFactor);
+                    _computeBrightLimb(pts, dir, radius);
+                    _computeTerminatorLimb(pts, dir, radius, tFactor);
 
                     _lastFraction = fraction;
                     _lastPhase = phase;
@@ -51,7 +49,7 @@ module Shared {
                     return pts;
                 }
 
-                private function computeBrightLimb(
+                private function _computeBrightLimb(
                     pts as Array<[Lang.Numeric, Lang.Numeric]>,
                     dir as Float,
                     radius as Number
@@ -69,7 +67,7 @@ module Shared {
                     }
                 }
 
-                private function computeTerminatorLimb(
+                private function _computeTerminatorLimb(
                     pts as Array<[Lang.Numeric, Lang.Numeric]>,
                     dir as Float,
                     radius as Number,
@@ -89,7 +87,9 @@ module Shared {
                 }
             }
 
-            var _calculator = new MoonCalculator();
+            var _calculator = new _MoonCalculator();
+
+            var _renderBuffer as Array<[Lang.Numeric, Lang.Numeric]>? = null;
 
             function render(
                 dc as Graphics.Dc,
@@ -128,10 +128,17 @@ module Shared {
                     Array<[Lang.Numeric, Lang.Numeric]>;
                 var totalPts = basePts.size();
 
-                var renderPts = MH.usePolygonBuffer(
-                    :moon_icon_render_buf,
-                    totalPts
-                ).req();
+                if (_renderBuffer == null || _renderBuffer.size() != totalPts) {
+                    _renderBuffer =
+                        new [totalPts] as Array<[Lang.Numeric, Lang.Numeric]>;
+                    for (var i = 0; i < totalPts; i++) {
+                        _renderBuffer[i] =
+                            [0.0, 0.0] as [Lang.Numeric, Lang.Numeric];
+                    }
+                }
+
+                var renderPts =
+                    _renderBuffer as Array<[Lang.Numeric, Lang.Numeric]>;
 
                 for (var i = 0; i < totalPts; i++) {
                     renderPts[i][0] = basePts[i][0] + x;

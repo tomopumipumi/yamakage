@@ -9,8 +9,8 @@ module Hal {
             var dummyDateOptions = {
                 :year => 2026,
                 :month => 8,
-                :day => 23,
-                :hour => 0,
+                :day => 28,
+                :hour => 17,
                 :minute => 0,
                 :second => 0
             };
