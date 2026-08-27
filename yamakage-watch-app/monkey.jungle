@@ -1,4 +1,6 @@
 project.manifest = manifest.xml
 project.typecheck = gradual
 
+base.sourcePath = source;lib/monkey-hooks/src
+
 base.excludeAnnotations = test

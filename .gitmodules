@@ -1,0 +1,3 @@
+[submodule "yamakage-watch-app/lib/monkey-hooks"]
+	path = yamakage-watch-app/lib/monkey-hooks
+	url = https://github.com/tomopumipumi/monkey-hooks.git
