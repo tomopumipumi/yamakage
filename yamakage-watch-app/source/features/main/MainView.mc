@@ -23,6 +23,18 @@ using Core.AppArena.MainUiArena as mainA;
 module Features {
     module Main {
         class MainView extends WatchUi.View {
+            // ==================================================
+            // ID
+            // ==================================================
+            private const MAIN_SUN_PROGRESS_KEY = :main_sun_progress;
+            private const MAIN_SPARKLES_KEY = :main_sparkles;
+            private const ON_TARGET_MODE_CHANGED_METHOD = :onTargetModeChanged;
+            private const ON_TIMER_TICK_METHOD = :onTimerTick;
+            private const ON_POSITION_UPDATE_METHOD = :onPositionUpdate;
+
+            // ==================================================
+            // Cash
+            // ==================================================
             private var _tickCount as Number = 0;
 
             private var _w as Number = 0;
@@ -43,6 +55,73 @@ module Features {
             private var _isGpsReady as Boolean = false;
             private var _sparkleBuffer as Array?;
 
+            // ==================================================
+            // Subscribe Method
+            // ==================================================
+            function onTargetModeChanged(vals as Array) as Void {
+                if (vals[0] != null) {
+                    _mode = vals[0] as Number;
+                }
+            }
+
+            function onTimerTick() as Void {
+                _tickCount++;
+                if (_tickCount % 10 == 0) {
+                    _updateGpsState();
+                }
+
+                if (_isAnimOn) {
+                    _progress += 0.005;
+                    if (_progress > 1.0) {
+                        _progress -= 1.0;
+                    }
+                    WatchUi.requestUpdate();
+                } else {
+                    if (_progress != 0.5) {
+                        _progress = 0.5;
+                        WatchUi.requestUpdate();
+                    }
+                }
+            }
+
+            function onPositionUpdate(info as Position.Info) as Void {
+                _updateGpsState();
+            }
+
+            // ==================================================
+            // Private Method
+            // ==================================================
+            function _updateGpsState() as Void {
+                var newText = LocationSensor.getGpsStatusString();
+                var newColor = LocationSensor.getGpsStatusColor();
+                var newReady = LocationSensor.getPosition() != null;
+
+                var isChanged = false;
+                if (!_gpsText.equals(newText)) {
+                    _gpsText = newText;
+                    isChanged = true;
+                }
+                if (_gpsColor != newColor) {
+                    _gpsColor = newColor;
+                    isChanged = true;
+                }
+                if (_isGpsReady != newReady) {
+                    _isGpsReady = newReady;
+                    isChanged = true;
+                }
+
+                if (isChanged) {
+                    MH.useString(mainA.GPS_TEXT).setSilent(_gpsText);
+                    MH.useColor(mainA.GPS_COLOR).setSilent(_gpsColor);
+                    MH.useBoolean(mainA.IS_GPS_READY).setSilent(_isGpsReady);
+
+                    WatchUi.requestUpdate();
+                }
+            }
+
+            // ==================================================
+            // Override Method
+            // ==================================================
             function initialize() {
                 View.initialize();
             }
@@ -103,93 +182,26 @@ module Features {
                     .init(ToggleValues.ON)
                     .req();
                 _isAnimOn = animState.equals(ToggleValues.ON);
-                _progress = MH.useFloat(:main_sun_progress)
-                    .init(0.0)
-                    .req();
-                _sparkleBuffer = MH.useArrayBuffer(:main_sparkles, 45).req();
+                _progress = MH.useFloat(MAIN_SUN_PROGRESS_KEY).init(0.0).req();
+                _sparkleBuffer = MH.useArrayBuffer(MAIN_SPARKLES_KEY, 45).req();
 
-                updateGpsState();
+                _updateGpsState();
 
-                MH.watch(self, :onTargetModeChanged, [coreA.TARGET_MODE]);
-                MH.watch(self, :onAnimConfigChanged, [SettingIds.ANIM_ENABLED]);
+                MH.watch(self, ON_TARGET_MODE_CHANGED_METHOD, [
+                    coreA.TARGET_MODE
+                ]);
 
-                MH.SharedTimer.subscribe(self, :onTimerTick);
-                MH.LocationHook.subscribe(self, :onPositionUpdate);
+                MH.SharedTimer.subscribe(self, ON_TIMER_TICK_METHOD);
+                MH.LocationHook.subscribe(self, ON_POSITION_UPDATE_METHOD);
             }
 
             function onHide() as Void {
-                MH.SharedTimer.unsubscribe(self, :onTimerTick);
-                MH.LocationHook.unsubscribe(self, :onPositionUpdate);
+                MH.SharedTimer.unsubscribe(self, ON_TIMER_TICK_METHOD);
+                MH.LocationHook.unsubscribe(self, ON_POSITION_UPDATE_METHOD);
 
-                MH.unwatch(self, :onTargetModeChanged);
-                MH.unwatch(self, :onAnimConfigChanged);
+                MH.unwatch(self, ON_TARGET_MODE_CHANGED_METHOD);
 
-                MH.useFloat(:main_sun_progress).setSilent(_progress);
-            }
-
-            function onTargetModeChanged(vals as Array) as Void {
-                if (vals[0] != null) {
-                    _mode = vals[0] as Number;
-                }
-            }
-
-            function onAnimConfigChanged(vals as Array) as Void {
-                if (vals[0] != null) {
-                    var animState = vals[0] as String;
-                    _isAnimOn = animState.equals(ToggleValues.ON);
-                }
-            }
-
-            function onTimerTick() as Void {
-                _tickCount++;
-                if (_tickCount % 10 == 0) {
-                    updateGpsState();
-                }
-
-                if (_isAnimOn) {
-                    _progress += 0.005;
-                    if (_progress > 1.0) {
-                        _progress -= 1.0;
-                    }
-                    WatchUi.requestUpdate();
-                } else {
-                    if (_progress != 0.5) {
-                        _progress = 0.5;
-                        WatchUi.requestUpdate();
-                    }
-                }
-            }
-
-            function updateGpsState() as Void {
-                var newText = LocationSensor.getGpsStatusString();
-                var newColor = LocationSensor.getGpsStatusColor();
-                var newReady = LocationSensor.getPosition() != null;
-
-                var isChanged = false;
-                if (!_gpsText.equals(newText)) {
-                    _gpsText = newText;
-                    isChanged = true;
-                }
-                if (_gpsColor != newColor) {
-                    _gpsColor = newColor;
-                    isChanged = true;
-                }
-                if (_isGpsReady != newReady) {
-                    _isGpsReady = newReady;
-                    isChanged = true;
-                }
-
-                if (isChanged) {
-                    MH.useString(mainA.GPS_TEXT).setSilent(_gpsText);
-                    MH.useColor(mainA.GPS_COLOR).setSilent(_gpsColor);
-                    MH.useBoolean(mainA.IS_GPS_READY).setSilent(_isGpsReady);
-
-                    WatchUi.requestUpdate();
-                }
-            }
-
-            function onPositionUpdate(info as Position.Info) as Void {
-                updateGpsState();
+                MH.useFloat(MAIN_SUN_PROGRESS_KEY).setSilent(_progress);
             }
 
             function onUpdate(dc as Graphics.Dc) as Void {

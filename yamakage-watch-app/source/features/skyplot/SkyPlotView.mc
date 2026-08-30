@@ -6,6 +6,7 @@ import Core.ApiSchema.SunDataIndex;
 import Core.ApiSchema.MoonDataIndex;
 import Hal.Sensor.CompassSensor;
 import Shared.Logic.FontManager;
+import Shared.Logic.IconFontManager;
 import Shared.Logic.PositionConfigure;
 import Shared.Ui.PageIndicator;
 import Shared.Core.Enums.TargetMode;
@@ -32,6 +33,16 @@ using Core.CustomContext as mycx;
 module Features {
     module SkyPlot {
         class SkyPlotView extends WatchUi.View {
+            // ==================================================
+            // ID
+            // ==================================================
+            private const SKYPLOT_CLOUDS_KEY = :skyplot_clouds;
+            private const SKYPLOT_STARS_KEY = :skyplot_stars;
+            private const REQUEST_UPDATE_METHOD = :requestUpdate;
+
+            // ==================================================
+            // Cash
+            // ==================================================
             private var _tickCount as Number = 0;
             private var _pulsePhase as Float = 0.0;
 
@@ -41,7 +52,7 @@ module Features {
             private var _cy as Number = 0;
             private var _radius as Float = 0.0;
             private var _nFont as Graphics.FontType?;
-            private var _iconFont as Graphics.FontType?;
+            private var _iconFontResource as Graphics.FontType?;
 
             private var _isAnimOn as Boolean = true;
             private var _mode as Number = TargetMode.SUN;
@@ -55,9 +66,102 @@ module Features {
             private var _fraction as Float = 1.0;
             private var _phase as Float = 0.5;
 
+            // ==================================================
+            // Subscribe Method
+            // ==================================================
+            function requestUpdate() as Void {
+                _tickCount++;
+                if (_isAnimOn) {
+                    _pulsePhase += 0.2;
+                    if (_pulsePhase > Math.PI * 2) {
+                        _pulsePhase -= Math.PI * 2;
+                    }
+                } else {
+                    _pulsePhase = 0.0;
+                }
+
+                if (_w > 0 && _h > 0) {
+                    switch (_mode) {
+                        case TargetMode.SUN:
+                            if (_cloudBuffer == null) {
+                                break;
+                            }
+                            BackgroundAnimationLogic.updateClouds(
+                                _cloudBuffer,
+                                _w,
+                                _h,
+                                _isAnimOn
+                            );
+                            break;
+
+                        case TargetMode.MOON:
+                            if (_starBuffer == null) {
+                                break;
+                            }
+                            BackgroundAnimationLogic.updateStars(
+                                _starBuffer,
+                                _w,
+                                _h,
+                                _isAnimOn
+                            );
+                            break;
+                    }
+                }
+
+                if (_isAnimOn || _tickCount % 2 == 0) {
+                    WatchUi.requestUpdate();
+                }
+            }
+
+            // ==================================================
+            // Private Method
+            // ==================================================
+            private function _refreshData() as Void {
+                var data = null;
+                _hasData = false;
+
+                switch (_mode) {
+                    case TargetMode.SUN:
+                        data = mycx.useSunPayload(coreA.SUN_SHADOW_DATA).get();
+                        if (data == null) {
+                            break;
+                        }
+                        _stepDeg = data[SunDataIndex.AZIMUTH_STEP] as Number;
+                        _profiles =
+                            data[SunDataIndex.PROFILES] as
+                            ApiSchema.AzimuthProfilesArray;
+                        _paths =
+                            data[SunDataIndex.PATHS] as ApiSchema.PathArray;
+                        _hasData = true;
+                        break;
+
+                    case TargetMode.MOON:
+                        data = mycx
+                            .useMoonPayload(coreA.MOON_SHADOW_DATA)
+                            .get();
+                        if (data == null) {
+                            break;
+                        }
+                        _stepDeg = data[MoonDataIndex.AZIMUTH_STEP] as Number;
+                        _fraction = data[MoonDataIndex.FRACTION] as Float;
+                        _phase = data[MoonDataIndex.PHASE] as Float;
+                        _profiles =
+                            data[MoonDataIndex.PROFILES] as
+                            ApiSchema.AzimuthProfilesArray;
+                        _paths =
+                            data[MoonDataIndex.PATHS] as ApiSchema.PathArray;
+                        _hasData = true;
+                        break;
+                }
+            }
+
+            // ==================================================
+            // Override Method
+            // ==================================================
             function initialize() {
                 View.initialize();
             }
+
             function onLayout(dc as Graphics.Dc) as Void {
                 PositionConfigure.initializeGlobalLayout(dc);
 
@@ -80,30 +184,15 @@ module Features {
                 }
                 _nFont = fontCx.get() as Graphics.FontType;
 
-                var iconFontCx = MH.useFont(skyA.ICON_FONT);
-                if (iconFontCx.get() == null) {
-                    var iconFonts =
-                        [
-                            WatchUi.loadResource(Rez.Fonts.IconFont40) as
-                                Graphics.FontType,
-                            WatchUi.loadResource(Rez.Fonts.IconFont48) as
-                                Graphics.FontType,
-                            WatchUi.loadResource(Rez.Fonts.IconFont62) as
-                                Graphics.FontType,
-                            WatchUi.loadResource(Rez.Fonts.IconFont92) as
-                                Graphics.FontType
-                        ] as Array<Graphics.FontType>;
-                    iconFontCx.set(
-                        FontManager.findBestFontFromList(
-                            dc,
-                            Icons.ICON_SUNRISE,
-                            (_w * 0.1).toNumber(),
-                            (_h * 0.1).toNumber(),
-                            iconFonts
-                        )
+                var iconFontIdxCx = MH.useNumber(coreA.ICON_FONT_INDEX);
+                if (iconFontIdxCx.get() == null) {
+                    iconFontIdxCx.set(
+                        IconFontManager.calculateBestIconFontIndex(dc, _w, _h)
                     );
                 }
-                _iconFont = iconFontCx.get() as Graphics.FontType;
+                _iconFontResource = IconFontManager.loadIconFontResource(
+                    iconFontIdxCx.req()
+                );
             }
 
             function onShow() as Void {
@@ -115,122 +204,17 @@ module Features {
                     .req();
                 _isAnimOn = animState.equals(ToggleValues.ON);
 
-                _cloudBuffer = MH.useArrayBuffer(:skyplot_clouds, 20).req();
-                _starBuffer = MH.useArrayBuffer(:skyplot_stars, 60).req();
-                refreshData();
+                _cloudBuffer = MH.useArrayBuffer(SKYPLOT_CLOUDS_KEY, 20).req();
+                _starBuffer = MH.useArrayBuffer(SKYPLOT_STARS_KEY, 60).req();
+                _refreshData();
 
-                MH.watch(self, :onTargetModeChanged, [coreA.TARGET_MODE]);
-                MH.watch(self, :onAnimConfigChanged, [SettingIds.ANIM_ENABLED]);
-                MH.watch(self, :onSunDataChanged, [coreA.SUN_SHADOW_DATA]);
-                MH.watch(self, :onMoonDataChanged, [coreA.MOON_SHADOW_DATA]);
-
-                MH.SharedTimer.subscribe(self, :requestUpdate);
+                MH.SharedTimer.subscribe(self, REQUEST_UPDATE_METHOD);
             }
 
             function onHide() as Void {
-                MH.SharedTimer.unsubscribe(self, :requestUpdate);
-
-                MH.unwatch(self, :onTargetModeChanged);
-                MH.unwatch(self, :onAnimConfigChanged);
-                MH.unwatch(self, :onSunDataChanged);
-                MH.unwatch(self, :onMoonDataChanged);
-
-                MH.destroy(:skyplot_stars);
-                MH.destroy(:skyplot_clouds);
-            }
-
-            function onTargetModeChanged(vals as Array) as Void {
-                if (vals[0] != null) {
-                    _mode = vals[0] as Number;
-                    refreshData();
-                }
-            }
-
-            function onAnimConfigChanged(vals as Array) as Void {
-                if (vals[0] != null) {
-                    var animState = vals[0] as String;
-                    _isAnimOn = animState.equals(ToggleValues.ON);
-                }
-            }
-
-            function onSunDataChanged(vals as Array) as Void {
-                if (_mode == TargetMode.SUN) {
-                    refreshData();
-                }
-            }
-
-            function onMoonDataChanged(vals as Array) as Void {
-                if (_mode == TargetMode.MOON) {
-                    refreshData();
-                }
-            }
-
-            private function refreshData() as Void {
-                var data = null;
-                _hasData = false;
-
-                if (_mode == TargetMode.SUN) {
-                    data = mycx.useSunPayload(coreA.SUN_SHADOW_DATA).get();
-                    if (data != null) {
-                        _stepDeg = data[SunDataIndex.AZIMUTH_STEP] as Number;
-                        _profiles =
-                            data[SunDataIndex.PROFILES] as
-                            ApiSchema.AzimuthProfilesArray;
-                        _paths =
-                            data[SunDataIndex.PATHS] as ApiSchema.PathArray;
-                        _hasData = true;
-                    }
-                } else {
-                    data = mycx.useMoonPayload(coreA.MOON_SHADOW_DATA).get();
-                    if (data != null) {
-                        _stepDeg = data[MoonDataIndex.AZIMUTH_STEP] as Number;
-                        _fraction = data[MoonDataIndex.FRACTION] as Float;
-                        _phase = data[MoonDataIndex.PHASE] as Float;
-                        _profiles =
-                            data[MoonDataIndex.PROFILES] as
-                            ApiSchema.AzimuthProfilesArray;
-                        _paths =
-                            data[MoonDataIndex.PATHS] as ApiSchema.PathArray;
-                        _hasData = true;
-                    }
-                }
-            }
-
-            function requestUpdate() as Void {
-                _tickCount++;
-                if (_isAnimOn) {
-                    _pulsePhase += 0.2;
-                    if (_pulsePhase > Math.PI * 2) {
-                        _pulsePhase -= Math.PI * 2;
-                    }
-                } else {
-                    _pulsePhase = 0.0;
-                }
-
-                if (_w > 0 && _h > 0) {
-                    if (_mode == TargetMode.SUN && _cloudBuffer != null) {
-                        BackgroundAnimationLogic.updateClouds(
-                            _cloudBuffer,
-                            _w,
-                            _h,
-                            _isAnimOn
-                        );
-                    } else if (
-                        _mode == TargetMode.MOON &&
-                        _starBuffer != null
-                    ) {
-                        BackgroundAnimationLogic.updateStars(
-                            _starBuffer,
-                            _w,
-                            _h,
-                            _isAnimOn
-                        );
-                    }
-                }
-
-                if (_isAnimOn || _tickCount % 2 == 0) {
-                    WatchUi.requestUpdate();
-                }
+                MH.SharedTimer.unsubscribe(self, REQUEST_UPDATE_METHOD);
+                MH.destroy(SKYPLOT_STARS_KEY);
+                MH.destroy(SKYPLOT_CLOUDS_KEY);
             }
 
             function onUpdate(dc as Graphics.Dc) as Void {
@@ -250,42 +234,46 @@ module Features {
                 SkyPlotGrid.render(dc, _cx, _cy, _radius, _nFont);
                 AzimuthChart.render(dc, _profiles, _stepDeg, _cx, _cy, _radius);
 
-                if (_mode == TargetMode.SUN) {
-                    SunPathChart.render(
-                        dc,
-                        _paths,
-                        _cx,
-                        _cy,
-                        _radius,
-                        _pulsePhase
-                    );
-                    SkyPlotSunEvents.render(
-                        dc,
-                        _paths,
-                        _cx,
-                        _cy,
-                        _radius,
-                        _iconFont
-                    );
-                } else {
-                    MoonPathChart.render(
-                        dc,
-                        _paths,
-                        _cx,
-                        _cy,
-                        _radius,
-                        _fraction,
-                        _phase,
-                        _pulsePhase
-                    );
-                    SkyPlotMoonEvents.render(
-                        dc,
-                        _paths,
-                        _cx,
-                        _cy,
-                        _radius,
-                        _iconFont
-                    );
+                switch (_mode) {
+                    case TargetMode.SUN:
+                        SunPathChart.render(
+                            dc,
+                            _paths,
+                            _cx,
+                            _cy,
+                            _radius,
+                            _pulsePhase
+                        );
+                        SkyPlotSunEvents.render(
+                            dc,
+                            _paths,
+                            _cx,
+                            _cy,
+                            _radius,
+                            _iconFontResource
+                        );
+                        break;
+
+                    case TargetMode.MOON:
+                        MoonPathChart.render(
+                            dc,
+                            _paths,
+                            _cx,
+                            _cy,
+                            _radius,
+                            _fraction,
+                            _phase,
+                            _pulsePhase
+                        );
+                        SkyPlotMoonEvents.render(
+                            dc,
+                            _paths,
+                            _cx,
+                            _cy,
+                            _radius,
+                            _iconFontResource
+                        );
+                        break;
                 }
 
                 if (heading != null) {

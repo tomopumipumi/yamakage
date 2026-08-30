@@ -16,6 +16,15 @@ using Core.AppArena.CoreArena as coreA;
 module Features {
     module Error {
         class ErrorView extends WatchUi.View {
+            // ==================================================
+            // ID
+            // ==================================================
+            private const ON_ERROR_CHANGED_METHOD = :onErrorChanged;
+            private const ON_TIMER_TICK_METHOD = :onTimerTick;
+
+            // ==================================================
+            // Cash
+            // ==================================================
             private var _pulse as Float = 0.0;
 
             private var _w as Number = 0;
@@ -25,6 +34,29 @@ module Features {
             private var _isAnimOn as Boolean = true;
             private var _errMsg as String = "Unknown Error";
 
+            // ==================================================
+            // Subscribe Method
+            // ==================================================
+            function onErrorChanged(vals as Array) as Void {
+                if (vals[0] != null) {
+                    _errMsg = vals[0] as String;
+                    WatchUi.requestUpdate();
+                }
+            }
+
+            function onTimerTick() as Void {
+                if (_isAnimOn) {
+                    _pulse += 0.2;
+                    if (_pulse > Math.PI * 2) {
+                        _pulse -= Math.PI * 2;
+                    }
+                    WatchUi.requestUpdate();
+                }
+            }
+
+            // ==================================================
+            // Override Method
+            // ==================================================
             function initialize() {
                 View.initialize();
             }
@@ -46,41 +78,14 @@ module Features {
                 var err = MH.useString(coreA.LAST_ERROR).get();
                 _errMsg = err != null ? err : "Unknown Error";
 
-                MH.watch(self, :onAnimConfigChanged, [SettingIds.ANIM_ENABLED]);
-                MH.watch(self, :onErrorChanged, [coreA.LAST_ERROR]);
+                MH.watch(self, ON_ERROR_CHANGED_METHOD, [coreA.LAST_ERROR]);
 
-                MH.SharedTimer.subscribe(self, :onTimerTick);
+                MH.SharedTimer.subscribe(self, ON_TIMER_TICK_METHOD);
             }
 
             function onHide() as Void {
-                MH.SharedTimer.unsubscribe(self, :onTimerTick);
-
-                MH.unwatch(self, :onAnimConfigChanged);
-                MH.unwatch(self, :onErrorChanged);
-            }
-
-            function onAnimConfigChanged(vals as Array) as Void {
-                if (vals[0] != null) {
-                    var animState = vals[0] as String;
-                    _isAnimOn = animState.equals(ToggleValues.ON);
-                }
-            }
-
-            function onErrorChanged(vals as Array) as Void {
-                if (vals[0] != null) {
-                    _errMsg = vals[0] as String;
-                    WatchUi.requestUpdate();
-                }
-            }
-
-            function onTimerTick() as Void {
-                if (_isAnimOn) {
-                    _pulse += 0.2;
-                    if (_pulse > Math.PI * 2) {
-                        _pulse -= Math.PI * 2;
-                    }
-                    WatchUi.requestUpdate();
-                }
+                MH.SharedTimer.unsubscribe(self, ON_TIMER_TICK_METHOD);
+                MH.unwatch(self, ON_ERROR_CHANGED_METHOD);
             }
 
             function onUpdate(dc as Graphics.Dc) as Void {

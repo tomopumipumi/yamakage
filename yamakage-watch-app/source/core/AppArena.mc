@@ -15,15 +15,15 @@ module Core {
                 LAST_ERROR,
                 SESSION_ID,
                 TARGET_MODE,
-                FRAME_RATE
+                FRAME_RATE,
+                ICON_FONT_INDEX
             }
         }
 
         module DetailsUiArena {
             enum {
                 LABEL_FONT = 100,
-                VALUE_FONT,
-                ICON_FONT
+                VALUE_FONT
             }
         }
 
@@ -46,12 +46,6 @@ module Core {
             }
         }
 
-        module PanoramaUiArena {
-            enum {
-                ICON_FONT = 400
-            }
-        }
-
         module RadarUiArena {
             enum {
                 N_FONT = 500
@@ -60,8 +54,7 @@ module Core {
 
         module SkyPlotUiArena {
             enum {
-                N_FONT = 600,
-                ICON_FONT
+                N_FONT = 600
             }
         }
     }

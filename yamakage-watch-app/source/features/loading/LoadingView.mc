@@ -2,6 +2,7 @@ import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
 import Toybox.Math;
+import Shared.Core.Enums.TargetMode;
 import Shared.Core.Page;
 import Shared.Core.Consts.ToggleValues;
 import Shared.Core.Consts.SettingIds;
@@ -18,6 +19,16 @@ using Core.AppArena.LoadingUiArena as loadA;
 module Features {
     module Loading {
         class LoadingView extends WatchUi.View {
+            // ==================================================
+            // ID
+            // ==================================================
+            private const ON_STATE_CHANGED_METHOD = :onStateChanged;
+            private const ON_MSG_TEXT_CHANGED_METHOD = :onMsgTextChanged;
+            private const ON_TIMER_TICK_METHOD = :onTimerTick;
+
+            // ==================================================
+            // Cash
+            // ==================================================
             private var _w as Number = 0;
             private var _h as Number = 0;
             private var _cx as Number = 0;
@@ -29,6 +40,45 @@ module Features {
 
             private var _angle as Float = 0.0;
 
+            // ==================================================
+            // Subscribe Method
+            // ==================================================
+            function onTimerTick() as Void {
+                if (_isAnimOn) {
+                    _angle += 0.1;
+                    if (_angle > Math.PI * 2) {
+                        _angle -= Math.PI * 2;
+                    }
+                    WatchUi.requestUpdate();
+                }
+            }
+
+            function onStateChanged(values as Array) as Void {
+                var data = values[0];
+                var err = values[1];
+
+                var pageNum =
+                    data != null
+                        ? Page.PANORAMA
+                        : err != null
+                          ? Page.ERROR
+                          : null;
+
+                if (pageNum != null) {
+                    MH.Router.switchTo(pageNum, WatchUi.SLIDE_LEFT);
+                }
+            }
+
+            function onMsgTextChanged(vals as Array) as Void {
+                if (vals[0] != null) {
+                    _msg = vals[0] as String;
+                    WatchUi.requestUpdate();
+                }
+            }
+
+            // ==================================================
+            // Override Method
+            // ==================================================
             function initialize() {
                 View.initialize();
             }
@@ -63,71 +113,23 @@ module Features {
                 _msg = MH.useString(loadA.MSG_TEXT).init("Loading...").req();
 
                 var targetDataKey =
-                    _mode == 0 ? coreA.SUN_SHADOW_DATA : coreA.MOON_SHADOW_DATA;
+                    _mode == TargetMode.SUN
+                        ? coreA.SUN_SHADOW_DATA
+                        : coreA.MOON_SHADOW_DATA;
 
-                MH.watch(self, :onStateChanged, [
+                MH.watch(self, ON_STATE_CHANGED_METHOD, [
                     targetDataKey,
                     coreA.LAST_ERROR
                 ]);
-                MH.watch(self, :onMsgTextChanged, [loadA.MSG_TEXT]);
-                MH.watch(self, :onAnimConfigChanged, [SettingIds.ANIM_ENABLED]);
-                MH.watch(self, :onTargetModeChanged, [coreA.TARGET_MODE]);
+                MH.watch(self, ON_MSG_TEXT_CHANGED_METHOD, [loadA.MSG_TEXT]);
 
-                MH.SharedTimer.subscribe(self, :onTimerTick);
+                MH.SharedTimer.subscribe(self, ON_TIMER_TICK_METHOD);
             }
 
             function onHide() as Void {
-                MH.SharedTimer.unsubscribe(self, :onTimerTick);
-                MH.unwatch(self, :onStateChanged);
-                MH.unwatch(self, :onMsgTextChanged);
-                MH.unwatch(self, :onAnimConfigChanged);
-                MH.unwatch(self, :onTargetModeChanged);
-            }
-
-            function onStateChanged(values as Array) as Void {
-                var data = values[0];
-                var err = values[1];
-
-                var pageNum =
-                    data != null
-                        ? Page.PANORAMA
-                        : err != null
-                          ? Page.ERROR
-                          : null;
-
-                if (pageNum != null) {
-                    MH.Router.switchTo(pageNum, WatchUi.SLIDE_LEFT);
-                }
-            }
-
-            function onMsgTextChanged(vals as Array) as Void {
-                if (vals[0] != null) {
-                    _msg = vals[0] as String;
-                    WatchUi.requestUpdate();
-                }
-            }
-
-            function onAnimConfigChanged(vals as Array) as Void {
-                if (vals[0] != null) {
-                    var animState = vals[0] as String;
-                    _isAnimOn = animState.equals(ToggleValues.ON);
-                }
-            }
-
-            function onTargetModeChanged(vals as Array) as Void {
-                if (vals[0] != null) {
-                    _mode = vals[0] as Number;
-                }
-            }
-
-            function onTimerTick() as Void {
-                if (_isAnimOn) {
-                    _angle += 0.1;
-                    if (_angle > Math.PI * 2) {
-                        _angle -= Math.PI * 2;
-                    }
-                    WatchUi.requestUpdate();
-                }
+                MH.SharedTimer.unsubscribe(self, ON_TIMER_TICK_METHOD);
+                MH.unwatch(self, ON_STATE_CHANGED_METHOD);
+                MH.unwatch(self, ON_MSG_TEXT_CHANGED_METHOD);
             }
 
             function onUpdate(dc as Graphics.Dc) as Void {
@@ -135,10 +137,15 @@ module Features {
                 dc.clear();
 
                 var objY = (_h * 0.35).toNumber();
-                if (_mode == 0) {
-                    LoadingSun.render(dc, _cx, objY, _angle);
-                } else {
-                    LoadingMoon.render(dc, _cx, objY, _angle);
+
+                switch (_mode) {
+                    case TargetMode.SUN:
+                        LoadingSun.render(dc, _cx, objY, _angle);
+                        break;
+
+                    case TargetMode.MOON:
+                        LoadingMoon.render(dc, _cx, objY, _angle);
+                        break;
                 }
 
                 LoadingMountains.render(dc, _w, _h);
