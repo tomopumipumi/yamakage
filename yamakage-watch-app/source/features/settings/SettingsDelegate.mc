@@ -13,8 +13,9 @@ using Core.AppArena.CoreArena as coreA;
 module Features {
     module Settings {
         class SettingsDelegate extends WatchUi.BehaviorDelegate {
-            var _view as SettingsView;
-            var _lastTapTime as Number = 0;
+            private const SETTINGS_CURSOR_KEY = :settings_cursor;
+
+            private var _view as SettingsView;
 
             function initialize(view as SettingsView) {
                 _view = view;
@@ -28,7 +29,7 @@ module Features {
 
             function onNextPage() as Boolean {
                 var size = SettingsConfig.getSettings().size();
-                var cursorCx = MH.useNumber(:settings_cursor);
+                var cursorCx = MH.useNumber(SETTINGS_CURSOR_KEY);
                 var cursor = cursorCx.init(0).req();
 
                 if (cursor < size - 1) {
@@ -42,7 +43,7 @@ module Features {
             }
 
             function onPreviousPage() as Boolean {
-                var cursorCx = MH.useNumber(:settings_cursor);
+                var cursorCx = MH.useNumber(SETTINGS_CURSOR_KEY);
                 var cursor = cursorCx.init(0).req();
 
                 if (cursor > 0) {
@@ -58,7 +59,7 @@ module Features {
             function onKey(keyEvent as WatchUi.KeyEvent) as Boolean {
                 if (keyEvent.getKey() == WatchUi.KEY_ENTER) {
                     var settings = SettingsConfig.getSettings();
-                    var cursor = MH.useNumber(:settings_cursor)
+                    var cursor = MH.useNumber(SETTINGS_CURSOR_KEY)
                         .init(0)
                         .req();
                     if (cursor >= 0 && cursor < settings.size()) {
@@ -70,8 +71,6 @@ module Features {
             }
 
             function onTap(clickEvent as WatchUi.ClickEvent) as Boolean {
-                _lastTapTime = System.getTimer();
-
                 if (!System.getDeviceSettings().isTouchScreen) {
                     return false;
                 }
@@ -90,7 +89,7 @@ module Features {
                 ).toNumber();
 
                 if (hitIndex >= 0 && hitIndex < settings.size()) {
-                    MH.useNumber(:settings_cursor).set(hitIndex);
+                    MH.useNumber(SETTINGS_CURSOR_KEY).set(hitIndex);
                     toggleSetting(hitIndex);
                 }
 
