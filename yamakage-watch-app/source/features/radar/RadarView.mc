@@ -1,24 +1,14 @@
 import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
+import Toybox.Math;
 import Core.ApiSchema;
-import Core.ApiSchema.SunDataIndex;
-import Core.ApiSchema.MoonDataIndex;
 import Hal.Sensor.CompassSensor;
 import Shared.Logic.PositionConfigure;
 import Shared.Logic.FontManager;
-import Shared.Ui.PageIndicator;
-import Shared.Core.Page;
 import Shared.Core.Enums.TargetMode;
 import Shared.Core.Consts.SettingIds;
 import Shared.Core.Consts.ToggleValues;
-
-import Features.Radar.Components.RadarGrid;
-import Features.Radar.Components.RadarArea;
-import Features.Radar.Components.RadarSun;
-import Features.Radar.Components.RadarMoon;
-import Features.Radar.Components.RadarBeam;
-import Features.Radar.Components.RadarSonarPulse;
 
 using MonkeyHooks as MH;
 using Core.AppArena.CoreArena as coreA;
@@ -27,98 +17,42 @@ using Core.CustomContext as mycx;
 
 module Features {
     module Radar {
+        // ==================================================
+        // Props
+        // ==================================================
+        module RadarProps {
+            enum {
+                W = 0, // Number
+                H, // Number
+                CX, // Number
+                CY, // Number
+                RADIUS, // Float
+                N_FONT, // Graphics.FontType
+                IS_ANIM_ON, // Boolean
+                MODE, // Number
+                HAS_DATA, // Boolean
+                STEP_DEG, // Number
+                PROFILES, // ApiSchema.AzimuthProfilesArray
+                PATHS, // ApiSchema.PathArray
+                FRACTION, // Float
+                PHASE, // Float
+                SWEEP_ANGLE, // Float
+                HEADING, // Float?
+                DATA_SIZE = 16
+            }
+        }
+
+        // ==================================================
+        // View Container
+        // ==================================================
         class RadarView extends WatchUi.View {
-            // ==================================================
             // ID
-            // ==================================================
             private const ON_TIMER_TICK_METHOD = :onTimerTick;
 
-            // ==================================================
-            // Cash
-            // ==================================================
+            private var _props as Array = new [RadarProps.DATA_SIZE];
+
             private var _tickCount as Number = 0;
-            private var _sweepAngle as Float = 0.0;
 
-            private var _w as Number = 0;
-            private var _h as Number = 0;
-            private var _cx as Number = 0;
-            private var _cy as Number = 0;
-            private var _radius as Float = 0.0;
-            private var _nFont as Graphics.FontType?;
-
-            private var _isAnimOn as Boolean = true;
-            private var _mode as Number = TargetMode.SUN;
-
-            private var _hasData as Boolean = false;
-            private var _stepDeg as Number = 0;
-            private var _profiles as ApiSchema.AzimuthProfilesArray?;
-            private var _paths as ApiSchema.PathArray?;
-            private var _fraction as Float = 1.0;
-            private var _phase as Float = 0.5;
-
-            // ==================================================
-            // Subscribe Method
-            // ==================================================
-            function onTimerTick() as Void {
-                _tickCount++;
-
-                if (_isAnimOn) {
-                    _sweepAngle += 0.05;
-                    if (_sweepAngle > Math.PI * 2) {
-                        _sweepAngle -= Math.PI * 2;
-                    }
-                }
-                if (_isAnimOn || _tickCount % 2 == 0) {
-                    WatchUi.requestUpdate();
-                }
-            }
-
-            // ==================================================
-            // Private Method
-            // ==================================================
-            private function _refreshData() as Void {
-                var data = null;
-                _hasData = false;
-
-                switch (_mode) {
-                    case TargetMode.SUN:
-                        data = mycx.useSunPayload(coreA.SUN_SHADOW_DATA).get();
-                        if (data != null) {
-                            _stepDeg =
-                                data[SunDataIndex.AZIMUTH_STEP] as Number;
-                            _profiles =
-                                data[SunDataIndex.PROFILES] as
-                                ApiSchema.AzimuthProfilesArray;
-                            _paths =
-                                data[SunDataIndex.PATHS] as ApiSchema.PathArray;
-                            _hasData = true;
-                        }
-                        break;
-
-                    case TargetMode.MOON:
-                        data = mycx
-                            .useMoonPayload(coreA.MOON_SHADOW_DATA)
-                            .get();
-                        if (data != null) {
-                            _stepDeg =
-                                data[MoonDataIndex.AZIMUTH_STEP] as Number;
-                            _fraction = data[MoonDataIndex.FRACTION] as Float;
-                            _phase = data[MoonDataIndex.PHASE] as Float;
-                            _profiles =
-                                data[MoonDataIndex.PROFILES] as
-                                ApiSchema.AzimuthProfilesArray;
-                            _paths =
-                                data[MoonDataIndex.PATHS] as
-                                ApiSchema.PathArray;
-                            _hasData = true;
-                        }
-                        break;
-                }
-            }
-
-            // ==================================================
-            // Override Method
-            // ==================================================
             function initialize() {
                 View.initialize();
             }
@@ -126,11 +60,23 @@ module Features {
             function onLayout(dc as Graphics.Dc) as Void {
                 PositionConfigure.initializeGlobalLayout(dc);
 
-                _w = MH.useNumber(coreA.DISPLAY_WIDTH).init(0).req();
-                _h = MH.useNumber(coreA.DISPLAY_HEIGHT).init(0).req();
-                _cx = MH.useNumber(coreA.CENTER_X).init(0).req();
-                _cy = MH.useNumber(coreA.CENTER_Y).init(0).req();
-                _radius = ((_w < _h ? _w : _h) / 2.0) * 0.75;
+                _props[RadarProps.W] = MH.useNumber(coreA.DISPLAY_WIDTH)
+                    .init(0)
+                    .req();
+                _props[RadarProps.H] = MH.useNumber(coreA.DISPLAY_HEIGHT)
+                    .init(0)
+                    .req();
+                _props[RadarProps.CX] = MH.useNumber(coreA.CENTER_X)
+                    .init(0)
+                    .req();
+                _props[RadarProps.CY] = MH.useNumber(coreA.CENTER_Y)
+                    .init(0)
+                    .req();
+
+                var w = _props[RadarProps.W] as Number;
+                var h = _props[RadarProps.H] as Number;
+
+                _props[RadarProps.RADIUS] = ((w < h ? w : h) / 2.0) * 0.75;
 
                 var fontCx = MH.useFont(radarA.N_FONT);
                 if (fontCx.get() == null) {
@@ -138,22 +84,27 @@ module Features {
                         FontManager.findBestFont(
                             dc,
                             "N",
-                            (_w * 0.2).toNumber(),
-                            (_h * 0.1).toNumber()
+                            (w * 0.2).toNumber(),
+                            (h * 0.1).toNumber()
                         )
                     );
                 }
-                _nFont = fontCx.get() as Graphics.FontType;
+                _props[RadarProps.N_FONT] = fontCx.get() as Graphics.FontType;
             }
 
             function onShow() as Void {
-                _mode = MH.useNumber(coreA.TARGET_MODE)
+                _props[RadarProps.MODE] = MH.useNumber(coreA.TARGET_MODE)
                     .init(TargetMode.SUN)
                     .req();
+
                 var animState = MH.useStorageString(SettingIds.ANIM_ENABLED)
                     .init(ToggleValues.ON)
                     .req();
-                _isAnimOn = animState.equals(ToggleValues.ON);
+                _props[RadarProps.IS_ANIM_ON] = animState.equals(
+                    ToggleValues.ON
+                );
+
+                _props[RadarProps.SWEEP_ANGLE] = 0.0;
 
                 _refreshData();
 
@@ -164,58 +115,90 @@ module Features {
                 MH.SharedTimer.unsubscribe(self, ON_TIMER_TICK_METHOD);
             }
 
-            function onUpdate(dc as Graphics.Dc) as Void {
-                dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-                dc.clear();
+            // ==================================================
+            // Subscribe Methods
+            // ==================================================
+            function onTimerTick() as Void {
+                _tickCount++;
 
-                if (!_hasData) {
-                    return;
+                var isAnimOn = _props[RadarProps.IS_ANIM_ON] as Boolean;
+
+                if (isAnimOn) {
+                    var sweepAngle = _props[RadarProps.SWEEP_ANGLE] as Float;
+                    sweepAngle += 0.05;
+                    if (sweepAngle > Math.PI * 2) {
+                        sweepAngle -= Math.PI * 2;
+                    }
+                    _props[RadarProps.SWEEP_ANGLE] = sweepAngle;
+                } else {
+                    _props[RadarProps.SWEEP_ANGLE] = 0.0;
                 }
 
-                var heading = CompassSensor.getHeadingDegrees();
+                if (isAnimOn || _tickCount % 2 == 0) {
+                    WatchUi.requestUpdate();
+                }
+            }
 
-                RadarGrid.render(dc, _cx, _cy, _radius, _nFont);
-                RadarArea.render(dc, _profiles, _stepDeg, _cx, _cy, _radius);
+            // ==================================================
+            // Private Method
+            // ==================================================
+            private function _refreshData() as Void {
+                var mode = _props[RadarProps.MODE] as Number;
+                var data = null;
+                _props[RadarProps.HAS_DATA] = false;
 
-                switch (_mode) {
+                switch (mode) {
                     case TargetMode.SUN:
-                        RadarSun.render(dc, _paths, _cx, _cy, _radius);
+                        data = mycx.useSunPayload(coreA.SUN_SHADOW_DATA).get();
+                        if (data == null) {
+                            break;
+                        }
+                        _props[RadarProps.STEP_DEG] =
+                            data[SunDataIndex.AZIMUTH_STEP] as Number;
+                        _props[RadarProps.PROFILES] =
+                            data[SunDataIndex.PROFILES] as
+                            ApiSchema.AzimuthProfilesArray;
+                        _props[RadarProps.PATHS] =
+                            data[SunDataIndex.PATHS] as ApiSchema.PathArray;
+                        _props[RadarProps.HAS_DATA] = true;
                         break;
 
                     case TargetMode.MOON:
-                        RadarMoon.render(
-                            dc,
-                            _paths,
-                            _cx,
-                            _cy,
-                            _radius,
-                            _fraction,
-                            _phase
-                        );
+                        data = mycx
+                            .useMoonPayload(coreA.MOON_SHADOW_DATA)
+                            .get();
+                        if (data == null) {
+                            break;
+                        }
+                        _props[RadarProps.STEP_DEG] =
+                            data[MoonDataIndex.AZIMUTH_STEP] as Number;
+                        _props[RadarProps.FRACTION] =
+                            data[MoonDataIndex.FRACTION] as Float;
+                        _props[RadarProps.PHASE] =
+                            data[MoonDataIndex.PHASE] as Float;
+                        _props[RadarProps.PROFILES] =
+                            data[MoonDataIndex.PROFILES] as
+                            ApiSchema.AzimuthProfilesArray;
+                        _props[RadarProps.PATHS] =
+                            data[MoonDataIndex.PATHS] as ApiSchema.PathArray;
+                        _props[RadarProps.HAS_DATA] = true;
                         break;
                 }
+            }
 
-                if (heading != null) {
-                    RadarBeam.render(
-                        dc,
-                        heading,
-                        _profiles,
-                        _stepDeg,
-                        _cx,
-                        _cy,
-                        _radius
-                    );
+            // ==================================================
+            // Render
+            // ==================================================
+            function onUpdate(dc as Graphics.Dc) as Void {
+                var hasData = _props[RadarProps.HAS_DATA];
+                if (hasData != null && (hasData as Boolean)) {
+                    _props[RadarProps.HEADING] =
+                        CompassSensor.getHeadingDegrees();
+                } else {
+                    _props[RadarProps.HEADING] = null;
                 }
 
-                RadarSonarPulse.render(dc, _cx, _cy, _radius, _sweepAngle);
-
-                PageIndicator.render(
-                    dc,
-                    Shared.Core.TOTAL_PAGES,
-                    Page.RADAR,
-                    _w,
-                    _h
-                );
+                RadarRender.render(dc, _props);
             }
         }
     }
