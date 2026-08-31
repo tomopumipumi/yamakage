@@ -2,9 +2,6 @@ import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
 import Shared.Logic.PositionConfigure;
-import Shared.Ui.Toggle;
-import Shared.Ui.ValueSelector;
-import Shared.Core.Consts.ToggleValues;
 import Features.Settings.SettingsConfig;
 
 using MonkeyHooks as MH;
@@ -12,47 +9,90 @@ using Core.AppArena.CoreArena as coreA;
 
 module Features {
     module Settings {
+        // ==================================================
+        // Props
+        // ==================================================
+        module SettingsProps {
+            enum {
+                CX = 0, //Number
+                ROW_WIDTH, //Number
+                START_X, //Float
+                START_Y, //Float
+                SETTINGS_LABEL_Y, //Number
+                CURSOR, //Number
+                SETTINGS_ARRAY, // Array<Dictionary>
+                CACHED_VALUES, //Dictionary
+                DATA_SIZE = 8
+            }
+        }
+
+        // ==================================================
+        // View Container
+        // ==================================================
         class SettingsView extends WatchUi.View {
-            // ==================================================
             // ID
-            // ==================================================
             private const SETTINGS_CURSOR_KEY = :settings_cursor;
             private const ON_CURSOR_CHANGED_METHOD = :onCursorChanged;
 
+            private var _props as Array = new [SettingsProps.DATA_SIZE];
+
+            function initialize() {
+                View.initialize();
+
+                _props[SettingsProps.SETTINGS_ARRAY] =
+                    SettingsConfig.getSettings();
+                _props[SettingsProps.CACHED_VALUES] = {};
+            }
+
+            function onLayout(dc as Graphics.Dc) as Void {
+                PositionConfigure.initializeGlobalLayout(dc);
+
+                var w = MH.useNumber(coreA.DISPLAY_WIDTH).req();
+                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).req();
+                var cx = MH.useNumber(coreA.CENTER_X).req();
+
+                _props[SettingsProps.CX] = cx;
+
+                var rowWidth = (w * 0.85).toNumber();
+                _props[SettingsProps.ROW_WIDTH] = rowWidth;
+                _props[SettingsProps.START_X] = cx - rowWidth / 2;
+                _props[SettingsProps.START_Y] = (h * 0.28).toNumber();
+                _props[SettingsProps.SETTINGS_LABEL_Y] = (h * 0.15).toNumber();
+            }
+
+            function onShow() as Void {
+                _props[SettingsProps.CURSOR] = MH.useNumber(SETTINGS_CURSOR_KEY)
+                    .init(0)
+                    .req();
+                refreshCache();
+
+                MH.watch(self, ON_CURSOR_CHANGED_METHOD, [SETTINGS_CURSOR_KEY]);
+            }
+
+            function onHide() as Void {
+                MH.unwatch(self, ON_CURSOR_CHANGED_METHOD);
+            }
+
             // ==================================================
-            // Cash
-            // ==================================================
-            private const ROW_HEIGHT = 44;
-            private const SPACING = 8;
-
-            private var _settings as Array<Dictionary>;
-            private var _cachedValues as Dictionary;
-
-            private var _w as Number = 0;
-            private var _h as Number = 0;
-            private var _cx as Number = 0;
-            private var _rowWidth as Number = 0;
-            private var _startX as Number = 0;
-            private var _startY as Number = 0;
-            private var _settingsLabelY as Number = 0;
-
-            private var _cursor as Number = 0;
-
-            // ==================================================
-            // Subscribe Method
+            // Subscribe Methods
             // ==================================================
             function onCursorChanged(vals as Array) as Void {
                 if (vals[0] != null) {
-                    _cursor = vals[0] as Number;
+                    _props[SettingsProps.CURSOR] = vals[0] as Number;
                 }
             }
 
             // ==================================================
-            // Util Method
+            // Public Util Method
             // ==================================================
             public function refreshCache() as Void {
-                for (var i = 0; i < _settings.size(); i++) {
-                    var setting = _settings[i] as Dictionary;
+                var settings =
+                    _props[SettingsProps.SETTINGS_ARRAY] as Array<Dictionary>;
+                var cachedValues =
+                    _props[SettingsProps.CACHED_VALUES] as Dictionary;
+
+                for (var i = 0; i < settings.size(); i++) {
+                    var setting = settings[i] as Dictionary;
                     var type = setting[SettingsConfig.TYPE];
                     var id = setting[SettingsConfig.ID];
 
@@ -61,114 +101,24 @@ module Features {
                             var stateStr = MH.useStorageString(id)
                                 .init(setting[SettingsConfig.DEFAULT])
                                 .req();
-                            _cachedValues.put(id, stateStr);
+                            cachedValues.put(id, stateStr);
                             break;
 
                         case SettingsConfig.TYPE_SELECTOR:
                             var idx = MH.useStorageNumber(id)
                                 .init(setting[SettingsConfig.DEFAULT])
                                 .req();
-                            _cachedValues.put(id, idx);
+                            cachedValues.put(id, idx);
                             break;
                     }
                 }
             }
 
             // ==================================================
-            // Override Method
+            // Render
             // ==================================================
-            function initialize() {
-                View.initialize();
-                _settings = SettingsConfig.getSettings();
-                _cachedValues = {};
-                refreshCache();
-            }
-
-            function onLayout(dc as Graphics.Dc) as Void {
-                PositionConfigure.initializeGlobalLayout(dc);
-
-                _w = MH.useNumber(coreA.DISPLAY_WIDTH).req();
-                _h = MH.useNumber(coreA.DISPLAY_HEIGHT).req();
-                _cx = MH.useNumber(coreA.CENTER_X).req();
-
-                _rowWidth = (_w * 0.85).toNumber();
-                _startX = _cx - _rowWidth / 2;
-                _startY = (_h * 0.28).toNumber();
-                _settingsLabelY = (_h * 0.15).toNumber();
-            }
-
-            function onShow() as Void {
-                _cursor = MH.useNumber(SETTINGS_CURSOR_KEY).init(0).req();
-                refreshCache();
-                MH.watch(self, ON_CURSOR_CHANGED_METHOD, [SETTINGS_CURSOR_KEY]);
-            }
-
-            function onHide() as Void {
-                MH.unwatch(self, ON_CURSOR_CHANGED_METHOD);
-            }
-
             function onUpdate(dc as Graphics.Dc) as Void {
-                dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-                dc.clear();
-
-                dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-                dc.drawText(
-                    _cx,
-                    _settingsLabelY,
-                    Graphics.FONT_XTINY,
-                    "SETTINGS",
-                    Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
-                );
-
-                for (var i = 0; i < _settings.size(); i++) {
-                    var setting = _settings[i] as Dictionary;
-                    var type = setting[SettingsConfig.TYPE];
-                    var id = setting[SettingsConfig.ID];
-
-                    var isSelected = i == _cursor;
-                    var startYRow = _startY + i * (ROW_HEIGHT + SPACING);
-
-                    switch (type) {
-                        case SettingsConfig.TYPE_TOGGLE:
-                            var stateStr = _cachedValues.get(id) as String;
-                            var isOn = stateStr.equals(ToggleValues.ON);
-
-                            Toggle.render(
-                                dc,
-                                _startX,
-                                startYRow,
-                                _rowWidth,
-                                ROW_HEIGHT,
-                                setting[SettingsConfig.LABEL] as String,
-                                isOn,
-                                isSelected
-                            );
-                            break;
-
-                        case SettingsConfig.TYPE_SELECTOR:
-                            var idx = _cachedValues.get(id) as Number;
-                            var options =
-                                setting[SettingsConfig.OPTIONS] as
-                                Array<Dictionary>;
-
-                            if (idx < 0 || idx >= options.size()) {
-                                idx = 0;
-                            }
-
-                            var valLabel = options[idx][:label] as String;
-                            ValueSelector.render(
-                                dc,
-                                _startX,
-                                startYRow,
-                                _rowWidth,
-                                ROW_HEIGHT,
-                                setting[SettingsConfig.LABEL] as String,
-                                valLabel,
-                                isSelected
-                            );
-                            break;
-                    }
-                }
+                SettingsRender.render(dc, _props);
             }
         }
     }
