@@ -20,20 +20,20 @@ module Features {
         // ==================================================
         module MainProps {
             enum {
-                W = 0,
-                H,
-                CX,
-                TITLE_FONT,
-                START_BTN_FONT,
-                START_BTN_WIDTH,
-                START_BTN_HEIGHT,
-                MODE,
-                IS_ANIM_ON,
-                PROGRESS,
-                SPARKLE_BUFFER,
-                GPS_TEXT,
-                GPS_COLOR,
-                IS_GPS_READY,
+                W = 0, // Number
+                H, // Number
+                CX, // Number
+                TITLE_FONT, // Graphics.FontType
+                START_BTN_FONT, // Graphics.FontType
+                START_BTN_WIDTH, // Number
+                START_BTN_HEIGHT, // Number
+                MODE, // Number (Shared.Core.Enums.TargetMode)
+                IS_ANIM_ON, // Boolean
+                PROGRESS, // Float
+                SPARKLE_BUFFER, // Array?
+                GPS_TEXT, // String
+                GPS_COLOR, // Graphics.ColorType
+                IS_GPS_READY, // Boolean
                 DATA_SIZE = 14
             }
         }

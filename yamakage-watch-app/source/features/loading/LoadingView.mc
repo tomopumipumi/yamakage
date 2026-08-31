@@ -20,14 +20,14 @@ module Features {
         // ==================================================
         module LoadingProps {
             enum {
-                W = 0,
-                H,
-                CX,
-                FONT,
-                MODE,
-                IS_ANIM_ON,
-                MSG,
-                ANGLE,
+                W = 0, // Number
+                H, // Number
+                CX, // Number
+                FONT, // Graphics.FontType?
+                MODE, // Number (Shared.Core.Enums.TargetMode)
+                IS_ANIM_ON, // Boolean
+                MSG, // String
+                ANGLE, // Float
                 DATA_SIZE = 8
             }
         }

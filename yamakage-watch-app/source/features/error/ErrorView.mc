@@ -17,12 +17,12 @@ module Features {
         // ==================================================
         module ErrorProps {
             enum {
-                W = 0,
-                H,
-                CX,
-                IS_ANIM_ON,
-                ERR_MSG,
-                PULSE,
+                W = 0, // Number
+                H, // Number
+                CX, // Number
+                IS_ANIM_ON, // Boolean
+                ERR_MSG, // String
+                PULSE, // Float
                 DATA_SIZE = 6
             }
         }

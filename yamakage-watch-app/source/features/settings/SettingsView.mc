@@ -13,14 +13,14 @@ module Features {
         // ==================================================
         module SettingsProps {
             enum {
-                CX = 0, //Number
-                ROW_WIDTH, //Number
-                START_X, //Float
-                START_Y, //Float
-                SETTINGS_LABEL_Y, //Number
-                CURSOR, //Number
+                CX = 0, // Number
+                ROW_WIDTH, // Number
+                START_X, // Number
+                START_Y, // Number
+                SETTINGS_LABEL_Y, // Number
+                CURSOR, // Number
                 SETTINGS_ARRAY, // Array<Dictionary>
-                CACHED_VALUES, //Dictionary
+                CACHED_VALUES, // Dictionary
                 DATA_SIZE = 8
             }
         }

@@ -22,20 +22,20 @@ module Features {
         // ==================================================
         module DetailsProps {
             enum {
-                W = 0,
-                H,
-                LAYOUT_CTX, // [w, labelFont, valueFont, iconFontResource]
-                MODE,
-                HAS_DATA,
-                PROFILES,
-                STEP_DEG,
-                FRACTION,
-                PHASE,
-                SUNRISE_STR,
-                SUNSET_STR,
-                ILLUM_STR,
-                LAST_HEADING,
-                ELEV_STR,
+                W = 0, // Number
+                H, // Number
+                LAYOUT_CTX, // Array? [w as Number, labelFont as Graphics.FontType, valueFont as Graphics.FontType, iconFontResource as Graphics.FontType?]
+                MODE, // Number (Shared.Core.Enums.TargetMode)
+                HAS_DATA, // Boolean
+                PROFILES, // Core.ApiSchema.AzimuthProfilesArray?
+                STEP_DEG, // Number
+                FRACTION, // Float
+                PHASE, // Float
+                SUNRISE_STR, // String
+                SUNSET_STR, // String
+                ILLUM_STR, // String
+                LAST_HEADING, // Float
+                ELEV_STR, // String
                 DATA_SIZE = 14
             }
         }
