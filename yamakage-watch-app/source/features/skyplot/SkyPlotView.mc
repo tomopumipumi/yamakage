@@ -1,29 +1,18 @@
 import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
+import Toybox.Math;
 import Core.ApiSchema;
 import Core.ApiSchema.SunDataIndex;
 import Core.ApiSchema.MoonDataIndex;
 import Hal.Sensor.CompassSensor;
+import Shared.Logic.PositionConfigure;
 import Shared.Logic.FontManager;
 import Shared.Logic.IconFontManager;
-import Shared.Logic.PositionConfigure;
-import Shared.Ui.PageIndicator;
 import Shared.Core.Enums.TargetMode;
 import Shared.Core.Consts.SettingIds;
 import Shared.Core.Consts.ToggleValues;
-import Shared.Core.Page;
-import Shared.Icons;
-import Shared.Ui.BackgroundAnimation;
 import Shared.Logic.BackgroundAnimationLogic;
-
-import Features.SkyPlot.Components.AzimuthChart;
-import Features.SkyPlot.Components.HeadingMarker;
-import Features.SkyPlot.Components.SkyPlotGrid;
-import Features.SkyPlot.Components.SunPathChart;
-import Features.SkyPlot.Components.MoonPathChart;
-import Features.SkyPlot.Components.SkyPlotSunEvents;
-import Features.SkyPlot.Components.SkyPlotMoonEvents;
 
 using MonkeyHooks as MH;
 using Core.AppArena.CoreArena as coreA;
@@ -32,83 +21,180 @@ using Core.CustomContext as mycx;
 
 module Features {
     module SkyPlot {
+        // ==================================================
+        // Props
+        // ==================================================
+        module SkyPlotProps {
+            enum {
+                W = 0, //Number
+                H, //Number
+                CX, //Number
+                CY, //Number
+                RADIUS, // Float
+                N_FONT, // Graphics.FontType
+                ICON_FONT, // Graphics.FontType
+                IS_ANIM_ON, // Boolean
+                MODE, // Number (TargetMode)
+                CLOUD_BUFFER, // Array
+                STAR_BUFFER, // Array
+                HAS_DATA, // Boolean
+                STEP_DEG, // Number
+                PROFILES, // ApiSchema.AzimuthProfilesArray
+                PATHS, // ApiSchema.PathArray
+                FRACTION, // Float
+                PHASE, // Float
+                PULSE_PHASE, // Float
+                HEADING, // Float?
+                DATA_SIZE = 19
+            }
+        }
+
+        // ==================================================
+        // View Container
+        // ==================================================
         class SkyPlotView extends WatchUi.View {
-            // ==================================================
             // ID
-            // ==================================================
             private const SKYPLOT_CLOUDS_KEY = :skyplot_clouds;
             private const SKYPLOT_STARS_KEY = :skyplot_stars;
-            private const REQUEST_UPDATE_METHOD = :requestUpdate;
+            private const ON_TIMER_TICK_METHOD = :onTimerTick;
 
-            // ==================================================
-            // Cash
-            // ==================================================
+            private var _props as Array = new [SkyPlotProps.DATA_SIZE];
+
             private var _tickCount as Number = 0;
-            private var _pulsePhase as Float = 0.0;
 
-            private var _w as Number = 0;
-            private var _h as Number = 0;
-            private var _cx as Number = 0;
-            private var _cy as Number = 0;
-            private var _radius as Float = 0.0;
-            private var _nFont as Graphics.FontType?;
-            private var _iconFontResource as Graphics.FontType?;
+            function initialize() {
+                View.initialize();
+            }
 
-            private var _isAnimOn as Boolean = true;
-            private var _mode as Number = TargetMode.SUN;
-            private var _cloudBuffer as Array?;
-            private var _starBuffer as Array?;
+            function onLayout(dc as Graphics.Dc) as Void {
+                PositionConfigure.initializeGlobalLayout(dc);
 
-            private var _hasData as Boolean = false;
-            private var _stepDeg as Number = 0;
-            private var _profiles as ApiSchema.AzimuthProfilesArray?;
-            private var _paths as ApiSchema.PathArray?;
-            private var _fraction as Float = 1.0;
-            private var _phase as Float = 0.5;
+                _props[SkyPlotProps.W] = MH.useNumber(coreA.DISPLAY_WIDTH)
+                    .init(0)
+                    .req();
+                _props[SkyPlotProps.H] = MH.useNumber(coreA.DISPLAY_HEIGHT)
+                    .init(0)
+                    .req();
+                _props[SkyPlotProps.CX] = MH.useNumber(coreA.CENTER_X)
+                    .init(0)
+                    .req();
+                _props[SkyPlotProps.CY] = MH.useNumber(coreA.CENTER_Y)
+                    .init(0)
+                    .req();
+
+                var w = _props[SkyPlotProps.W] as Number;
+                var h = _props[SkyPlotProps.H] as Number;
+
+                _props[SkyPlotProps.RADIUS] = ((w < h ? w : h) / 2.0) * 0.75;
+
+                var fontCx = MH.useFont(skyA.N_FONT);
+                if (fontCx.get() == null) {
+                    fontCx.set(
+                        FontManager.findBestFont(
+                            dc,
+                            "N",
+                            (w * 0.2).toNumber(),
+                            (h * 0.1).toNumber()
+                        )
+                    );
+                }
+                _props[SkyPlotProps.N_FONT] = fontCx.get() as Graphics.FontType;
+
+                var iconFontIdxCx = MH.useNumber(coreA.ICON_FONT_INDEX);
+                if (iconFontIdxCx.get() == null) {
+                    iconFontIdxCx.set(
+                        IconFontManager.calculateBestIconFontIndex(dc, w, h)
+                    );
+                }
+
+                _props[SkyPlotProps.ICON_FONT] =
+                    IconFontManager.loadIconFontResource(iconFontIdxCx.req());
+            }
+
+            function onShow() as Void {
+                _props[SkyPlotProps.MODE] = MH.useNumber(coreA.TARGET_MODE)
+                    .init(TargetMode.SUN)
+                    .req();
+
+                var animState = MH.useStorageString(SettingIds.ANIM_ENABLED)
+                    .init(ToggleValues.ON)
+                    .req();
+                _props[SkyPlotProps.IS_ANIM_ON] = animState.equals(
+                    ToggleValues.ON
+                );
+
+                _props[SkyPlotProps.CLOUD_BUFFER] = MH.useArrayBuffer(
+                    SKYPLOT_CLOUDS_KEY,
+                    20
+                ).req();
+                _props[SkyPlotProps.STAR_BUFFER] = MH.useArrayBuffer(
+                    SKYPLOT_STARS_KEY,
+                    60
+                ).req();
+
+                _props[SkyPlotProps.PULSE_PHASE] = 0.0;
+
+                _refreshData();
+
+                MH.SharedTimer.subscribe(self, ON_TIMER_TICK_METHOD);
+            }
+
+            function onHide() as Void {
+                MH.SharedTimer.unsubscribe(self, ON_TIMER_TICK_METHOD);
+                MH.destroy(SKYPLOT_STARS_KEY);
+                MH.destroy(SKYPLOT_CLOUDS_KEY);
+
+                _props[SkyPlotProps.ICON_FONT] = null;
+            }
 
             // ==================================================
-            // Subscribe Method
+            // Subscribe Methods
             // ==================================================
-            function requestUpdate() as Void {
+            function onTimerTick() as Void {
                 _tickCount++;
-                if (_isAnimOn) {
-                    _pulsePhase += 0.2;
-                    if (_pulsePhase > Math.PI * 2) {
-                        _pulsePhase -= Math.PI * 2;
+
+                var isAnimOn = _props[SkyPlotProps.IS_ANIM_ON] as Boolean;
+                var pulsePhase = _props[SkyPlotProps.PULSE_PHASE] as Float;
+
+                if (isAnimOn) {
+                    pulsePhase += 0.2;
+                    if (pulsePhase > Math.PI * 2) {
+                        pulsePhase -= Math.PI * 2;
                     }
                 } else {
-                    _pulsePhase = 0.0;
+                    pulsePhase = 0.0;
                 }
+                _props[SkyPlotProps.PULSE_PHASE] = pulsePhase;
 
-                if (_w > 0 && _h > 0) {
-                    switch (_mode) {
-                        case TargetMode.SUN:
-                            if (_cloudBuffer == null) {
-                                break;
-                            }
-                            BackgroundAnimationLogic.updateClouds(
-                                _cloudBuffer,
-                                _w,
-                                _h,
-                                _isAnimOn
-                            );
-                            break;
+                var w = _props[SkyPlotProps.W] as Number;
+                var h = _props[SkyPlotProps.H] as Number;
+                var mode = _props[SkyPlotProps.MODE] as Number;
 
-                        case TargetMode.MOON:
-                            if (_starBuffer == null) {
-                                break;
-                            }
-                            BackgroundAnimationLogic.updateStars(
-                                _starBuffer,
-                                _w,
-                                _h,
-                                _isAnimOn
-                            );
-                            break;
+                if (w > 0 && h > 0) {
+                    if (
+                        mode == TargetMode.SUN &&
+                        _props[SkyPlotProps.CLOUD_BUFFER] != null
+                    ) {
+                        BackgroundAnimationLogic.updateClouds(
+                            _props[SkyPlotProps.CLOUD_BUFFER] as Array,
+                            w,
+                            h,
+                            isAnimOn
+                        );
+                    } else if (
+                        mode == TargetMode.MOON &&
+                        _props[SkyPlotProps.STAR_BUFFER] != null
+                    ) {
+                        BackgroundAnimationLogic.updateStars(
+                            _props[SkyPlotProps.STAR_BUFFER] as Array,
+                            w,
+                            h,
+                            isAnimOn
+                        );
                     }
                 }
 
-                if (_isAnimOn || _tickCount % 2 == 0) {
+                if (isAnimOn || _tickCount % 2 == 0) {
                     WatchUi.requestUpdate();
                 }
             }
@@ -117,22 +203,24 @@ module Features {
             // Private Method
             // ==================================================
             private function _refreshData() as Void {
+                var mode = _props[SkyPlotProps.MODE] as Number;
                 var data = null;
-                _hasData = false;
+                _props[SkyPlotProps.HAS_DATA] = false;
 
-                switch (_mode) {
+                switch (mode) {
                     case TargetMode.SUN:
                         data = mycx.useSunPayload(coreA.SUN_SHADOW_DATA).get();
                         if (data == null) {
                             break;
                         }
-                        _stepDeg = data[SunDataIndex.AZIMUTH_STEP] as Number;
-                        _profiles =
+                        _props[SkyPlotProps.STEP_DEG] =
+                            data[SunDataIndex.AZIMUTH_STEP] as Number;
+                        _props[SkyPlotProps.PROFILES] =
                             data[SunDataIndex.PROFILES] as
                             ApiSchema.AzimuthProfilesArray;
-                        _paths =
+                        _props[SkyPlotProps.PATHS] =
                             data[SunDataIndex.PATHS] as ApiSchema.PathArray;
-                        _hasData = true;
+                        _props[SkyPlotProps.HAS_DATA] = true;
                         break;
 
                     case TargetMode.MOON:
@@ -142,159 +230,35 @@ module Features {
                         if (data == null) {
                             break;
                         }
-                        _stepDeg = data[MoonDataIndex.AZIMUTH_STEP] as Number;
-                        _fraction = data[MoonDataIndex.FRACTION] as Float;
-                        _phase = data[MoonDataIndex.PHASE] as Float;
-                        _profiles =
+                        _props[SkyPlotProps.STEP_DEG] =
+                            data[MoonDataIndex.AZIMUTH_STEP] as Number;
+                        _props[SkyPlotProps.FRACTION] =
+                            data[MoonDataIndex.FRACTION] as Float;
+                        _props[SkyPlotProps.PHASE] =
+                            data[MoonDataIndex.PHASE] as Float;
+                        _props[SkyPlotProps.PROFILES] =
                             data[MoonDataIndex.PROFILES] as
                             ApiSchema.AzimuthProfilesArray;
-                        _paths =
+                        _props[SkyPlotProps.PATHS] =
                             data[MoonDataIndex.PATHS] as ApiSchema.PathArray;
-                        _hasData = true;
+                        _props[SkyPlotProps.HAS_DATA] = true;
                         break;
                 }
             }
 
             // ==================================================
-            // Override Method
+            // Render
             // ==================================================
-            function initialize() {
-                View.initialize();
-            }
-
-            function onLayout(dc as Graphics.Dc) as Void {
-                PositionConfigure.initializeGlobalLayout(dc);
-
-                _w = MH.useNumber(coreA.DISPLAY_WIDTH).req();
-                _h = MH.useNumber(coreA.DISPLAY_HEIGHT).req();
-                _cx = MH.useNumber(coreA.CENTER_X).req();
-                _cy = MH.useNumber(coreA.CENTER_Y).req();
-                _radius = ((_w < _h ? _w : _h) / 2.0) * 0.75;
-
-                var fontCx = MH.useFont(skyA.N_FONT);
-                if (fontCx.get() == null) {
-                    fontCx.set(
-                        FontManager.findBestFont(
-                            dc,
-                            "N",
-                            (_w * 0.2).toNumber(),
-                            (_h * 0.1).toNumber()
-                        )
-                    );
-                }
-                _nFont = fontCx.get() as Graphics.FontType;
-
-                var iconFontIdxCx = MH.useNumber(coreA.ICON_FONT_INDEX);
-                if (iconFontIdxCx.get() == null) {
-                    iconFontIdxCx.set(
-                        IconFontManager.calculateBestIconFontIndex(dc, _w, _h)
-                    );
-                }
-                _iconFontResource = IconFontManager.loadIconFontResource(
-                    iconFontIdxCx.req()
-                );
-            }
-
-            function onShow() as Void {
-                _mode = MH.useNumber(coreA.TARGET_MODE)
-                    .init(TargetMode.SUN)
-                    .req();
-                var animState = MH.useStorageString(SettingIds.ANIM_ENABLED)
-                    .init(ToggleValues.ON)
-                    .req();
-                _isAnimOn = animState.equals(ToggleValues.ON);
-
-                _cloudBuffer = MH.useArrayBuffer(SKYPLOT_CLOUDS_KEY, 20).req();
-                _starBuffer = MH.useArrayBuffer(SKYPLOT_STARS_KEY, 60).req();
-                _refreshData();
-
-                MH.SharedTimer.subscribe(self, REQUEST_UPDATE_METHOD);
-            }
-
-            function onHide() as Void {
-                MH.SharedTimer.unsubscribe(self, REQUEST_UPDATE_METHOD);
-                MH.destroy(SKYPLOT_STARS_KEY);
-                MH.destroy(SKYPLOT_CLOUDS_KEY);
-            }
-
             function onUpdate(dc as Graphics.Dc) as Void {
-                dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-                dc.clear();
-
-                var activeBuffer =
-                    _mode == TargetMode.SUN ? _cloudBuffer : _starBuffer;
-                BackgroundAnimation.render(dc, _mode, activeBuffer);
-
-                if (!_hasData) {
-                    return;
+                var hasData = _props[SkyPlotProps.HAS_DATA];
+                if (hasData != null && (hasData as Boolean)) {
+                    _props[SkyPlotProps.HEADING] =
+                        CompassSensor.getHeadingDegrees();
+                } else {
+                    _props[SkyPlotProps.HEADING] = null;
                 }
 
-                var heading = CompassSensor.getHeadingDegrees();
-
-                SkyPlotGrid.render(dc, _cx, _cy, _radius, _nFont);
-                AzimuthChart.render(dc, _profiles, _stepDeg, _cx, _cy, _radius);
-
-                switch (_mode) {
-                    case TargetMode.SUN:
-                        SunPathChart.render(
-                            dc,
-                            _paths,
-                            _cx,
-                            _cy,
-                            _radius,
-                            _pulsePhase
-                        );
-                        SkyPlotSunEvents.render(
-                            dc,
-                            _paths,
-                            _cx,
-                            _cy,
-                            _radius,
-                            _iconFontResource
-                        );
-                        break;
-
-                    case TargetMode.MOON:
-                        MoonPathChart.render(
-                            dc,
-                            _paths,
-                            _cx,
-                            _cy,
-                            _radius,
-                            _fraction,
-                            _phase,
-                            _pulsePhase
-                        );
-                        SkyPlotMoonEvents.render(
-                            dc,
-                            _paths,
-                            _cx,
-                            _cy,
-                            _radius,
-                            _iconFontResource
-                        );
-                        break;
-                }
-
-                if (heading != null) {
-                    HeadingMarker.render(
-                        dc,
-                        heading,
-                        _profiles,
-                        _stepDeg,
-                        _cx,
-                        _cy,
-                        _radius
-                    );
-                }
-
-                PageIndicator.render(
-                    dc,
-                    Shared.Core.TOTAL_PAGES,
-                    Page.SKYPLOT,
-                    _w,
-                    _h
-                );
+                SkyPlotRender.render(dc, _props);
             }
         }
     }

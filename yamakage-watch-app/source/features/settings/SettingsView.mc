@@ -2,7 +2,6 @@ import Toybox.Lang;
 import Toybox.Graphics;
 import Toybox.WatchUi;
 import Shared.Logic.PositionConfigure;
-import Features.Settings.SettingsConfig;
 
 using MonkeyHooks as MH;
 using Core.AppArena.CoreArena as coreA;
