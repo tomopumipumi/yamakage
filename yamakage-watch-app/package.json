@@ -17,8 +17,7 @@
     "run:release": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeydo bin/Yamakage-release.prg \\$GARMIN_DEVICE\"",
     "dev:release": "pnpm build:release && pnpm run:release",
     
-    "build:test": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -d \\$GARMIN_DEVICE -y \\$GARMIN_KEY_PATH -f monkey.jungle -o bin/Yamakage-test.prg -t\"",
-    "test": "pnpm build:test && dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeydo bin/Yamakage-test.prg \\$GARMIN_DEVICE -t\"",
+    "test": "dotenv -- node scripts/run-tests.cjs",
 
     "export": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -e -r -y \\$GARMIN_KEY_PATH -f monkey.jungle -o bin/yamakage-watch-app.iq\""
   },
