@@ -4,6 +4,7 @@ import Toybox.WatchUi;
 import Shared.Logic.PositionConfigure;
 
 using MonkeyHooks as MH;
+using MonkeyHooks.Touchable as MHTouchable;
 using Core.AppArena.CoreArena as coreA;
 
 module Features {
@@ -32,6 +33,9 @@ module Features {
             // ID
             private const SETTINGS_CURSOR_KEY = :settings_cursor;
             private const ON_CURSOR_CHANGED_METHOD = :onCursorChanged;
+
+            private const _ROW_HEIGHT = 44;
+            private const _SPACING = 8;
 
             private var _props as Array = new [SettingsProps.DATA_SIZE];
 
@@ -66,10 +70,18 @@ module Features {
                 refreshCache();
 
                 MH.watch(self, ON_CURSOR_CHANGED_METHOD, [SETTINGS_CURSOR_KEY]);
+
+                if (System.getDeviceSettings().isTouchScreen) {
+                    _touchableSetting();
+                }
             }
 
             function onHide() as Void {
                 MH.unwatch(self, ON_CURSOR_CHANGED_METHOD);
+
+                if (System.getDeviceSettings().isTouchScreen) {
+                    MHTouchable.clear();
+                }
             }
 
             // ==================================================
@@ -110,6 +122,31 @@ module Features {
                             cachedValues.put(id, idx);
                             break;
                     }
+                }
+            }
+
+            // ==================================================
+            // Private Methods
+            // ==================================================
+            private function _touchableSetting() as Void {
+                MHTouchable.clear();
+
+                var startX = _props[SettingsProps.START_X] as Number;
+                var startY = _props[SettingsProps.START_Y] as Number;
+                var rowWidth = _props[SettingsProps.ROW_WIDTH] as Number;
+                var settings =
+                    _props[SettingsProps.SETTINGS_ARRAY] as Array<Dictionary>;
+
+                for (var i = 0; i < settings.size(); i++) {
+                    var startYRow = startY + i * (_ROW_HEIGHT + _SPACING);
+
+                    MHTouchable.registerRect(
+                        i,
+                        startX,
+                        startYRow,
+                        rowWidth,
+                        _ROW_HEIGHT
+                    );
                 }
             }
 

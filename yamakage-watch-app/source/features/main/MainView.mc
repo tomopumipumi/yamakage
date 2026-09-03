@@ -10,6 +10,7 @@ import Shared.Logic.PositionConfigure;
 import Hal.Sensor.LocationSensor;
 
 using MonkeyHooks as MH;
+using MonkeyHooks.Touchable as MHTouchable;
 using Core.AppArena.CoreArena as coreA;
 using Core.AppArena.MainUiArena as mainA;
 
@@ -39,16 +40,19 @@ module Features {
         }
 
         // ==================================================
+        // Features Consts
+        // ==================================================
+        const MAIN_SUN_PROGRESS_KEY = :main_sun_progress;
+        const MAIN_SPARKLES_KEY = :main_sparkles;
+        const MAIN_START_BUTTON_KEY = :main_start_button;
+        const ON_TARGET_MODE_CHANGED_METHOD = :onTargetModeChanged;
+        const ON_TIMER_TICK_METHOD = :onTimerTick;
+        const ON_POSITION_UPDATE_METHOD = :onPositionUpdate;
+
+        // ==================================================
         // View Container
         // ==================================================
         class MainView extends WatchUi.View {
-            // ID
-            private const MAIN_SUN_PROGRESS_KEY = :main_sun_progress;
-            private const MAIN_SPARKLES_KEY = :main_sparkles;
-            private const ON_TARGET_MODE_CHANGED_METHOD = :onTargetModeChanged;
-            private const ON_TIMER_TICK_METHOD = :onTimerTick;
-            private const ON_POSITION_UPDATE_METHOD = :onPositionUpdate;
-
             private var _props as Array = new [MainProps.DATA_SIZE];
 
             private var _tickCount as Number = 0;
@@ -138,6 +142,10 @@ module Features {
                 ]);
                 MH.SharedTimer.subscribe(self, ON_TIMER_TICK_METHOD);
                 MH.LocationHook.subscribe(self, ON_POSITION_UPDATE_METHOD);
+
+                if (System.getDeviceSettings().isTouchScreen) {
+                    _touchableSetting();
+                }
             }
 
             function onHide() as Void {
@@ -148,6 +156,10 @@ module Features {
                 MH.useFloat(MAIN_SUN_PROGRESS_KEY).setSilent(
                     _props[MainProps.PROGRESS] as Float
                 );
+
+                if (System.getDeviceSettings().isTouchScreen) {
+                    MHTouchable.clear();
+                }
             }
 
             // ==================================================
@@ -190,6 +202,28 @@ module Features {
             // ==================================================
             // Private Methods
             // ==================================================
+            private function _touchableSetting() as Void {
+                MHTouchable.clear();
+
+                var h = _props[MainProps.H] as Number;
+
+                var btnY = (h * 0.8).toNumber();
+                var btnW = _props[MainProps.START_BTN_WIDTH] as Number;
+                var btnH = _props[MainProps.START_BTN_HEIGHT] as Number;
+                var cx = _props[MainProps.CX] as Number;
+
+                var btnTopX = cx - btnW / 2;
+                var btnTopY = btnY - btnH / 2;
+
+                MHTouchable.registerRect(
+                    MAIN_START_BUTTON_KEY,
+                    btnTopX,
+                    btnTopY,
+                    btnW,
+                    btnH
+                );
+            }
+
             private function _updateGpsState() as Void {
                 var newText = LocationSensor.getGpsStatusString();
                 var newColor = LocationSensor.getGpsStatusColor();

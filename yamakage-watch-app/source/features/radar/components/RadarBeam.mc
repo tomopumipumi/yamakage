@@ -1,7 +1,7 @@
 import Toybox.Graphics;
-import Toybox.Math;
 import Toybox.Lang;
 import Core.ApiSchema;
+import Features.Radar.RadarLogic;
 
 module Features {
     module Radar {
@@ -16,27 +16,36 @@ module Features {
                     cy as Number,
                     radius as Float
                 ) as Void {
-                    var rad = ((headingDeg - 90.0) * Math.PI) / 180.0;
-                    var px = cx + (radius * Math.cos(rad)).toNumber();
-                    var py = cy + (radius * Math.sin(rad)).toNumber();
+                    var edge = RadarLogic.getPolarCoordinates(
+                        headingDeg,
+                        RadarLogic.MAX_DISTANCE_M,
+                        cx,
+                        cy,
+                        radius
+                    );
 
                     dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
                     dc.setPenWidth(2);
-                    dc.drawLine(cx, cy, px, py);
+                    dc.drawLine(cx, cy, edge[0], edge[1]);
 
                     dc.setPenWidth(1);
                     dc.setColor(
                         Graphics.COLOR_DK_RED,
                         Graphics.COLOR_TRANSPARENT
                     );
+
                     for (var i = -15; i <= 15; i += 5) {
                         if (i == 0) {
                             continue;
                         }
-                        var bRad = ((headingDeg + i - 90.0) * Math.PI) / 180.0;
-                        var bx = cx + (radius * Math.cos(bRad)).toNumber();
-                        var by = cy + (radius * Math.sin(bRad)).toNumber();
-                        dc.drawLine(cx, cy, bx, by);
+                        var bPos = RadarLogic.getPolarCoordinates(
+                            headingDeg + i,
+                            RadarLogic.MAX_DISTANCE_M,
+                            cx,
+                            cy,
+                            radius
+                        );
+                        dc.drawLine(cx, cy, bPos[0], bPos[1]);
                     }
 
                     var index = (headingDeg / stepDeg).toNumber();
@@ -49,18 +58,21 @@ module Features {
                                 item[1] instanceof Number ||
                                 item[1] instanceof Float
                                     ? item[1].toFloat()
-                                    : 30000.0;
-                            if (d <= 0.0 || d >= 30000.0) {
-                                distStr = ">30km";
-                            } else {
-                                distStr = (d / 1000.0).format("%.1f") + "km";
-                            }
+                                    : 0.0;
+                            distStr = RadarLogic.formatDistance(d);
                         }
                     }
 
                     if (!distStr.equals("")) {
-                        var lx = cx + (radius * 0.7 * Math.cos(rad)).toNumber();
-                        var ly = cy + (radius * 0.7 * Math.sin(rad)).toNumber();
+                        var lblPos = RadarLogic.getPolarCoordinates(
+                            headingDeg,
+                            RadarLogic.MAX_DISTANCE_M * 0.7,
+                            cx,
+                            cy,
+                            radius
+                        );
+                        var lx = lblPos[0];
+                        var ly = lblPos[1];
 
                         var font = Graphics.FONT_XTINY;
                         var textDims = dc.getTextDimensions(distStr, font);

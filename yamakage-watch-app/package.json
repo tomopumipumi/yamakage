@@ -9,15 +9,15 @@
     "fmt:check": "prettier --check \"**/*.mc\"",
     "sim:start": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/connectiq\"",
 
-    "build:debug": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -d \\$GARMIN_DEVICE -y \\$GARMIN_KEY_PATH -f monkey.jungle -o bin/Yamakage-debug.prg\"",
+    "build:debug": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -d \\$GARMIN_DEVICE -y \\$GARMIN_KEY_PATH -f monkey.debug.jungle -o bin/Yamakage-debug.prg\"",
     "run:debug": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeydo bin/Yamakage-debug.prg \\$GARMIN_DEVICE\"",
     "dev": "pnpm build:debug && pnpm run:debug",
     
-    "build:release": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -r -d \\$GARMIN_DEVICE -y \\$GARMIN_KEY_PATH -f monkey.jungle -o bin/Yamakage-release.prg\"",
+    "build:release": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -r -d \\$GARMIN_DEVICE -y \\$GARMIN_KEY_PATH -f monkey.release.jungle -o bin/Yamakage-release.prg\"",
     "run:release": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeydo bin/Yamakage-release.prg \\$GARMIN_DEVICE\"",
     "dev:release": "pnpm build:release && pnpm run:release",
     
-    "test": "dotenv -- node scripts/run-tests.cjs",
+    "test": "pnpm sim:start && dotenv -- node scripts/run-tests.cjs",
 
     "export": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -e -r -y \\$GARMIN_KEY_PATH -f monkey.jungle -o bin/yamakage-watch-app.iq\""
   },

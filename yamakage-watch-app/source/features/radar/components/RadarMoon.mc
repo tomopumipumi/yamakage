@@ -48,10 +48,15 @@ module Features {
                                 currentSp[
                                     ApiSchema.PathIndex.AZIMUTH
                                 ].toFloat();
-                            var rad = ((az - 90.0) * Math.PI) / 180.0;
-                            var r = radius + 15;
-                            var px = cx + (r * Math.cos(rad)).toNumber();
-                            var py = cy + (r * Math.sin(rad)).toNumber();
+                            var pos = RadarLogic.getIconCoordinates(
+                                az,
+                                cx,
+                                cy,
+                                radius,
+                                15
+                            );
+                            var px = pos[0];
+                            var py = pos[1];
 
                             MoonIcon.render(dc, px, py, fraction, phase, 6);
 

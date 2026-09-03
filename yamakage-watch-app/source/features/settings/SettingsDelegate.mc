@@ -8,6 +8,7 @@ import Shared.Core.Page;
 import Features.Settings.SettingsConfig;
 
 using MonkeyHooks as MH;
+using MonkeyHooks.Touchable as MHTouchable;
 using Core.AppArena.CoreArena as coreA;
 
 module Features {
@@ -63,7 +64,7 @@ module Features {
                         .init(0)
                         .req();
                     if (cursor >= 0 && cursor < settings.size()) {
-                        toggleSetting(cursor);
+                        _toggleSetting(cursor);
                     }
                     return true;
                 }
@@ -75,28 +76,25 @@ module Features {
                     return false;
                 }
 
-                var y = clickEvent.getCoordinates()[1];
-                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).req();
+                var coords = clickEvent.getCoordinates();
 
-                var startY = (h * 0.28).toNumber();
-                var rowHeight = 44;
-                var spacing = 8;
-                var settings = SettingsConfig.getSettings();
+                var x = coords[0] as Number;
+                var y = coords[1] as Number;
+                var hitId = MHTouchable.handleTap(x, y);
 
-                var hitIndex = (
-                    (y - startY + spacing / 2.0) /
-                    (rowHeight + spacing)
-                ).toNumber();
-
-                if (hitIndex >= 0 && hitIndex < settings.size()) {
-                    MH.useNumber(SETTINGS_CURSOR_KEY).set(hitIndex);
-                    toggleSetting(hitIndex);
+                if (hitId == null) {
+                    return true;
                 }
+
+                var hitIndex = hitId as Number;
+
+                MH.useNumber(SETTINGS_CURSOR_KEY).set(hitIndex);
+                _toggleSetting(hitIndex);
 
                 return true;
             }
 
-            private function toggleSetting(settingIndex as Number) as Void {
+            private function _toggleSetting(settingIndex as Number) as Void {
                 var setting = SettingsConfig.getSettings()[settingIndex];
                 var id = setting[SettingsConfig.ID] as String;
                 var type = setting[SettingsConfig.TYPE];

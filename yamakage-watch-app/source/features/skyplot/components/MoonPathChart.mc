@@ -1,10 +1,10 @@
 import Toybox.Lang;
 import Toybox.Graphics;
-import Toybox.Math;
 import Core.ApiSchema;
 import Shared.Ui.MoonIcon;
 import Hal.DateTime;
 import Shared.Ui.SonarPulse;
+import Features.SkyPlot.SkyPlotLogic;
 
 module Features {
     module SkyPlot {
@@ -32,7 +32,6 @@ module Features {
 
                     var lastX = -1;
                     var lastY = -1;
-
                     var now = DateTime.createTargetUnixTime();
                     var minTimeDiff = 99999999;
                     var currentPx = -1;
@@ -42,7 +41,6 @@ module Features {
                         var sp = paths[i] as ApiSchema.PathPointTuple;
                         var azDeg = sp[ApiSchema.PathIndex.AZIMUTH].toFloat();
                         var elDeg = sp[ApiSchema.PathIndex.ALTITUDE].toFloat();
-
                         var tVal = sp[ApiSchema.PathIndex.TIME];
                         var t =
                             tVal instanceof Long
@@ -55,14 +53,15 @@ module Features {
                             continue;
                         }
 
-                        var r = radius * (1.0 - elDeg / 90.0);
-                        if (r < 0.0) {
-                            r = 0.0;
-                        }
-
-                        var rad = ((azDeg - 90.0) * Math.PI) / 180.0;
-                        var px = cx + (r * Math.cos(rad)).toNumber();
-                        var py = cy + (r * Math.sin(rad)).toNumber();
+                        var pos = SkyPlotLogic.getPolarCoordinates(
+                            azDeg,
+                            elDeg,
+                            cx,
+                            cy,
+                            radius
+                        );
+                        var px = pos[0];
+                        var py = pos[1];
 
                         if (lastX != -1 && lastY != -1) {
                             dc.drawLine(lastX, lastY, px, py);
@@ -79,7 +78,6 @@ module Features {
                     }
 
                     dc.setPenWidth(1);
-
                     if (currentPx != -1 && currentPy != -1) {
                         SonarPulse.render(
                             dc,

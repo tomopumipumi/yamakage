@@ -8,6 +8,7 @@ import Shared.Core.Enums.TargetMode;
 import Shared.Core.Page;
 
 using MonkeyHooks as MH;
+using MonkeyHooks.Touchable as MHTouchable;
 using Core.AppArena.CoreArena as coreA;
 using Core.AppArena.LoadingUiArena as loadA;
 using Core.CustomContext as mycx;
@@ -19,14 +20,17 @@ module Features {
                 BehaviorDelegate.initialize();
             }
 
-            function onSelect() as Boolean {
-                startCalculation();
-                return true;
-            }
-
             function onMenu() as Boolean {
                 MH.Router.switchTo(Page.SETTINGS, WatchUi.SLIDE_UP);
                 return true;
+            }
+
+            function onKey(keyEvent as WatchUi.KeyEvent) as Boolean {
+                if (keyEvent.getKey() == WatchUi.KEY_ENTER) {
+                    _startCalculation();
+                    return true;
+                }
+                return false;
             }
 
             function onNextPage() as Boolean {
@@ -62,23 +66,25 @@ module Features {
                 }
 
                 var coords = clickEvent.getCoordinates();
+                var x = coords[0];
                 var y = coords[1];
-                var h = MH.useNumber(coreA.DISPLAY_HEIGHT).req();
 
-                if (y > h * 0.2 && y < h * 0.6) {
-                    onNextPage();
-                    return true;
+                var hitId = MHTouchable.handleTap(x, y);
+
+                if (hitId == null) {
+                    return false;
                 }
 
-                if (y >= h * 0.6) {
-                    startCalculation();
-                    return true;
+                switch (hitId) {
+                    case MAIN_START_BUTTON_KEY:
+                        _startCalculation();
+                        return true;
                 }
 
                 return true;
             }
 
-            private function startCalculation() as Void {
+            private function _startCalculation() as Void {
                 var errCx = MH.useString(coreA.LAST_ERROR);
                 if (!System.getDeviceSettings().phoneConnected) {
                     errCx.set("Phone Disconnected");
@@ -99,18 +105,22 @@ module Features {
                     .init(TargetMode.SUN)
                     .req();
 
-                if (mode == TargetMode.SUN) {
-                    ApiClient.fetchSunShadowData(
-                        pos[LatLon.LATITUDE],
-                        pos[LatLon.LONGITUDE],
-                        method(:onSunApiCallback)
-                    );
-                } else {
-                    ApiClient.fetchMoonShadowData(
-                        pos[LatLon.LATITUDE],
-                        pos[LatLon.LONGITUDE],
-                        method(:onMoonApiCallback)
-                    );
+                switch (mode) {
+                    case TargetMode.SUN:
+                        ApiClient.fetchSunShadowData(
+                            pos[LatLon.LATITUDE],
+                            pos[LatLon.LONGITUDE],
+                            method(:onSunApiCallback)
+                        );
+                        break;
+
+                    case TargetMode.MOON:
+                        ApiClient.fetchMoonShadowData(
+                            pos[LatLon.LATITUDE],
+                            pos[LatLon.LONGITUDE],
+                            method(:onMoonApiCallback)
+                        );
+                        break;
                 }
             }
 
