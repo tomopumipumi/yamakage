@@ -30,9 +30,10 @@ class YamakageWatchApp extends Application.AppBase {
     }
 
     function onStart(state as Dictionary?) as Void {
-        MH.useStorageString(Consts.SESSION_ID_KEY).init(
-            Crypt.generateRandomSessionId()
-        );
+        var sessionCx = MH.useStorageString(Consts.SESSION_ID_KEY);
+        if (sessionCx.get() == null) {
+            sessionCx.set(Crypt.generateRandomSessionId());
+        }
     }
 
     function onStop(state as Dictionary?) as Void {}
