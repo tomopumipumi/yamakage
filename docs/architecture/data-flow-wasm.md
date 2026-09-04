@@ -1,6 +1,6 @@
-# YAMAKAGE Wasm Zero-Copy Data Flow Document
+# YAMAKAGE Wasm Data Flow Document
 
-This document defines the "completely zero-copy" data transfer flow and the structure of the shared memory (Linear Memory) between TypeScript (Cloudflare Workers) and WebAssembly (Rust).
+This document defines data transfer flow and the structure of the shared memory (Linear Memory) between TypeScript (Cloudflare Workers) and WebAssembly (Rust).
 
 ## 1. Overall Data Flow (Sequence Diagram)
 

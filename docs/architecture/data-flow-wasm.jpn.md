@@ -1,6 +1,6 @@
-# YAMAKAGE Wasm Zero-Copy データフロードキュメント
+# YAMAKAGE Wasm データフロードキュメント
 
-このドキュメントは、TypeScript（Cloudflare Workers）と WebAssembly（Rust）間で行われるゼロコピーのデータ受け渡しフローと、共有メモリの構造を定義します。
+このドキュメントは、TypeScript（Cloudflare Workers）と WebAssembly（Rust）間で行われるデータ受け渡しフローと、共有メモリの構造を定義します。
 
 ## 1. 全体データフロー（シーケンス図）
 
