@@ -3,6 +3,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { cors } from 'hono/cors';
 import { ConsoleLogger } from './infrastructure/logging/ConsoleLogger';
 import { requestLogger } from './presentation/middlewares/requestLogger';
+import { createComplicationRouter } from './presentation/routes/complication';
 import { createShadowRouter } from './presentation/routes/shadow';
 import { createWatchAppMoonShadowRouter } from './presentation/routes/watchAppMoonShadow';
 import { createWatchAppShadowRouter } from './presentation/routes/watchAppShadow';
@@ -78,6 +79,8 @@ app.doc('/doc', {
 app.get('/ui', swaggerUI({ url: '/doc' }));
 app.get('/', (c) => c.text('YAMAKAGE API is running.'));
 
+// For Garmin (Complication)
+app.route('/api/v1/complication', createComplicationRouter(logger));
 // For Garmin (DataField)
 app.route('/api/v1/shadow', createShadowRouter(logger));
 // For Garmin (WatchApp)

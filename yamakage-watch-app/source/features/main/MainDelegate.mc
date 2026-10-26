@@ -3,7 +3,7 @@ import Toybox.WatchUi;
 import Toybox.System;
 import Hal.Sensor.LocationSensor;
 import Hal.Sensor.LocationSensor.LatLon;
-import Network.ApiClient;
+import Network.ApiHooks;
 import Shared.Core.Enums.TargetMode;
 import Shared.Core.Page;
 
@@ -107,7 +107,7 @@ module Features {
 
                 switch (mode) {
                     case TargetMode.SUN:
-                        ApiClient.fetchSunShadowData(
+                        ApiHooks.fetchSunShadowData(
                             pos[LatLon.LATITUDE],
                             pos[LatLon.LONGITUDE],
                             method(:onSunApiCallback)
@@ -115,7 +115,7 @@ module Features {
                         break;
 
                     case TargetMode.MOON:
-                        ApiClient.fetchMoonShadowData(
+                        ApiHooks.fetchMoonShadowData(
                             pos[LatLon.LATITUDE],
                             pos[LatLon.LONGITUDE],
                             method(:onMoonApiCallback)

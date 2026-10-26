@@ -1,5 +1,6 @@
 import Toybox.Communications;
 import Toybox.Lang;
+import Toybox.Application.Storage;
 import Core.Config;
 import Hal.DateTime;
 import Systems.Crypt;
@@ -7,8 +8,11 @@ import Shared.Core.Consts;
 
 using MonkeyHooks as MH;
 
+(:background)
 module Network {
+    (:background)
     module ApiClient {
+        (:background)
         class ShadowDataRequest {
             private var _lat as Float;
             private var _lng as Float;
@@ -36,11 +40,11 @@ module Network {
 
             function execute() as Void {
                 var url = Config.API_BASE_URL + _endpoint;
-                var sessionId = MH.useStorageString(
-                    Consts.SESSION_ID_KEY
-                ).get();
+                var sessionId =
+                    Storage.getValue(Consts.SESSION_ID_KEY) as String?;
                 if (sessionId == null) {
                     sessionId = Crypt.generateRandomSessionId();
+                    Storage.setValue(Consts.SESSION_ID_KEY, sessionId);
                 }
 
                 var params = {
@@ -95,33 +99,5 @@ module Network {
 
         typedef CallbackMethod as
             (Method(responseCode as Number, data as Dictionary?) as Void);
-
-        function fetchSunShadowData(
-            lat as Float,
-            lng as Float,
-            callback as CallbackMethod
-        ) as Void {
-            var request = new ShadowDataRequest(
-                lat,
-                lng,
-                Config.SHADOW_ENDPOINT,
-                callback
-            );
-            request.execute();
-        }
-
-        function fetchMoonShadowData(
-            lat as Float,
-            lng as Float,
-            callback as CallbackMethod
-        ) as Void {
-            var request = new ShadowDataRequest(
-                lat,
-                lng,
-                Config.MOON_SHADOW_ENDPOINT,
-                callback
-            );
-            request.execute();
-        }
     }
 }

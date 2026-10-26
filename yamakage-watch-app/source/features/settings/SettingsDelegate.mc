@@ -96,34 +96,56 @@ module Features {
 
             private function _toggleSetting(settingIndex as Number) as Void {
                 var setting = SettingsConfig.getSettings()[settingIndex];
-                var id = setting[SettingsConfig.ID] as String;
+                var id = setting[SettingsConfig.ID] as Number;
                 var type = setting[SettingsConfig.TYPE];
 
-                if (type == null || type == SettingsConfig.TYPE_TOGGLE) {
-                    var storageCx = MH.useStorageString(id);
-                    var current = storageCx
-                        .init(setting[SettingsConfig.DEFAULT])
-                        .req();
-                    storageCx.set(
-                        current.equals(ToggleValues.ON)
-                            ? ToggleValues.OFF
-                            : ToggleValues.ON
-                    );
-                } else if (type == SettingsConfig.TYPE_SELECTOR) {
-                    var storageCx = MH.useStorageNumber(id);
-                    var currentIdx = storageCx
-                        .init(setting[SettingsConfig.DEFAULT])
-                        .req();
-
-                    var options =
-                        setting[SettingsConfig.OPTIONS] as Array<Dictionary>;
-                    var nextIdx = (currentIdx + 1) % options.size();
-                    storageCx.set(nextIdx);
-
-                    if (id.equals(SettingIds.FRAME_RATE)) {
-                        MH.SharedTimer.setInterval(
-                            options[nextIdx][:val] as Number
+                switch (type) {
+                    case null:
+                    case SettingsConfig.TYPE_TOGGLE: {
+                        var storageCx = MH.useStorageString(id.toString());
+                        var current = storageCx
+                            .init(setting[SettingsConfig.DEFAULT])
+                            .req();
+                        storageCx.set(
+                            current.equals(ToggleValues.ON)
+                                ? ToggleValues.OFF
+                                : ToggleValues.ON
                         );
+                        break;
+                    }
+
+                    case SettingsConfig.TYPE_SELECTOR: {
+                        var storageCx = MH.useStorageNumber(id.toString());
+                        var currentIdx = storageCx
+                            .init(setting[SettingsConfig.DEFAULT])
+                            .req();
+
+                        var options =
+                            setting[SettingsConfig.OPTIONS] as
+                            Array<Dictionary>;
+                        var nextIdx = (currentIdx + 1) % options.size();
+                        storageCx.set(nextIdx);
+
+                        if (id.equals(SettingIds.FRAME_RATE)) {
+                            MH.SharedTimer.setInterval(
+                                options[nextIdx][:val] as Number
+                            );
+                        } else if (id.equals(SettingIds.BG_UPDATE_INTERVAL)) {
+                            var intervalSec = options[nextIdx][:val] as Number;
+                            if (intervalSec == 0) {
+                                // 0 = Off
+                                if (Toybox has :Background) {
+                                    Background.deleteTemporalEvent();
+                                }
+                            } else {
+                                if (Toybox has :Background) {
+                                    Background.registerForTemporalEvent(
+                                        new Time.Duration(intervalSec)
+                                    );
+                                }
+                            }
+                        }
+                        break;
                     }
                 }
 

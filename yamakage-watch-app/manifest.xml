@@ -5,7 +5,7 @@
         Use "Monkey C: Edit Application" from the Visual Studio Code command palette
         to update the application attributes.
     -->
-    <iq:application id="871f6463-134b-4645-acea-86ef8773457e" version="2.2.3" type="watch-app" name="@Strings.AppName" entry="YamakageWatchApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.2.0">
+    <iq:application id="871f6463-134b-4645-acea-86ef8773457e" version="2.3.3" type="watch-app" name="@Strings.AppName" entry="YamakageWatchApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.2.0">
         <!--
             Use the following from the Visual Studio Code comand palette to edit
             the build targets:
@@ -137,10 +137,13 @@
             palette to update permissions.
         -->
         <iq:permissions>
+            <iq:uses-permission id="Background"/>
             <iq:uses-permission id="Communications"/>
+            <iq:uses-permission id="ComplicationPublisher"/>
             <iq:uses-permission id="Positioning"/>
             <iq:uses-permission id="Sensor"/>
         </iq:permissions>
+
         <!--
             Use "Monkey C: Edit Languages" from the Visual Studio Code command
             palette to edit your compatible language list.
@@ -151,5 +154,6 @@
             command palette to edit the included barrels.
         -->
         <iq:barrels/>
+
     </iq:application>
 </iq:manifest>
