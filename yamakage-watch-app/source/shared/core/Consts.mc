@@ -4,8 +4,6 @@ module Shared {
             const APP_TITLE = "YAMAKAGE";
             const SESSION_ID_KEY = "session_id";
 
-            const COMPLICATION_ID_EPHEMERIS = "0";
-
             module ToggleValues {
                 const ON = "on";
                 const OFF = "off";

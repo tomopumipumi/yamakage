@@ -1,0 +1,34 @@
+<complications>
+    <complication 
+        id="1" 
+        access="public" 
+        longLabel="@Strings.Comp1_LongLabelName" 
+        shortLabel="@Strings.Comp1_ShortLabelName"
+        icon="@Drawables.ComplicationIcon"
+        glancePreview="false">
+
+        <faceIt defaultText="@Strings.FaceItDefaultText" />
+    </complication>
+
+    <complication 
+        id="2" 
+        access="public" 
+        longLabel="@Strings.Comp2_LongLabelName" 
+        shortLabel="@Strings.Comp2_ShortLabelName"
+        icon="@Drawables.ComplicationIcon"
+        glancePreview="true">
+
+        <faceIt defaultText="@Strings.FaceItDefaultText" />
+    </complication>
+
+    <complication 
+        id="3" 
+        access="public" 
+        longLabel="@Strings.Comp3_LongLabelName" 
+        shortLabel="@Strings.Comp3_ShortLabelName"
+        icon="@Drawables.ComplicationIcon"
+        glancePreview="false">
+
+        <faceIt defaultText="@Strings.FaceItDefaultText" />
+    </complication>
+</complications>

@@ -19,7 +19,7 @@
     
     "test": "pnpm sim:start && dotenv -- node scripts/run-tests.cjs",
 
-    "export": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -e -r -y \\$GARMIN_KEY_PATH -f monkey.jungle -o bin/yamakage-watch-app.iq\""
+    "export": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -e -r -y \\$GARMIN_KEY_PATH -f monkey.release.jungle -o bin/yamakage-watch-app.iq\""
   },
   "keywords": [],
   "author": "",

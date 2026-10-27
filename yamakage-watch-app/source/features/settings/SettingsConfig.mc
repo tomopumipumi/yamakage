@@ -33,18 +33,17 @@ module Features {
                         DEFAULT => 0,
                         TYPE => TYPE_SELECTOR,
                         OPTIONS => Consts.FRAME_RATES
-                    },
-                    {
+                    }
+                ];
+
+                if (Toybox has :Complications) {
+                    settings.add({
                         ID => SettingIds.BG_UPDATE_INTERVAL,
                         LABEL => "Comp. Interval",
                         DEFAULT => 0,
                         TYPE => TYPE_SELECTOR,
                         OPTIONS => Consts.BG_UPDATE_OPTIONS
-                    }
-                ];
-
-                if (!(Toybox has :Complications)) {
-                    settings.remove(2);
+                    });
                 }
 
                 return settings;
