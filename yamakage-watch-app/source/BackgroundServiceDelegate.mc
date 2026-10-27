@@ -46,13 +46,7 @@ class BackgroundServiceDelegate extends System.ServiceDelegate {
             return;
         }
 
-        if (responseCode >= 400 && responseCode < 500) {
-            compData = Status.PROVIDER_ERROR;
-            Background.exit(compData);
-            return;
-        }
-
-        if (responseCode >= 500 && responseCode < 600) {
+        if (responseCode >= 400 && responseCode < 600) {
             compData = Status.SERVER_ERROR;
             Background.exit(compData);
             return;

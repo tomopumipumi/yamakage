@@ -6,7 +6,7 @@ module Hal {
             (:background)
             module Schema {
                 enum {
-                    VERSION, // Number
+                    VERSION = 0, // Number
                     TIMESTAMP, // Number (Unix timestamp)
                     STATUS, // Number
                     SUNRISE_TIME, // Number (Unix timestamp)
@@ -23,10 +23,9 @@ module Hal {
             (:background)
             module Status {
                 enum {
-                    SUCCESS,
+                    SUCCESS = 0,
                     NO_GPS,
                     NETWORK_ERROR,
-                    PROVIDER_ERROR,
                     SERVER_ERROR,
                     UNKNOWN_ERROR
                 }
