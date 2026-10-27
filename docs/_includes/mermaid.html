@@ -1,0 +1,39 @@
+<script type="module">
+  import mermaid from
+    'https://cdn.jsdelivr.net/npm/mermaid@12/dist/mermaid.esm.min.mjs';
+
+  // Initialize Mermaid without automatic rendering.
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'default'
+  });
+
+  // Find Mermaid code blocks generated from Markdown.
+  const codeBlocks = document.querySelectorAll(
+    'pre code.language-mermaid'
+  );
+
+  for (const code of codeBlocks) {
+    const originalPre = code.closest('pre');
+
+    if (!originalPre) {
+      continue;
+    }
+
+    // Create an element that Mermaid.js can render.
+    const diagram = document.createElement('pre');
+    diagram.className = 'mermaid';
+    diagram.textContent = code.textContent ?? '';
+
+    // Replace the entire Rouge/Jekyll wrapper when present.
+    const wrapper =
+      originalPre.closest('.language-mermaid') || originalPre;
+
+    wrapper.replaceWith(diagram);
+  }
+
+  // Render all Mermaid diagrams on the page.
+  await mermaid.run({
+    querySelector: 'pre.mermaid'
+  });
+</script>

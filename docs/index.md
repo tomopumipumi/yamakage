@@ -5,7 +5,7 @@ YAMAKAGEの開発者向けドキュメントへようこそ。
 
 ---
 
-## 🇬🇧 English Documents (英語)
+## English Documents (英語)
 
 ### Complication
 * [Complication API Specification (V1)](./complication/complication.md)
@@ -27,7 +27,7 @@ YAMAKAGEの開発者向けドキュメントへようこそ。
 
 ---
 
-## 🇯🇵 日本語ドキュメント (Japanese)
+## 日本語ドキュメント (Japanese)
 
 ### コンプリケーション (Complication)
 * [コンプリケーション仕様書 (V1)](./complication/complication.jpn.md)
