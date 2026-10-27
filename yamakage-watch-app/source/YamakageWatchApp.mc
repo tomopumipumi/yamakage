@@ -11,7 +11,7 @@ import Features.Main;
 
 using MonkeyHooks as MH;
 using Core.AppArena.CoreArena as coreA;
-using Hal.Complication.V1.Manager as ComplicationManager;
+using Complication.V1 as V1Comp;
 
 class YamakageWatchApp extends Application.AppBase {
     function initialize() {
@@ -63,14 +63,14 @@ class YamakageWatchApp extends Application.AppBase {
     }
 
     function getServiceDelegate() as [System.ServiceDelegate] {
-        return [new BackgroundServiceDelegate()];
+        return [new V1Comp.BackgroundServiceDelegate()];
     }
 
     function onBackgroundData(data as Application.PersistableType) as Void {
         if (!(Toybox has :Complications)) {
             return;
         }
-        ComplicationManager.update(data);
+        V1Comp.Manager.update(data);
     }
 }
 
