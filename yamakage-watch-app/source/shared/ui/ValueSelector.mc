@@ -41,7 +41,7 @@ module Shared {
                     dc.drawText(
                         x + 12,
                         y + h / 2,
-                        Graphics.FONT_SMALL,
+                        Graphics.FONT_XTINY,
                         label,
                         Graphics.TEXT_JUSTIFY_LEFT |
                             Graphics.TEXT_JUSTIFY_VCENTER
@@ -65,7 +65,7 @@ module Shared {
                     dc.drawText(
                         x + w - 12,
                         y + h / 2,
-                        Graphics.FONT_SMALL,
+                        Graphics.FONT_XTINY,
                         valueText,
                         Graphics.TEXT_JUSTIFY_RIGHT |
                             Graphics.TEXT_JUSTIFY_VCENTER

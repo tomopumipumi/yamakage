@@ -28,7 +28,7 @@ const ensureWasmInitialized = Effect.gen(function* (_) {
   if (!wasmInstance) {
     wasmInstance = yield* _(
       Effect.tryPromise({
-        try: () => init(wasmModule),
+        try: () => init({ module_or_path: wasmModule }),
         catch: (e) => new WasmError('Failed to initialize Wasm module', e),
       }),
     );

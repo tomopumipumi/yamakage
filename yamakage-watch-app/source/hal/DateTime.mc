@@ -3,8 +3,9 @@ import Toybox.Time;
 import Toybox.Time.Gregorian;
 
 module Hal {
+    (:background)
     module DateTime {
-        (:debug)
+        (:debug, :background)
         function createTargetUnixTime() as Number {
             var dummyDateOptions = {
                 :year => 2026,
@@ -22,7 +23,7 @@ module Hal {
             return dummyUnixTime;
         }
 
-        (:release)
+        (:release, :background)
         function createTargetUnixTime() as Number {
             return Time.now().value();
         }
