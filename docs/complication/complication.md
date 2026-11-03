@@ -11,6 +11,7 @@ YAMAKAGE complication data is kept up to date through periodic background commun
 - **Configuring the update interval:**
   
   The background data update interval can be changed by the user in the Settings screen of **YAMAKAGE - WatchApp**.
+  ![](./images/1.jpg)
 
 - **Initial settings (default state):**
   
@@ -102,3 +103,164 @@ When `STATUS` is anything other than `0` (`SUCCESS`), all data fields at indices
 > Background communication may occasionally fail due to temporary network errors (`NETWORK_ERROR`) or GPS signal loss (`NO_GPS`), for example, while the user is moving.
 >
 > To improve the user experience (UX), consider caching the data whenever `STATUS == 0` using `Storage` or a similar mechanism. When an error occurs, continue displaying the previously cached data while showing a small error indicator.
+
+---
+
+## 7. Implementation Example
+
+Below is a sample WatchFace code that simply utilizes the YAMAKAGE complication on the consumer watch face.
+
+The file structure consists of just two files: an entry point and a view.
+
+### `MyFatchfaceApp.mc`
+
+```java
+import Toybox.Application;
+import Toybox.Lang;
+import Toybox.System;
+import Toybox.WatchUi;
+import Toybox.Complications;
+
+// Stored globally for this sample code (referenced later in the View)
+var gDisplayData as String = "";
+var gSuccessSubscribe = false;
+
+module ComplicationUtils {
+    function findByShortLabel(
+        shortLabel as String
+    ) as Complications.Complication? {
+        // Retrieve Complication object from shortLabel
+        var iter = Complications.getComplications();
+        var comp = iter.next();
+
+        while (comp != null) {
+            System.println(comp.shortLabel);
+            if (comp.shortLabel != null && comp.shortLabel.equals(shortLabel)) {
+                return comp;
+            }
+            comp = iter.next();
+        }
+        return null;
+    }
+}
+
+class MyFatchfaceApp extends Application.AppBase {
+    var _complicationId as Complications.Id?;
+
+    function initialize() {
+        AppBase.initialize();
+    }
+
+    function onStart(state as Dictionary?) as Void {
+        // Retrieve Complication object
+        var comp = ComplicationUtils.findByShortLabel("YK CSV");
+        if (comp == null || comp.complicationId == null) {
+            return;
+        }
+
+        // Store the id within the class
+        _complicationId = comp.complicationId;
+
+        // Register a callback invoked when the value is updated
+        Complications.registerComplicationChangeCallback(
+            method(:onComplicationChanged)
+        );
+
+        // Start subscription
+        try {
+            gSuccessSubscribe =
+                Complications.subscribeToUpdates(_complicationId);
+        } catch (e) {
+            System.println("Error: " + e.getErrorMessage());
+            gSuccessSubscribe = false;
+        }
+
+        // Apply initial data
+        if (gSuccessSubscribe) {
+            System.println("OK");
+            gSuccessSubscribe = true;
+            _refreshComplication(_complicationId);
+        }
+    }
+
+    function onComplicationChanged(complicationId as Complications.Id) as Void {
+        // Callback when complication data is changed
+        if (_complicationId != null && complicationId.equals(_complicationId)) {
+            _refreshComplication(complicationId);
+        }
+    }
+
+    function _refreshComplication(id as Complications.Id) as Void {
+        try {
+            var comp = Complications.getComplication(id);
+            var value = comp.value;
+
+            gDisplayData = value instanceof String ? value : "";
+        } catch (e instanceof Complications.ComplicationNotFoundException) {
+            System.println("Complication retrieval error: " + e);
+            _complicationId = null;
+            gDisplayData = "Complication retrieval error";
+        }
+        WatchUi.requestUpdate();
+    }
+
+    function getInitialView() as [Views] or [Views, InputDelegates] {
+        return [new MyFatchfaceView()];
+    }
+}
+
+function getApp() as MyFatchfaceApp {
+    return Application.getApp() as MyFatchfaceApp;
+}
+
+
+```
+
+### `MyFatchfaceView.mc`
+
+```java
+import Toybox.Graphics;
+import Toybox.WatchUi;
+
+class MyFatchfaceView extends WatchUi.WatchFace {
+    private var _textArea;
+    private var _displayData;
+
+    function initialize() {
+        WatchFace.initialize();
+
+        _displayData = gSuccessSubscribe
+            ? gDisplayData 
+            : "fail subsc";
+    }
+
+    function onLayout(dc as Graphics.Dc) as Void {
+        // Prepare a text area for better visibility in this sample
+        _textArea = new WatchUi.TextArea({
+            :text => "",
+            :color => Graphics.COLOR_WHITE,
+            :font => [Graphics.FONT_LARGE],
+            :locX => WatchUi.LAYOUT_HALIGN_CENTER,
+            :locY => WatchUi.LAYOUT_VALIGN_CENTER,
+            :width => dc.getWidth() * 0.8,
+            :height => dc.getHeight() * 0.8,
+            :justification => Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
+        });
+    }
+
+    function onUpdate(dc as Graphics.Dc) as Void {
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.clear();
+
+        _textArea.setText("Data: " + _displayData);
+        _textArea.draw(dc);
+    }
+}
+
+```
+
+In the sample code, `comp.value` is displayed directly on the screen.
+
+![](./images/3.jpg)
+
+For YAMAKAGE's `Sunrise Time` and `Sunset Time`, they are already formatted as labels, so they can be displayed as is. However, for the `Full Data Set (CSV)`, the implementation would typically involve parsing the CSV and mapping it to an object.

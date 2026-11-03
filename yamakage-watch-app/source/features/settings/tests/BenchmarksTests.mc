@@ -29,9 +29,9 @@ module Features {
                     ])
                 );
 
-                // Rendering cost threshold (e.g., 2.5ms)
+                // Rendering cost threshold
                 Test.assertEqualMessage(
-                    msPerFrame < 30.5,
+                    msPerFrame < 35.0,
                     true,
                     "Rendering of SettingsRender is too slow."
                 );

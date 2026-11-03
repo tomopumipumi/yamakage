@@ -2,12 +2,12 @@
     <string id="AppName">YAMAKAGE WatchApp</string>
     <string id="FaceItDefaultText">--</string>
 
-    <string id="Comp1_LongLabelName">YAMAKAGE RawData(CSV)</string>
-    <string id="Comp1_ShortLabelName">YK RawData</string>
+    <string id="Comp1_LongLabelName" scope="background">YAMAKAGE RawData(CSV)</string>
+    <string id="Comp1_ShortLabelName" scope="background">YK CSV</string>
 
-    <string id="Comp2_LongLabelName">YAMAKAGE Sunrise</string>
-    <string id="Comp2_ShortLabelName">YK Sunrise</string>
+    <string id="Comp2_LongLabelName" scope="background">YAMAKAGE Sunrise</string>
+    <string id="Comp2_ShortLabelName" scope="background">YK Sunrise</string>
 
-    <string id="Comp3_LongLabelName">YAMAKAGE Sunset</string>
-    <string id="Comp3_ShortLabelName">YK Sunset</string>
+    <string id="Comp3_LongLabelName" scope="background">YAMAKAGE Sunset</string>
+    <string id="Comp3_ShortLabelName" scope="background">YK Sunset</string>
 </strings>

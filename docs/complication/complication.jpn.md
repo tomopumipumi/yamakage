@@ -10,6 +10,8 @@ YAMAKAGEのコンプリケーションデータは、アプリがバックグラ
 
 - **更新間隔の設定:**
   バックグラウンドでのデータ更新間隔は、「YAMAKAGE - WatchApp」内の設定画面（Settings）からユーザーが任意に変更できます。
+  ![](./images/1.jpg)
+
 - **初期設定（デフォルト状態）:**
   YAMAKAGE - WatchApp のインストール直後は、意図しないバッテリー消費や通信を防ぐため、バックグラウンド更新機能は **「オフ（Off）」** に設定されています。
   サードパーティのウォッチフェイス等でこのコンプリケーションを利用・案内する際は、ユーザー自身にYAMAKAGEアプリを開き、設定画面から更新間隔を有効（例: 10 Min など）にするよう促す必要があります。
@@ -20,10 +22,7 @@ YAMAKAGEのコンプリケーションデータは、アプリがバックグラ
 
 ウォッチフェイス側（コンシューマー側）でYAMAKAGEのコンプリケーションを購読するためには、プロジェクトの `manifest.xml` に以下のパーミッションを追加する必要があります。
 
-```xml
-<iq:uses-permission id="ComplicationSubscriber"/>
-
-```
+![subscriverの権限付与](./images/2.png)
 
 ---
 
@@ -33,18 +32,15 @@ YAMAKAGEでは、用途に合わせて以下の3種類のコンプリケーシ�
 
 | データ内容 | ターゲット | `shortLabel` (検索キー) | 提供される `:value` の型・形式 |
 | --- | --- | --- | --- |
-| **全データセット (CSV)** | 開発者向け | `"YK Dev CSV"` | `String` (カンマ区切りのデータ群。詳細は4章以降) |
+| **全データセット (CSV)** | 開発者向け | `"YK CSV"` | `String` (カンマ区切りのデータ群。詳細は4章以降) |
 | **日の出時間** | 一般ユーザー/開発者 | `"YK Sunrise"` | `String` (例: `"06:30"` / `"6:30a"`) ※端末の12/24H設定に依存 |
 | **日の入り時間** | 一般ユーザー/開発者 | `"YK Sunset"` | `String` (例: `"18:45"` / `"6:45p"`) ※端末の12/24H設定に依存 |
-
-> ⚠️ **開発上の注意:**
-> Garminの仕様上、コンプリケーションID（`Complications.Id`）は端末やインストール状況によって動的に割り振られます。そのため、固定のIDを使用するのではなく、プログラム内でイテレータを回して `shortLabel` が `"YK Dev CSV"` などに一致するオブジェクトを動的に特定して呼び出してください。
 
 ---
 
 ## 4. 開発者向けデータ (CSV) のフォーマット概要
 
-上記で `YK Dev CSV` として提供されるコンプリケーションの `:value` プロパティには、各要素がカンマ（`,`）で連結された **1つのCSV形式の文字列（`String`）** が格納されて配信されます。
+上記で `YK CSV` として提供されるコンプリケーションの `:value` プロパティには、各要素がカンマ（`,`）で連結された **1つのCSV形式の文字列（`String`）** が格納されて配信されます。
 
 コンシューマー側では、受け取った文字列をカンマで分割（パース）し、下記の「データスキーマ」のインデックス順序に従って各値を取得・型変換して利用してください。
 
@@ -91,3 +87,160 @@ YAMAKAGEでは、用途に合わせて以下の3種類のコンプリケーシ�
 
 > **💡 実装のヒント（キャッシュの活用）:**
 > バックグラウンド通信はユーザーの移動中などに一時的な通信エラー（`NETWORK_ERROR`）やGPSロスト（`NO_GPS`）を起こすことがあります。ウォッチフェイス側では、`STATUS == 0` のときにデータを `Storage` 等にキャッシュしておき、エラー発生時は「前回のキャッシュデータを表示しつつ、小さくエラーインジケーターを出す」といった設計にすると、ユーザー体験（UX）が向上します。
+
+---
+
+## 7. 実装例
+以下は利用側ウォッチフェイスで簡易的にYAMAKAGEのコンプリケーションを利用するWatchFaceコードです。
+
+ファイル構成はエントリポイントとビューの2つだけです。
+
+### `MyFatchfaceApp.mc`
+```java
+import Toybox.Application;
+import Toybox.Lang;
+import Toybox.System;
+import Toybox.WatchUi;
+import Toybox.Complications;
+
+// サンプルコードなのでとりあえずグローバルに保持(後でViewで参照)
+var gDisplayData as String = "";
+var gSuccessSubscribe = false;
+
+module ComplicationUtils {
+    function findByShortLabel(
+        shortLabel as String
+    ) as Complications.Complication? {
+        // shortLabelからComplicationオブジェクトを取得する
+        var iter = Complications.getComplications();
+        var comp = iter.next();
+
+        while (comp != null) {
+            System.println(comp.shortLabel);
+            if (comp.shortLabel != null && comp.shortLabel.equals(shortLabel)) {
+                return comp;
+            }
+            comp = iter.next();
+        }
+        return null;
+    }
+}
+
+class MyFatchfaceApp extends Application.AppBase {
+    var _complicationId as Complications.Id?;
+
+    function initialize() {
+        AppBase.initialize();
+    }
+
+    function onStart(state as Dictionary?) as Void {
+        // Complicationオブジェクトを取得
+        var comp = ComplicationUtils.findByShortLabel("YK CSV");
+        if (comp == null || comp.complicationId == null) {
+            return;
+        }
+
+        // idをクラス内で保持
+        _complicationId = comp.complicationId;
+
+        // 値が更新されたときに呼ばれるコールバックを登録
+        Complications.registerComplicationChangeCallback(
+            method(:onComplicationChanged)
+        );
+
+        // 購読スタート
+        try {
+            gSuccessSubscribe =
+                Complications.subscribeToUpdates(_complicationId);
+        } catch (e) {
+            System.println("エラー: " + e.getErrorMessage());
+            gSuccessSubscribe = false;
+        }
+
+        // 初期データ反映
+        if (gSuccessSubscribe) {
+            System.println("OK");
+            gSuccessSubscribe = true;
+            _refreshComplication(_complicationId);
+        }
+    }
+
+    function onComplicationChanged(complicationId as Complications.Id) as Void {
+        // コンプリケーションデータが変更された場合のコールバック
+        if (_complicationId != null && complicationId.equals(_complicationId)) {
+            _refreshComplication(complicationId);
+        }
+    }
+
+    function _refreshComplication(id as Complications.Id) as Void {
+        try {
+            var comp = Complications.getComplication(id);
+            var value = comp.value;
+
+            gDisplayData = value instanceof String ? value : "";
+        } catch (e instanceof Complications.ComplicationNotFoundException) {
+            System.println("コンプリケーション取得エラー: " + e);
+            _complicationId = null;
+            gDisplayData = "コンプリケーション取得エラー";
+        }
+        WatchUi.requestUpdate();
+    }
+
+    function getInitialView() as [Views] or [Views, InputDelegates] {
+        return [new MyFatchfaceView()];
+    }
+}
+
+function getApp() as MyFatchfaceApp {
+    return Application.getApp() as MyFatchfaceApp;
+}
+
+```
+
+### `MyFatchfaceView.mc`
+
+```java
+import Toybox.Graphics;
+import Toybox.WatchUi;
+
+class MyFatchfaceView extends WatchUi.WatchFace {
+    private var _textArea;
+    private var _displayData;
+
+    function initialize() {
+        WatchFace.initialize();
+
+        _displayData = gSuccessSubscribe
+            ? gDisplayData 
+            : "fail subsc";
+    }
+
+    function onLayout(dc as Graphics.Dc) as Void {
+        // 今回は見やすいようにテキストエリアを用意
+        _textArea = new WatchUi.TextArea({
+            :text => "",
+            :color => Graphics.COLOR_WHITE,
+            :font => [Graphics.FONT_LARGE],
+            :locX => WatchUi.LAYOUT_HALIGN_CENTER,
+            :locY => WatchUi.LAYOUT_VALIGN_CENTER,
+            :width => dc.getWidth() * 0.8,
+            :height => dc.getHeight() * 0.8,
+            :justification => Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
+        });
+    }
+
+    function onUpdate(dc as Graphics.Dc) as Void {
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.clear();
+
+        _textArea.setText("Data: " + _displayData);
+        _textArea.draw(dc);
+    }
+}
+```
+
+サンプルコードでは`comp.value`をそのまま画面に表示しています。
+
+![](./images/3.jpg)
+
+YAMAKAGEの`日の出時間`と`日の入り時間`については、すでにラベルになっているのでこのまま表示できますが、`全データセット (CSV)`についてはCSVパース処理をいれてオブジェクトなどにマッピングする感じの実装になると思います。

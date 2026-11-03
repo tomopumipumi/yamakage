@@ -2,12 +2,14 @@ import Toybox.Application;
 import Toybox.Lang;
 import Toybox.System;
 import Toybox.Complications;
+import Toybox.Background;
 import Systems.Crypt;
 import Shared.Core.Page;
 import Shared.Core.Consts;
 import Shared.Core.Consts.SettingIds;
 import Shared.Core.ViewFactory;
 import Features.Main;
+import TestComplication;
 
 using MonkeyHooks as MH;
 using Core.AppArena.CoreArena as coreA;
@@ -42,6 +44,7 @@ class YamakageWatchApp extends Application.AppBase {
 
         var intervalMs = Consts.FRAME_RATES[frIdx][:val] as Number;
         MH.SharedTimer.setInterval(intervalMs);
+
         if (System has :ServiceDelegate && Toybox has :Complications) {
             var intervalIdx = MH.useStorageNumber(SettingIds.BG_UPDATE_INTERVAL)
                 .init(0)
@@ -63,15 +66,19 @@ class YamakageWatchApp extends Application.AppBase {
     }
 
     function getServiceDelegate() as [System.ServiceDelegate] {
-        return [new V1Comp.BackgroundServiceDelegate()];
+        return [
+            new V1Comp.BackgroundServiceDelegate(
+                Application.loadResource(Rez.Strings.Comp1_ShortLabelName) as
+                    String,
+                Application.loadResource(Rez.Strings.Comp2_ShortLabelName) as
+                    String,
+                Application.loadResource(Rez.Strings.Comp3_ShortLabelName) as
+                    String
+            )
+        ];
     }
 
-    function onBackgroundData(data as Application.PersistableType) as Void {
-        if (!(Toybox has :Complications)) {
-            return;
-        }
-        V1Comp.Manager.update(data);
-    }
+    function onBackgroundData(data as Application.PersistableType) as Void {}
 }
 
 function getApp() as YamakageWatchApp {

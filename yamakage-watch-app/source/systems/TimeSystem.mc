@@ -3,7 +3,9 @@ import Toybox.Lang;
 import Toybox.System;
 
 module Systems {
+    (:background)
     module TimeSystem {
+        (:background)
         function formatUnixTime(unixSec as Long or Number or Null) as String {
             if (unixSec != null && unixSec > 0) {
                 var moment = new Time.Moment(unixSec.toNumber());
