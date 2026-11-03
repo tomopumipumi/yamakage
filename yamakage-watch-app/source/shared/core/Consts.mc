@@ -22,13 +22,13 @@ module Shared {
             ];
 
             const BG_UPDATE_OPTIONS = [
+                { :label => "Off", :val => 0 },
                 { :label => "5 Min", :val => 5 * 60 },
                 { :label => "10 Min", :val => 10 * 60 },
                 { :label => "15 Min", :val => 15 * 60 },
                 { :label => "30 Min", :val => 30 * 60 },
                 { :label => "1 Hour", :val => 60 * 60 },
-                { :label => "2 Hours", :val => 120 * 60 },
-                { :label => "Off", :val => 0 }
+                { :label => "2 Hours", :val => 120 * 60 }
             ];
         }
     }

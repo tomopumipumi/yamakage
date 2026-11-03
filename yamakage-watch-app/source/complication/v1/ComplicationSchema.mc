@@ -1,6 +1,4 @@
-(:background)
 module Complication {
-    (:background)
     module V1 {
         (:background)
         module ComplicationSchema {

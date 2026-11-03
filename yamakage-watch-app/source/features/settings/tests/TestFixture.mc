@@ -22,6 +22,7 @@ module Features {
                 var cached = {};
                 cached.put(SettingIds.ANIM_ENABLED, ToggleValues.ON);
                 cached.put(SettingIds.FRAME_RATE, 0);
+                cached.put(SettingIds.BG_UPDATE_INTERVAL, 0);
                 props[SettingsProps.CACHED_VALUES] = cached;
 
                 return props;

@@ -1,5 +1,6 @@
 module Complication {
     module V1 {
+        (:background)
         module ApiSchema {
             enum {
                 SUNRISE_TIME, // Number (Unix timestamp)

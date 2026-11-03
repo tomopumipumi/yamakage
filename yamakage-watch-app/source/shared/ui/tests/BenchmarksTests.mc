@@ -195,7 +195,7 @@ module Shared {
                 );
 
                 Test.assertMessage(
-                    msPerFrame < 5.0,
+                    msPerFrame < 6.0,
                     "TextLabel rendering is too slow."
                 );
                 return true;

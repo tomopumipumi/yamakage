@@ -2,6 +2,7 @@ import Toybox.Lang;
 import Toybox.Application;
 import Toybox.Complications;
 import Toybox.System;
+import Toybox.Time;
 import Hal.DateTime;
 import Systems.TimeSystem;
 import Complication.V1.Consts;
@@ -9,24 +10,29 @@ import Complication.V1.Status;
 import Complication.V1.ApiSchema;
 import Complication.V1.ComplicationSchema;
 
-using MonkeyHooks as MH;
-using Core.AppArena.CoreArena as coreA;
+using Complication.V1.Context as cx;
 
 module Complication {
     module V1 {
+        (:background)
         module Manager {
-            function update(data as Application.PersistableType) as Void {
-                if (
-                    data == null &&
-                    !(data instanceof Array) &&
-                    !(data instanceof Number)
-                ) {
-                    data = Status.UNKNOWN_ERROR;
-                }
+            (:background)
+            const CSV_FORMAT = "$1$,$2$,$3$,$4$,$5$,$6$,$7$,$8$,$9$,$10$";
 
-                var rawCompData = _serializeRawData(data);
-                var sunriseCompData = _serializeSunriseData(data);
-                var sunsetCompData = _serializeSunsetData(data);
+            (:background)
+            function update(data as Array or Number) as Void {
+                var rawCompData = _serializeRawData(
+                    data,
+                    cx.RawData_ShortLabelName
+                );
+                var sunriseCompData = _serializeSunriseData(
+                    data,
+                    cx.Sunrise_ShortLabelName
+                );
+                var sunsetCompData = _serializeSunsetData(
+                    data,
+                    cx.Sunset_ShortLabelName
+                );
 
                 try {
                     Complications.updateComplication(
@@ -49,8 +55,10 @@ module Complication {
                 }
             }
 
+            (:background)
             function _serializeRawData(
-                rawData as Array or Number
+                rawData as Array or Number,
+                shortLabelName as String
             ) as Complications.Data {
                 var schemaData = new [ComplicationSchema.DATA_SIZE];
                 schemaData[ComplicationSchema.VERSION] = Consts.VERSION;
@@ -91,10 +99,8 @@ module Complication {
 
                 var compData =
                     ({
-                        :shortLabel => Application.loadResource(
-                            Rez.Strings.Comp1_ShortLabelName
-                        ) as String,
-                        :value => _join(schemaData, ",")
+                        :shortLabel => shortLabelName,
+                        :value => Lang.format(CSV_FORMAT, schemaData)
                     }) as Complications.Data;
 
                 System.println(compData);
@@ -102,8 +108,10 @@ module Complication {
                 return compData;
             }
 
+            (:background)
             function _serializeSunriseData(
-                rawData as Array or Number
+                rawData as Array or Number,
+                shortLabelName as String
             ) as Complications.Data {
                 var valueStr = "--:--";
 
@@ -116,18 +124,19 @@ module Complication {
                     );
                 }
 
-                var compData = {
-                    :shortLabel => Application.loadResource(
-                        Rez.Strings.Comp2_ShortLabelName
-                    ) as String,
-                    :value => valueStr
-                };
+                var compData =
+                    ({
+                        :shortLabel => shortLabelName,
+                        :value => valueStr
+                    }) as Complications.Data;
 
-                return compData as Complications.Data;
+                return compData;
             }
 
+            (:background)
             function _serializeSunsetData(
-                rawData as Array or Number
+                rawData as Array or Number,
+                shortLabelName as String
             ) as Complications.Data {
                 var valueStr = "--:--";
 
@@ -140,27 +149,13 @@ module Complication {
                     );
                 }
 
-                var compData = {
-                    :shortLabel => Application.loadResource(
-                        Rez.Strings.Comp3_ShortLabelName
-                    ) as String,
-                    :value => valueStr
-                };
+                var compData =
+                    ({
+                        :shortLabel => shortLabelName,
+                        :value => valueStr
+                    }) as Complications.Data;
 
-                return compData as Complications.Data;
-            }
-
-            function _join(values as Array, delimiter as String) as String {
-                var result = "";
-
-                for (var i = 0; i < values.size(); i++) {
-                    if (i > 0) {
-                        result += delimiter;
-                    }
-                    result += values[i].toString();
-                }
-
-                return result;
+                return compData;
             }
         }
     }

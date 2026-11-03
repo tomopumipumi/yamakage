@@ -1,5 +1,6 @@
 module Complication {
     module V1 {
+        (:background)
         module Consts {
             const COMPLICATION_ID_ROW_DATA = "1";
             const COMPLICATION_ID_SUNRISE = "2";
