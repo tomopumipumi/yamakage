@@ -3,31 +3,30 @@
   "version": "1.0.3",
   "description": "",
   "license": "MIT",
-  "main": "index.js",
+  "main": "",
+  "keywords": [],
+  "author": "",
+  "type": "module",
   "scripts": {
     "fmt": "prettier --write \"**/*.mc\"",
     "fmt:check": "prettier --check \"**/*.mc\"",
     "sim:start": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/connectiq\"",
-
     "build:debug": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -d \\$GARMIN_DEVICE -y \\$GARMIN_KEY_PATH -f monkey.debug.jungle -o bin/Yamakage-debug.prg\"",
     "run:debug": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeydo bin/Yamakage-debug.prg \\$GARMIN_DEVICE\"",
     "dev": "pnpm build:debug && pnpm run:debug",
-    
     "build:release": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -r -d \\$GARMIN_DEVICE -y \\$GARMIN_KEY_PATH -f monkey.release.jungle -o bin/Yamakage-release.prg\"",
     "run:release": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeydo bin/Yamakage-release.prg \\$GARMIN_DEVICE\"",
-    "dev:release": "pnpm build:release && pnpm run:release",
-    
-    "test": "pnpm sim:start && dotenv -- node scripts/run-tests.cjs",
-
+    "preview": "pnpm build:release && pnpm run:release",
+    "test": "pnpm sim:start && dotenv -- node scripts/run-tests.mjs",
+    "test:all": "pnpm sim:start && dotenv -- node scripts/run-tests.mjs --all",
     "export": "dotenv -- cross-env-shell \"\\$GARMIN_SDK_BIN/monkeyc -e -r -y \\$GARMIN_KEY_PATH -f monkey.release.jungle -o bin/yamakage-watch-app.iq\""
   },
-  "keywords": [],
-  "author": "",
   "packageManager": "pnpm@10.33.2",
   "devDependencies": {
     "@markw65/prettier-plugin-monkeyc": "^1.0.69",
     "cross-env": "^10.1.0",
     "dotenv-cli": "^11.0.0",
+    "iconv-lite": "^0.7.3",
     "prettier": "^3.9.5"
   }
 }
