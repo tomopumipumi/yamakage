@@ -6,6 +6,7 @@ module Features {
     module Panorama {
         module Components {
             module PanoramaGrid {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     width as Number,

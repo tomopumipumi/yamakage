@@ -5,6 +5,7 @@ module Features {
     module Loading {
         module Components {
             module LoadingMountains {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     width as Number,

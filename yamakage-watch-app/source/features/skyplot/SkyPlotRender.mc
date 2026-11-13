@@ -18,6 +18,7 @@ import Features.SkyPlot.Components.SkyPlotMoonEvents;
 module Features {
     module SkyPlot {
         module SkyPlotRender {
+            (:inline, :force_dce)
             function render(dc as Graphics.Dc, props as Array) as Void {
                 var w = props[SkyPlotProps.W] as Number;
                 var h = props[SkyPlotProps.H] as Number;
@@ -36,90 +37,90 @@ module Features {
                     mode == TargetMode.SUN ? cloudBuffer : starBuffer;
                 BackgroundAnimation.render(dc, mode, activeBuffer);
 
-                if (!hasData) {
-                    return;
-                }
+                if (hasData) {
+                    var radius = props[SkyPlotProps.RADIUS] as Float;
+                    var nFont = props[SkyPlotProps.N_FONT] as Graphics.FontType;
+                    var iconFont =
+                        props[SkyPlotProps.ICON_FONT] as Graphics.FontType;
 
-                var radius = props[SkyPlotProps.RADIUS] as Float;
-                var nFont = props[SkyPlotProps.N_FONT] as Graphics.FontType;
-                var iconFont =
-                    props[SkyPlotProps.ICON_FONT] as Graphics.FontType;
+                    var stepDeg = props[SkyPlotProps.STEP_DEG] as Number;
+                    var profiles =
+                        props[SkyPlotProps.PROFILES] as
+                        ApiSchema.AzimuthProfilesArray;
+                    var paths =
+                        props[SkyPlotProps.PATHS] as ApiSchema.PathArray;
 
-                var stepDeg = props[SkyPlotProps.STEP_DEG] as Number;
-                var profiles =
-                    props[SkyPlotProps.PROFILES] as
-                    ApiSchema.AzimuthProfilesArray;
-                var paths = props[SkyPlotProps.PATHS] as ApiSchema.PathArray;
+                    var pulsePhase = props[SkyPlotProps.PULSE_PHASE] as Float;
+                    var heading = props[SkyPlotProps.HEADING] as Float?;
 
-                var pulsePhase = props[SkyPlotProps.PULSE_PHASE] as Float;
-                var heading = props[SkyPlotProps.HEADING] as Float?;
+                    SkyPlotGrid.render(dc, cx, cy, radius, nFont);
+                    AzimuthChart.render(dc, profiles, stepDeg, cx, cy, radius);
 
-                SkyPlotGrid.render(dc, cx, cy, radius, nFont);
-                AzimuthChart.render(dc, profiles, stepDeg, cx, cy, radius);
+                    switch (mode) {
+                        case TargetMode.SUN:
+                            SunPathChart.render(
+                                dc,
+                                paths,
+                                cx,
+                                cy,
+                                radius,
+                                pulsePhase
+                            );
+                            SkyPlotSunEvents.render(
+                                dc,
+                                paths,
+                                cx,
+                                cy,
+                                radius,
+                                iconFont
+                            );
+                            break;
 
-                switch (mode) {
-                    case TargetMode.SUN:
-                        SunPathChart.render(
+                        case TargetMode.MOON:
+                            var fraction =
+                                props[SkyPlotProps.FRACTION] as Float;
+                            var phase = props[SkyPlotProps.PHASE] as Float;
+                            MoonPathChart.render(
+                                dc,
+                                paths,
+                                cx,
+                                cy,
+                                radius,
+                                fraction,
+                                phase,
+                                pulsePhase
+                            );
+                            SkyPlotMoonEvents.render(
+                                dc,
+                                paths,
+                                cx,
+                                cy,
+                                radius,
+                                iconFont
+                            );
+                            break;
+                    }
+
+                    if (heading != null) {
+                        HeadingMarker.render(
                             dc,
-                            paths,
+                            heading,
+                            profiles,
+                            stepDeg,
                             cx,
                             cy,
-                            radius,
-                            pulsePhase
+                            radius
                         );
-                        SkyPlotSunEvents.render(
-                            dc,
-                            paths,
-                            cx,
-                            cy,
-                            radius,
-                            iconFont
-                        );
-                        break;
+                    }
 
-                    case TargetMode.MOON:
-                        var fraction = props[SkyPlotProps.FRACTION] as Float;
-                        var phase = props[SkyPlotProps.PHASE] as Float;
-                        MoonPathChart.render(
-                            dc,
-                            paths,
-                            cx,
-                            cy,
-                            radius,
-                            fraction,
-                            phase,
-                            pulsePhase
-                        );
-                        SkyPlotMoonEvents.render(
-                            dc,
-                            paths,
-                            cx,
-                            cy,
-                            radius,
-                            iconFont
-                        );
-                        break;
-                }
-
-                if (heading != null) {
-                    HeadingMarker.render(
+                    PageIndicator.render(
                         dc,
-                        heading,
-                        profiles,
-                        stepDeg,
-                        cx,
-                        cy,
-                        radius
+                        Shared.Core.TOTAL_PAGES,
+                        Page.SKYPLOT,
+                        w,
+                        h
                     );
                 }
-
-                PageIndicator.render(
-                    dc,
-                    Shared.Core.TOTAL_PAGES,
-                    Page.SKYPLOT,
-                    w,
-                    h
-                );
             }
         }
     }

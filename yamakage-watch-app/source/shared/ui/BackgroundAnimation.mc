@@ -21,6 +21,7 @@ module Shared {
                 }
             }
 
+            (:inline, :force_dce)
             function _sunAnimation(
                 dc as Graphics.Dc,
                 buffer as Array<Number or Float>
@@ -38,6 +39,7 @@ module Shared {
                 }
             }
 
+            (:inline, :force_dce)
             function _moonAnimation(
                 dc as Graphics.Dc,
                 buffer as Array<Number or Float>

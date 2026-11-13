@@ -55,7 +55,7 @@ module Complication {
                 }
             }
 
-            (:background)
+            (:background, :inline, :force_dce)
             function _serializeRawData(
                 rawData as Array or Number,
                 shortLabelName as String
@@ -108,7 +108,7 @@ module Complication {
                 return compData;
             }
 
-            (:background)
+            (:background, :inline, :force_dce)
             function _serializeSunriseData(
                 rawData as Array or Number,
                 shortLabelName as String
@@ -133,7 +133,7 @@ module Complication {
                 return compData;
             }
 
-            (:background)
+            (:background, :inline, :force_dce)
             function _serializeSunsetData(
                 rawData as Array or Number,
                 shortLabelName as String

@@ -5,6 +5,7 @@ module Features {
     module Details {
         module Components {
             module DetailsSeparators {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     w as Number,

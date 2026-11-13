@@ -7,6 +7,7 @@ module Features {
     module Main {
         module Components {
             module MainStartAction {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     cx as Number,

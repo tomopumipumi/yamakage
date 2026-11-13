@@ -6,6 +6,7 @@ import Core.Config;
 module Network {
     (:background)
     module ApiHooks {
+        (:inline, :force_dce)
         function fetchSunShadowData(
             lat as Float,
             lng as Float,
@@ -20,6 +21,7 @@ module Network {
             request.execute();
         }
 
+        (:inline, :force_dce)
         function fetchMoonShadowData(
             lat as Float,
             lng as Float,
@@ -34,7 +36,7 @@ module Network {
             request.execute();
         }
 
-        (:background)
+        (:background, :inline, :force_dce)
         function fetchComplicationData(
             lat as Float,
             lng as Float,

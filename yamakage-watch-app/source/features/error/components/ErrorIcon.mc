@@ -6,6 +6,7 @@ module Features {
     module Error {
         module Components {
             module ErrorIcon {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     cx as Number,

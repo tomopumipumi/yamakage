@@ -141,6 +141,7 @@ module Features {
             // ==================================================
             // Private Method
             // ==================================================
+            (:inline, :force_dce)
             private function _refreshData() as Void {
                 var mode = _props[DetailsProps.MODE] as Number;
                 var data = null;

@@ -7,6 +7,7 @@ module Features {
     module Details {
         module Components {
             module DetailsMoonRow {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     centerY as Number,

@@ -192,6 +192,7 @@ module Features {
             // ==================================================
             // Private Method
             // ==================================================
+            (:inline, :force_dce)
             private function _refreshData() as Void {
                 var mode = _props[PanoramaProps.MODE] as Number;
                 var data = null;
@@ -238,31 +239,32 @@ module Features {
                 _props[PanoramaProps.LAST_HEADING] = -999.0;
             }
 
+            (:inline, :force_dce)
             private function _refreshMountains() as Void {
                 var hasData = _props[PanoramaProps.HAS_DATA];
                 var profiles = _props[PanoramaProps.PROFILES];
 
                 if (
-                    hasData == null ||
-                    !(hasData as Boolean) ||
-                    profiles == null
+                    hasData != null &&
+                    (hasData as Boolean) &&
+                    profiles != null
                 ) {
+                    var heading = _props[PanoramaProps.HEADING] as Float;
+
+                    _props[PanoramaProps.MOUNTAIN_POINTS] =
+                        PanoramaLogic.getPanoramaPoints(
+                            profiles as ApiSchema.AzimuthProfilesArray,
+                            _props[PanoramaProps.STEP_DEG] as Number,
+                            heading,
+                            _props[PanoramaProps.W] as Number,
+                            _props[PanoramaProps.H] as Number
+                        ) as Array<Array<Number> >;
+
+                    _props[PanoramaProps.LAST_HEADING] = heading;
+                } else {
                     _props[PanoramaProps.MOUNTAIN_POINTS] =
                         [] as Array<Array<Number> >;
-                    return;
                 }
-
-                var heading = _props[PanoramaProps.HEADING] as Float;
-                _props[PanoramaProps.MOUNTAIN_POINTS] =
-                    PanoramaLogic.getPanoramaPoints(
-                        profiles as ApiSchema.AzimuthProfilesArray,
-                        _props[PanoramaProps.STEP_DEG] as Number,
-                        heading,
-                        _props[PanoramaProps.W] as Number,
-                        _props[PanoramaProps.H] as Number
-                    ) as Array<Array<Number> >;
-
-                _props[PanoramaProps.LAST_HEADING] = heading;
             }
 
             // ==================================================

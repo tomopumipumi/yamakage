@@ -128,6 +128,7 @@ module Features {
             // ==================================================
             // Private Methods
             // ==================================================
+            (:inline, :force_dce)
             private function _touchableSetting() as Void {
                 MHTouchable.clear();
 

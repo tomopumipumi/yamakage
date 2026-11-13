@@ -9,6 +9,7 @@ module Features {
     module Main {
         module Components {
             module MainSunAnimation {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     progress as Float,

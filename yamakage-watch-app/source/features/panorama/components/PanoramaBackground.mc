@@ -6,6 +6,7 @@ module Features {
     module Panorama {
         module Components {
             module PanoramaBackground {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     mode as Number,

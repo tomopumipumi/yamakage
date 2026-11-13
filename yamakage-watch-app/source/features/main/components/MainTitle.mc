@@ -6,6 +6,7 @@ module Features {
     module Main {
         module Components {
             module MainTitle {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     cx as Number,

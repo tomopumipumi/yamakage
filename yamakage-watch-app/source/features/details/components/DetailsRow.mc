@@ -9,6 +9,7 @@ module Features {
     module Details {
         module Components {
             module DetailsRow {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     centerY as Number,

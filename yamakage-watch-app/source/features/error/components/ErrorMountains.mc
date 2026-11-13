@@ -5,6 +5,7 @@ module Features {
     module Error {
         module Components {
             module ErrorMountains {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     width as Number,

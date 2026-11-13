@@ -9,6 +9,7 @@ import Features.Loading.Components.LoadingMountains;
 module Features {
     module Loading {
         module LoadingRender {
+            (:inline, :force_dce)
             function render(dc as Graphics.Dc, props as Array) as Void {
                 var w = props[LoadingProps.W] as Number;
                 var h = props[LoadingProps.H] as Number;

@@ -8,6 +8,7 @@ module Features {
     module Main {
         module Components {
             module MainTargetSelector {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     cx as Number,

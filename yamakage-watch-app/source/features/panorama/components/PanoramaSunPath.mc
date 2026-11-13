@@ -11,6 +11,7 @@ module Features {
     module Panorama {
         module Components {
             module PanoramaSunPath {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     paths as ApiSchema.PathArray,
