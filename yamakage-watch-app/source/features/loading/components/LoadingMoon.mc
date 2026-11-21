@@ -6,6 +6,7 @@ module Features {
     module Loading {
         module Components {
             module LoadingMoon {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     cx as Number,

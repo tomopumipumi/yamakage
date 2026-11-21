@@ -6,6 +6,7 @@ module Features {
     module Panorama {
         module Components {
             module PanoramaLabels {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     heading as Float,

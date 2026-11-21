@@ -27,6 +27,7 @@ module Shared {
             }
 
             module _Label {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     x as Number,
@@ -50,6 +51,7 @@ module Shared {
             }
 
             module _Value {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     x as Number,

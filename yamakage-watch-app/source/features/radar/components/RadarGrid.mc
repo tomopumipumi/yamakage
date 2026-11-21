@@ -5,6 +5,7 @@ module Features {
     module Radar {
         module Components {
             module RadarGrid {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     cx as Number,

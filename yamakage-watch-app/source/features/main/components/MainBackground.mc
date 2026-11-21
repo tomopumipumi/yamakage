@@ -5,6 +5,7 @@ module Features {
     module Main {
         module Components {
             module MainBackground {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     w as Number,
@@ -16,6 +17,7 @@ module Features {
             }
 
             module _ForegroundMountain {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     h as Number,
@@ -37,6 +39,7 @@ module Features {
             }
 
             module _BackgroundMountain {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     h as Number,

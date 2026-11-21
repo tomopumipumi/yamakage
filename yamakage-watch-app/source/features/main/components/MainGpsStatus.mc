@@ -5,6 +5,7 @@ module Features {
     module Main {
         module Components {
             module MainGpsStatus {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     cx as Number,

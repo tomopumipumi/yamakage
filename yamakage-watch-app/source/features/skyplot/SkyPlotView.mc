@@ -202,6 +202,7 @@ module Features {
             // ==================================================
             // Private Method
             // ==================================================
+            (:inline, :force_dce)
             private function _refreshData() as Void {
                 var mode = _props[SkyPlotProps.MODE] as Number;
                 var data = null;
@@ -251,12 +252,11 @@ module Features {
             // ==================================================
             function onUpdate(dc as Graphics.Dc) as Void {
                 var hasData = _props[SkyPlotProps.HAS_DATA];
-                if (hasData != null && (hasData as Boolean)) {
-                    _props[SkyPlotProps.HEADING] =
-                        CompassSensor.getHeadingDegrees();
-                } else {
-                    _props[SkyPlotProps.HEADING] = null;
-                }
+
+                _props[SkyPlotProps.HEADING] =
+                    hasData != null && (hasData as Boolean)
+                        ? CompassSensor.getHeadingDegrees()
+                        : null;
 
                 SkyPlotRender.render(dc, _props);
             }

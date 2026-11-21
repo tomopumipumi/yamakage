@@ -8,6 +8,7 @@ import Features.Error.Components.ErrorMessage;
 module Features {
     module Error {
         module ErrorRender {
+            (:inline, :force_dce)
             function render(dc as Graphics.Dc, props as Array) as Void {
                 var w = props[ErrorProps.W] as Number;
                 var h = props[ErrorProps.H] as Number;

@@ -6,6 +6,7 @@ module Feature {
     module SkyPlot {
         module Components {
             module SonarPulse {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     currentPx as Number,

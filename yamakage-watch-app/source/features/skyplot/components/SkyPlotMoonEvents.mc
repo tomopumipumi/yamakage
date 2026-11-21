@@ -8,6 +8,7 @@ module Features {
     module SkyPlot {
         module Components {
             module SkyPlotMoonEvents {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     paths as ApiSchema.PathArray,

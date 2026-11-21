@@ -6,6 +6,7 @@ module Features {
     module Radar {
         module Components {
             module RadarSonarPulse {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     cx as Number,

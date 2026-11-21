@@ -28,6 +28,7 @@ module Shared {
             }
 
             module _Label {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     x as Number,
@@ -51,6 +52,7 @@ module Shared {
             }
 
             module _Switch {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     x as Number,
@@ -78,6 +80,7 @@ module Shared {
                     _Circle.render(dc, pillX, pillY, pillW, pillH, isOn);
                 }
                 module _Circle {
+                    (:inline, :force_dce)
                     function render(
                         dc as Graphics.Dc,
                         pillX as Number,

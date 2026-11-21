@@ -5,6 +5,7 @@ module Features {
     module SkyPlot {
         module Components {
             module SkyPlotGrid {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     cx as Number,

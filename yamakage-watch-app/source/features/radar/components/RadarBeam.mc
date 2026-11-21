@@ -7,6 +7,7 @@ module Features {
     module Radar {
         module Components {
             module RadarBeam {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     headingDeg as Float,

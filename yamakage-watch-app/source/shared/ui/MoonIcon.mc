@@ -49,6 +49,7 @@ module Shared {
                     return pts;
                 }
 
+                (:inline)
                 private function _computeBrightLimb(
                     pts as Array<[Lang.Numeric, Lang.Numeric]>,
                     dir as Float,
@@ -67,6 +68,7 @@ module Shared {
                     }
                 }
 
+                (:inline)
                 private function _computeTerminatorLimb(
                     pts as Array<[Lang.Numeric, Lang.Numeric]>,
                     dir as Float,

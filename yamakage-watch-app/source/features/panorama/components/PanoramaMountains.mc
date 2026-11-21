@@ -7,6 +7,7 @@ module Features {
     module Panorama {
         module Components {
             module PanoramaMountains {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     points as Array<Array<Number> >,

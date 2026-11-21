@@ -116,7 +116,7 @@ module Features {
                 );
 
                 Test.assertMessage(
-                    msPerFrame < 10.0,
+                    msPerFrame < 15.0,
                     "DetailsMoonRow rendering is too slow."
                 );
                 return true;

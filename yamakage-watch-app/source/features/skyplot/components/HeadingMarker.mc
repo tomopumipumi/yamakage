@@ -7,6 +7,7 @@ module Features {
     module SkyPlot {
         module Components {
             module HeadingMarker {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     headingDeg as Float,

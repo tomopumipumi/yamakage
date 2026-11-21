@@ -12,6 +12,7 @@ module Features {
             const _ROW_HEIGHT = 44;
             const _SPACING = 8;
 
+            (:inline, :force_dce)
             function render(dc as Graphics.Dc, props as Array) as Void {
                 var cx = props[SettingsProps.CX] as Number;
                 var rowWidth = props[SettingsProps.ROW_WIDTH] as Number;

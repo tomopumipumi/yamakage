@@ -8,6 +8,7 @@ module Features {
     module Panorama {
         module Components {
             module PanoramaMoonEvents {
+                (:inline, :force_dce)
                 function render(
                     dc as Graphics.Dc,
                     paths as ApiSchema.PathArray,

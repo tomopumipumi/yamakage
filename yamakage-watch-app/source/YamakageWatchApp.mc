@@ -9,7 +9,6 @@ import Shared.Core.Consts;
 import Shared.Core.Consts.SettingIds;
 import Shared.Core.ViewFactory;
 import Features.Main;
-import TestComplication;
 
 using MonkeyHooks as MH;
 using Core.AppArena.CoreArena as coreA;
